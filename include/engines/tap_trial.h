@@ -156,7 +156,7 @@ extern void tap_trial_cue_despawn(struct Cue *, struct TapTrialCue *); // Cue - 
 extern void tap_trial_cue_hit(struct Cue *, struct TapTrialCue *, u32 pressed, u32 released); // Cue - Hit
 extern void tap_trial_cue_barely(struct Cue *, struct TapTrialCue *, u32 pressed, u32 released); // Cue - Barely
 extern void tap_trial_cue_miss(struct Cue *, struct TapTrialCue *); // Cue - Miss
-// extern ? func_0803e644(?);
+extern void func_0803e644(void);
 extern void tap_trial_input_event(u32 pressed, u32 released); // Input Event
 extern void tap_trial_common_beat_animation(void); // Common Event 0 (Beat Animation)
 extern void tap_trial_common_display_text(const char *); // Common Event 1 (Display Text)

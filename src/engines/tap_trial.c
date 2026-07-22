@@ -233,7 +233,7 @@ void func_0803e258(char* text) {
     } else {
         textAnim = bmp_font_obj_print_c(gTapTrial->font, text, 1, 0xc);
         delete_bmp_font_obj_text_anim(gTapTrial->font, gTapTrial->unk_1a);
-        sprite_set_anim(gSpriteHandler, gTapTrial->unk_1a, textAnim, 0, 0, 0, 0);
+        sprite_set_anim(gSpriteHandler, gTapTrial->unk_1a, textAnim->frames, 0, 0, 0, 0);
         sprite_set_visible(gSpriteHandler, gTapTrial->unk_1a, TRUE);
         scene_show_bg_layer(BG_LAYER_2);
     }

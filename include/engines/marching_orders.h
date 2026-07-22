@@ -122,10 +122,10 @@ extern void marching_cue_despawn(struct Cue *, struct MarchingOrdersCue *); // C
 extern void marching_cue_hit(struct Cue *, struct MarchingOrdersCue *, u32 pressed, u32 released); // Cue - Hit
 extern void marching_cue_barely(struct Cue *, struct MarchingOrdersCue *, u32 pressed, u32 released); // Cue - Barely
 extern void marching_cue_miss(struct Cue *, struct MarchingOrdersCue *); // Cue - Miss
-// extern ? func_0803494c(?);
-// extern ? func_08034988(?);
-// extern ? func_080349ac(?);
-// extern ? func_080349d0(?);
+extern void marching_player_step(void); // Player Step
+extern void marching_player_turn_left(void); // Player Turn Left
+extern void marching_player_turn_right(void); // Player Turn Right
+extern void marching_player_halt(void); // Player Halt
 extern void marching_input_event(u32 pressed, u32 released); // Input Event
 extern void marching_common_beat_animation(void); // Common Event 0 (Beat Animation, Unimplemented)
 extern void marching_common_display_text(const char *); // Common Event 1 (Display Text)

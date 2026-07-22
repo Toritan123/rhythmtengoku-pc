@@ -373,7 +373,7 @@ void space_dance_common_display_text(const char *text) {
         delete_bmp_font_obj_text_anim(gSpaceDance->font, gSpaceDance->textSprite);
         textAnim = bmp_font_obj_print_c(gSpaceDance->font, text, 1, 0xc);
         
-        sprite_set_anim(gSpriteHandler, gSpaceDance->textSprite, textAnim, 0, 0, 0, 0);
+        sprite_set_anim(gSpriteHandler, gSpaceDance->textSprite, textAnim->frames, 0, 0, 0, 0);
         sprite_set_visible(gSpriteHandler, gSpaceDance->textSprite, TRUE);
     }
 }

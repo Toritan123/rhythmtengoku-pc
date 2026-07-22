@@ -1,4 +1,5 @@
 #include "engines/mr_upbeat.h"
+#include "src/affine_sprite.h"
 
 // For readability.
 #define gMrUpbeat ((struct MrUpbeatEngineData *)gCurrentEngineData)

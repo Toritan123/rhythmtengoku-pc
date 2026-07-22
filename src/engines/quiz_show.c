@@ -1,4 +1,5 @@
 #include "engines/quiz_show.h"
+#include "src/affine_sprite.h"
 
 asm(".include \"include/gba.inc\""); // Temporary
 
@@ -258,21 +259,21 @@ void quiz_show_engine_update(void) {
     func_08037378();
 }
 
-void func_08037d00(u32 arg0) {
+void func_08037d00(struct QuizShowScriptTable *arg0) {
     gQuizShow->unk_40 = arg0;
 }
 
-s32 func_08037d0c(void) {
+struct Beatscript *func_08037d0c(void) {
     return gQuizShow->unk_40->scriptA; 
 }
 
-s32 func_08037d1c(void) {
+struct Beatscript *func_08037d1c(void) {
     return gQuizShow->unk_40->scriptB; 
 }
 
 void func_08037d2c(void) {
-    struct Beatscript **scripts = gQuizShow->unk_40->scriptTable;
-    struct Beatscript **current;
+    struct QuizShowScriptTable **scripts = gQuizShow->unk_40->scriptTable;
+    struct QuizShowScriptTable **current;
     u32 count = 0;
 
     if (scripts[0] != NULL) {

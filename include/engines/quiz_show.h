@@ -69,7 +69,7 @@ struct QuizShowScriptTable {
 
 
 // Engine Definition Data:
-extern struct CompressedGraphics *quiz_show_buffered_textures[];
+extern struct CompressedData *quiz_show_buffered_textures[];
 extern struct GraphicsTable quiz_show_gfx_table[];
 extern struct Animation *quiz_show_arm_r_anim[];
 extern struct Animation *quiz_show_arm_l_anim[];
@@ -105,10 +105,10 @@ extern void func_08037bf4(); // Engine Event 02 (?)
 extern void func_08037cb8(); // Engine Event 03 (?)
 extern s32 func_08037cd0(); // Engine Event 04 (?)
 extern void quiz_show_engine_update(void); // Game Engine Update
-extern void func_08037d00(); // Engine Event 07 (?)
-extern s32 func_08037d0c(); // Engine Event 08 (?)
-extern s32 func_08037d1c(); // Engine Event 09 (?)
-extern void func_08037d2c(); // Engine Event 0A (?)
+extern void func_08037d00(struct QuizShowScriptTable *arg0); // Engine Event 07 (?)
+extern struct Beatscript *func_08037d0c(void); // Engine Event 08 (?)
+extern struct Beatscript *func_08037d1c(void); // Engine Event 09 (?)
+extern void func_08037d2c(void); // Engine Event 0A (?)
 extern void func_08037d6c(u32 arg0); // Engine Event 0B (?)
 extern void func_08037d90(); // Engine Event 0C (?)
 extern void func_08037dc8(); // Engine Event 0D (?)

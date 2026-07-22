@@ -63,7 +63,7 @@ void marching_engine_start(u32 version) {
     gMarchingOrders->font = scene_create_obj_font_printer(0x340, 2);
     textAnim = bmp_font_obj_print_l(gMarchingOrders->font, D_0805a670, 1, 0xe);
 
-    gMarchingOrders->textSprite = sprite_create(gSpriteHandler, textAnim, 0, 0x78, 0x16, 0, 0, 0, 0);
+    gMarchingOrders->textSprite = sprite_create(gSpriteHandler, textAnim->frames, 0, 0x78, 0x16, 0, 0, 0, 0);
 
     for (i = 0; i < 4; i++) {
         marcher = &gMarchingOrders->marchers[i];
@@ -367,7 +367,7 @@ void marching_common_display_text(const char *text) {
         textAnim = bmp_font_obj_print_c(gMarchingOrders->font, text, 1, 0xc);
 
         delete_bmp_font_obj_text_anim(gMarchingOrders->font, gMarchingOrders->textSprite);
-        sprite_set_anim(gSpriteHandler, gMarchingOrders->textSprite, textAnim, 0, 0, 0, 0);
+        sprite_set_anim(gSpriteHandler, gMarchingOrders->textSprite, textAnim->frames, 0, 0, 0, 0);
         sprite_set_visible(gSpriteHandler, gMarchingOrders->textSprite, TRUE);
         scene_show_bg_layer(BG_LAYER_2);
     }
