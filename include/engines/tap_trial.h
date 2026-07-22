@@ -11,7 +11,8 @@ enum TapTrialVersionsEnum {
     ENGINE_VER_TAP_REMIX_8,
     ENGINE_VER_TAP_REMIX_7,
     ENGINE_VER_TAP_TRIAL_2,
-    ENGINE_VER_TAP_REMIX_5
+    ENGINE_VER_TAP_REMIX_5,
+    ENGINE_VER_TAP_TRIAL_RANDOM = 6
 };
 
 enum TapTrialAnimationsEnum {
@@ -52,8 +53,37 @@ enum TapTrialAnimationsEnum {
 
 // Engine Types:
 struct TapTrialEngineData {
-    u8 pad[0x398];
+    u8 version;
+    struct BitmapFontOBJ *font;
+    s16 unk_8; // girl sprite
+    u16 unk_a;
+    u16 unk_c;
+    u16 unk_e;
+    u8 unk_10;
+    s16 unk_12[2]; // monkey sprites
+    //s16 unk_14; // monkey two
+    u16 unk_16;
+    s16 unk_18; // giraffe sprite
+    s16 unk_1a;
+    u16 unk_1c;
+    u8 unk_1e;
+    u16 unk_20;
+    s16 textSprite;
+    struct DrumTechController *drumtech;
+    u8 pad[0x34c];
+
+    s32 unk_374;
+    s32 unk_378;
+    u32 unk_37c;
+    s32 unk_380;
+    s32 unk_384;
+    u32 unk_388;
+    u32 unk_38c;
+    s32 unk_390;
+    u8 unk_394;
 };
+
+// TOTAL: 0x398
 
 struct TapTrialCue {
     s32 unused;
@@ -97,7 +127,7 @@ extern void tap_trial_init_gfx1(void); // Graphics Init. 1
 // extern ? func_0803dd84(?);
 extern void tap_trial_engine_start(u32 version); // Game Engine Start
 extern void tap_trial_engine_event_stub(void); // Engine Event 0x0F (STUB)
-// extern ? func_0803e08c(?);
+extern void func_0803e08c(void);
 extern void func_0803e0bc(); // Engine Event 0x01 (?)
 extern void func_0803e0f8(); // Engine Event 0x02 (?)
 extern void func_0803e10c(); // Engine Event 0x03 (?)
