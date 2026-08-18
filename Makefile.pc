@@ -222,8 +222,17 @@ app: $(TARGET)
 	  install_name_tool -id "@executable_path/../Frameworks/$$base" \
 	      "$(APPDIR)/Contents/Frameworks/$$base"; \
 	  for dep in $$(strings "$$real" | grep -E '^@loader_path/lib.*\.dylib$$' | sed 's|@loader_path/||' | sort -u); do \
-	    src=$$(dirname "$$real")/$$dep; \
-	    if [ ! -f "$$src" ]; then src=/usr/local/lib/$$dep; fi; \
+	    src=""; \
+	    for cand in "$$(dirname "$$real")/$$dep" \
+	                "$$(brew --prefix 2>/dev/null)/lib/$$dep" \
+	                "/opt/homebrew/lib/$$dep" "/usr/local/lib/$$dep"; do \
+	      if [ -f "$$cand" ]; then src="$$cand"; break; fi; \
+	    done; \
+	    if [ -z "$$src" ]; then \
+	      echo "ERROR: $$base needs $$dep at run time and it was not found."; \
+	      echo "       Bundling without it produces an app that hangs at launch."; \
+	      exit 1; \
+	    fi; \
 	    if [ -f "$$src" ]; then \
 	      echo "  bundling runtime dependency $$dep"; \
 	      cp "$$(python3 -c "import os,sys;print(os.path.realpath(sys.argv[1]))" "$$src")" \
