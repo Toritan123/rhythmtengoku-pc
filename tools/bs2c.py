@@ -332,6 +332,18 @@ class Emitter:
             body = "".join(f"    (const struct MarkingCriteria *)({self.obj_ref(w)}),\n" for w in words)
             return f"const struct MarkingCriteria *{name}[] = {{\n{body}}};"
 
+        # Anything else is a plain data table local to this file — grade
+        # thresholds, comment lists, text tables.  No header declares them, so
+        # the only consumer is this file taking their address, and emitting
+        # them with matching element widths is enough.  Skipping them instead
+        # left dangling references that broke the link.
+        if words and not hwords:
+            body = "".join(f"    (const void *)({self.ref(w)}),\n" for w in words)
+            return f"const void *{name}[] = {{\n{body}}};"
+        if hwords and not words:
+            body = ", ".join(hwords)
+            return f"const u16 {name}[] = {{ {body} }};"
+
         self.warnings.append(f"{name}: unrecognised struct shape "
                              f"({len(words)} words, {len(hwords)} hwords) — skipped")
         return None

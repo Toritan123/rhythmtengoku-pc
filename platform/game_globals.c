@@ -36,7 +36,6 @@ struct PlaySessionInfo gSessionInfo = {{0}};
 struct PauseMenu gPauseMenu = {0};
 
 // Scene descriptors – used as targets for set_next_scene().
-struct Scene scene_debug_menu = {0};
 
 // Studio: not yet implemented – return to main_menu immediately.
 static u32 pc_studio_loop(void) {
@@ -87,12 +86,6 @@ static struct SubScene sub_scene_warning_pc = {
     /* script     */ script_scene_warning_pc,
 };
 
-struct Scene scene_warning = {
-    /* initFunc  */ (void (*)())func_0801d86c, /* initParam  */ &sub_scene_warning_pc,
-    /* loopFunc  */ (u32 (*)())func_0801d8d8,  /* loopParam  */ NULL,
-    /* endFunc   */ NULL,                       /* endParam   */ NULL,
-    /* memory    */ sizeof(struct WarningSceneData),
-};
 
 
 // ─── Title Scene ─────────────────────────────────────────────────────────────
@@ -190,24 +183,12 @@ static u32 pc_stub_scene_loop(void) { return TRUE; }
 
 // Demo cutscene (auto-demo from title): skip directly back → falls through to
 // D_08935fb0 (title), which is the correct GBA behaviour.
-struct Scene scene_drum_samurai_demo_cutscene = {
-    /* initFunc  */ NULL,                          /* initParam  */ 0,
-    /* loopFunc  */ (u32 (*)())pc_stub_scene_loop, /* loopParam  */ 0,
-    /* endFunc   */ NULL,                          /* endParam   */ 0,
-    /* memory    */ 0,
-};
 
 // Rhythm Test: not yet implemented – return to main_menu immediately.
 static u32 pc_rhythm_test_loop(void) {
     set_next_scene(&scene_main_menu);
     return TRUE;
 }
-struct Scene scene_rhythm_test = {
-    /* initFunc  */ NULL,                             /* initParam  */ 0,
-    /* loopFunc  */ (u32 (*)())pc_rhythm_test_loop,  /* loopParam  */ 0,
-    /* endFunc   */ NULL,                             /* endParam   */ 0,
-    /* memory    */ 0,
-};
 
 // Opening cutscene (played on first A-press from title): skip to main_menu.
 // On GBA this transitions naturally; on PC we set the target explicitly.
@@ -216,12 +197,6 @@ static u32 pc_opening_cutscene_loop(void) {
     return TRUE;
 }
 
-struct Scene scene_drum_samurai_opening_cutscene = {
-    /* initFunc  */ NULL,                               /* initParam  */ 0,
-    /* loopFunc  */ (u32 (*)())pc_opening_cutscene_loop, /* loopParam */ 0,
-    /* endFunc   */ NULL,                               /* endParam   */ 0,
-    /* memory    */ 0,
-};
 
 
 // ─── Main Menu Scene ──────────────────────────────────────────────────────────
@@ -264,12 +239,6 @@ static struct SubScene sub_scene_main_menu_pc = {
     /* script     */ script_scene_main_menu_pc,
 };
 
-struct Scene scene_main_menu = {
-    /* initFunc  */ (void (*)())func_0801d86c, /* initParam  */ &sub_scene_main_menu_pc,
-    /* loopFunc  */ (u32 (*)())func_0801d8d8,  /* loopParam  */ NULL,
-    /* endFunc   */ NULL,                       /* endParam   */ NULL,
-    /* memory    */ sizeof(struct MainMenuSceneData),
-};
 
 
 // ─── Game Select Scene ────────────────────────────────────────────────────────
@@ -378,12 +347,6 @@ static struct SubScene sub_scene_options_menu_pc = {
     /* script     */ script_scene_options_menu_pc,
 };
 
-struct Scene scene_options_menu = {
-    /* initFunc  */ (void (*)())func_0801d86c, /* initParam  */ &sub_scene_options_menu_pc,
-    /* loopFunc  */ (u32 (*)())func_0801d8d8,  /* loopParam  */ NULL,
-    /* endFunc   */ NULL,                       /* endParam   */ NULL,
-    /* memory    */ sizeof(struct OptionsSceneData),
-};
 
 
 // ─── Rhythm Data Room Scene ───────────────────────────────────────────────────
@@ -425,12 +388,6 @@ static struct SubScene sub_scene_data_room_pc = {
     /* script     */ script_scene_data_room_pc,
 };
 
-struct Scene scene_data_room = {
-    /* initFunc  */ (void (*)())func_0801d86c, /* initParam  */ &sub_scene_data_room_pc,
-    /* loopFunc  */ (u32 (*)())func_0801d8d8,  /* loopParam  */ NULL,
-    /* endFunc   */ NULL,                       /* endParam   */ NULL,
-    /* memory    */ sizeof(struct DataRoomSceneData),
-};
 
 
 // ─── Cafe (Barista) Scene ─────────────────────────────────────────────────────
@@ -504,12 +461,6 @@ static struct SubScene sub_scene_cafe_pc = {
     /* script     */ script_scene_cafe_pc,
 };
 
-struct Scene scene_cafe = {
-    /* initFunc  */ (void (*)())func_0801d86c, /* initParam  */ &sub_scene_cafe_pc,
-    /* loopFunc  */ (u32 (*)())func_0801d8d8,  /* loopParam  */ NULL,
-    /* endFunc   */ NULL,                       /* endParam   */ NULL,
-    /* memory    */ sizeof(struct CafeSceneData),
-};
 
 
 // ─── Results / Epilogue Scene Stubs ──────────────────────────────────────────
@@ -523,24 +474,12 @@ static u32 pc_results_loop(void) {
 
 
 
-struct Scene scene_results_ver_score = {
-    /* initFunc  */ NULL,                              /* initParam  */ 0,
-    /* loopFunc  */ (u32 (*)())pc_results_loop,        /* loopParam  */ 0,
-    /* endFunc   */ NULL,                              /* endParam   */ 0,
-    /* memory    */ 0,
-};
 
 static u32 pc_epilogue_loop(void) {
     set_next_scene(&scene_game_select);
     return TRUE;
 }
 
-struct Scene scene_epilogue = {
-    /* initFunc  */ NULL,                              /* initParam  */ 0,
-    /* loopFunc  */ (u32 (*)())pc_epilogue_loop,       /* loopParam  */ 0,
-    /* endFunc   */ NULL,                              /* endParam   */ 0,
-    /* memory    */ 0,
-};
 
 
 // ─── PC Beatscript Helpers ────────────────────────────────────────────────────
@@ -583,73 +522,31 @@ static u32 pc_game_stub_loop(void) {
 // On GBA they come from assembled .bs files; on PC we provide stubs.
 #define PC_GAME_STUB(name) \
     struct Scene name = { NULL, 0, (u32(*)())pc_game_stub_loop, 0, NULL, 0, 0 }
-
-PC_GAME_STUB(scene_polyrhythm);
 PC_GAME_STUB(scene_polyrhythm_2);
-PC_GAME_STUB(scene_bouncy_road);
-PC_GAME_STUB(scene_bouncy_road_2);
-PC_GAME_STUB(scene_tap_trial);
-PC_GAME_STUB(scene_tap_trial_2);
-PC_GAME_STUB(scene_clappy_trio);
 PC_GAME_STUB(scene_clappy_trio_2);
-PC_GAME_STUB(scene_space_dance);
 PC_GAME_STUB(scene_space_dance_2);
-PC_GAME_STUB(scene_bunny_hop);
 PC_GAME_STUB(scene_bunny_hop_2);
-PC_GAME_STUB(scene_toss_boys);
-PC_GAME_STUB(scene_toss_boys_2);
-PC_GAME_STUB(scene_rat_race);
 PC_GAME_STUB(scene_rat_race_2);
-PC_GAME_STUB(scene_marching_orders);
-PC_GAME_STUB(scene_marching_orders_2);
-PC_GAME_STUB(scene_night_walk);
-PC_GAME_STUB(scene_night_walk_2);
-PC_GAME_STUB(scene_mr_upbeat);
 PC_GAME_STUB(scene_mr_upbeat_2);
-PC_GAME_STUB(scene_metronome);
 PC_GAME_STUB(scene_metronome_2);
-PC_GAME_STUB(scene_ninja_bodyguard);
 PC_GAME_STUB(scene_ninja_bodyguard_2);
-PC_GAME_STUB(scene_spaceball);
-PC_GAME_STUB(scene_spaceball_2);
-PC_GAME_STUB(scene_fireworks);
 PC_GAME_STUB(scene_fireworks_2);
-PC_GAME_STUB(scene_quiz_show);
 PC_GAME_STUB(scene_quiz_show_2);
-PC_GAME_STUB(scene_power_calligraphy);
 PC_GAME_STUB(scene_power_calligraphy_2);
 PC_GAME_STUB(scene_rap_men);
 PC_GAME_STUB(scene_rap_men_2);
-PC_GAME_STUB(scene_samurai_slice);
 PC_GAME_STUB(scene_samurai_slice_2);
-PC_GAME_STUB(scene_rhythm_tweezers);
-PC_GAME_STUB(scene_rhythm_tweezers_2);
-PC_GAME_STUB(scene_wizards_waltz);
 PC_GAME_STUB(scene_wizards_waltz_2);
-PC_GAME_STUB(scene_bon_odori);
 PC_GAME_STUB(scene_bon_odori_2);
-PC_GAME_STUB(scene_mechanical_horse);
 PC_GAME_STUB(scene_mechanical_horse_2);
-PC_GAME_STUB(scene_showtime);
 PC_GAME_STUB(scene_tram_and_pauline);
-PC_GAME_STUB(scene_mannequin_factory);
-PC_GAME_STUB(scene_drum_live);
 PC_GAME_STUB(scene_sick_beats);
-PC_GAME_STUB(scene_sneaky_spirits);
-PC_GAME_STUB(scene_sneaky_spirits_2);
 // Remix stages
-PC_GAME_STUB(scene_remix_1);
 PC_GAME_STUB(scene_remix_2);
-PC_GAME_STUB(scene_remix_3);
 PC_GAME_STUB(scene_remix_4);
-PC_GAME_STUB(scene_remix_5);
 PC_GAME_STUB(scene_remix_6);
 PC_GAME_STUB(scene_remix_7);
-PC_GAME_STUB(scene_remix_8);
 // Unused variants listed in scenes.h
-PC_GAME_STUB(scene_bouncy_road_unused);
-PC_GAME_STUB(scene_bouncy_road_unused_2);
-PC_GAME_STUB(scene_tap_trial_unused);
 
 #endif // PLATFORM_PC
 

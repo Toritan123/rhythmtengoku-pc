@@ -1,5 +1,10 @@
 #include "main.h"
 #ifdef PLATFORM_PC
+#if defined(__APPLE__) || defined(__linux__)
+#include <dlfcn.h>
+#endif
+#endif
+#ifdef PLATFORM_PC
 #include <stdio.h>
 #include <stdlib.h>
 #endif
@@ -193,7 +198,11 @@ void process_scenes(void) {
 		gCurrentScene = gNextScene;
 		gNextScene = NULL;
 #ifdef PLATFORM_PC
-		if (getenv("RTPC_TRACE")) { extern int gPcFrameNo; fprintf(stderr, "[SCENE] f=%d enter %p mem=%d\n", gPcFrameNo, (void*)gCurrentScene, (int)gCurrentScene->requiredMemory); fflush(stderr); }
+		if (getenv("RTPC_TRACE")) { extern int gPcFrameNo; const char *nm = "?";
+#if defined(__APPLE__) || defined(__linux__)
+			{ Dl_info di; if (dladdr((void *)gCurrentScene, &di) && di.dli_sname) nm = di.dli_sname; }
+#endif
+			fprintf(stderr, "[SCENE] f=%d enter %p mem=%d %s\n", gPcFrameNo, (void*)gCurrentScene, (int)gCurrentScene->requiredMemory, nm); fflush(stderr); }
 #endif
 		D_03000080 = FALSE;
 
