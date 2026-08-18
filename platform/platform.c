@@ -16,11 +16,35 @@ static SDL_Window   *s_win      = NULL;
 static SDL_Renderer *s_renderer = NULL;
 static uint64_t      s_last_tick = 0;
 
+// RTPC_HEADLESS=1 runs the game with no window, renderer or audio device.
+// Everything above the platform layer still runs — scene flow, the beatscript
+// VM, the MIDI mixer — so CI can check the engine on a machine with no display.
+// SDL's dummy video driver is not enough on its own: it cannot create a
+// renderer, and the game then blocks instead of reporting anything.
+static int           s_headless = 0;
+
 volatile int gPlatformVBlankFlag = 0;
 
 
 int platform_init(void)
 {
+    {
+        const char *e = getenv("RTPC_HEADLESS");
+        s_headless = (e && atoi(e)) ? 1 : 0;
+    }
+
+    if (s_headless) {
+        if (SDL_Init(SDL_INIT_TIMER) != 0) {
+            fprintf(stderr, "SDL_Init: %s\n", SDL_GetError());
+            return -1;
+        }
+        input_init();
+        fprintf(stderr, "[PLATFORM] headless: no window, renderer or audio\n");
+        fflush(stderr);
+        s_last_tick = SDL_GetTicks64();
+        return 0;
+    }
+
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMECONTROLLER) != 0) {
         fprintf(stderr, "SDL_Init: %s\n", SDL_GetError());
         return -1;
@@ -76,6 +100,7 @@ int platform_init(void)
 
 void platform_destroy(void)
 {
+    if (s_headless) { SDL_Quit(); return; }
     audio_pc_destroy();
     ppu_destroy();
     if (s_renderer) { SDL_DestroyRenderer(s_renderer); s_renderer = NULL; }
@@ -112,6 +137,7 @@ void platform_frame_sync(void)
 
     t0 = SDL_GetPerformanceCounter();
 
+    if (!s_headless) {
     // Render GBA frame to texture and present.  This shows the frame the game
     // just finished building, so it happens first — presenting any later would
     // add display latency for no benefit.
@@ -119,11 +145,12 @@ void platform_frame_sync(void)
     SDL_RenderClear(s_renderer);
     ppu_present(s_renderer);
     SDL_RenderPresent(s_renderer);
+    }
 
     t_render = SDL_GetPerformanceCounter();
 
     // Push audio samples for this frame
-    audio_pc_push_frame();
+    if (!s_headless) audio_pc_push_frame();
 
     t_audio = SDL_GetPerformanceCounter();
 
@@ -162,9 +189,11 @@ void platform_frame_sync(void)
     // meant the game acted on a snapshot taken a whole sleep earlier —
     // measured at ~12.3 ms, three quarters of a frame of dead input latency on
     // a rhythm game.  Reading it here makes the snapshot as fresh as possible.
-    if (platform_poll_events() != 0) {
-        SDL_Quit();
-        exit(0);
+    if (!s_headless) {
+        if (platform_poll_events() != 0) {
+            SDL_Quit();
+            exit(0);
+        }
     }
     input_update_reg_key();
 

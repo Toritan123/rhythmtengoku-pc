@@ -36,10 +36,12 @@ jobs:
             || { echo "SDL2 was not relocated into the bundle"; exit 1; }
       - name: Smoke test
         run: |
-          # No display on the runner, so drive the offscreen video/audio
-          # backends: this still exercises boot, the scene table, the
-          # beatscript VM and the mixer, which is where breakage shows up.
-          export SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy RTPC_TRACE=1 RTPC_AUTO=2
+          # No display on the runner. SDL's dummy video driver is not enough —
+          # it cannot create a renderer and the game then blocks — so use the
+          # port's own headless mode, which skips window/renderer/audio and
+          # runs everything above the platform layer: boot, the scene table,
+          # the beatscript VM and the mixer, where breakage actually shows up.
+          export RTPC_HEADLESS=1 RTPC_TRACE=1 RTPC_AUTO=2
           "dist/Rhythm Tengoku.app/Contents/MacOS/rhythmtengoku" > run.log 2>&1 &
           pid=$!
           sleep 40
@@ -91,7 +93,7 @@ jobs:
       - name: Smoke test
         run: |
           file dist/windows/rhythmtengoku.exe || true
-          export SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy RTPC_TRACE=1 RTPC_AUTO=2
+          export RTPC_HEADLESS=1 RTPC_TRACE=1 RTPC_AUTO=2
           # Launch through cmd: MSYS2's bash refused to exec the GUI-subsystem
           # binary directly ("Exec format error"), and cmd is what a user would
           # start it with anyway.
