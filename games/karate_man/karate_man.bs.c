@@ -89,10 +89,10 @@ const struct Beatscript script_karate_man_entry[] = {
 };
 
 const struct SubScene sub_scene_karate_man = {
-    /* start  */ (void (*)())gameplay_start_scene, NULL,
-    /* paused */ (void (*)())gameplay_update_paused_scene, NULL,
-    /* update */ (void (*)())gameplay_update_scene, NULL,
-    /* stop   */ (void (*)())gameplay_stop_scene, NULL,
+    /* start  */ (void (*)())gameplay_start_scene, 0,
+    /* paused */ (void (*)())gameplay_update_paused_scene, 0,
+    /* update */ (void (*)())gameplay_update_scene, 0,
+    /* stop   */ (void (*)())gameplay_stop_scene, 0,
     /* script */ script_karate_man_entry,
 };
 
@@ -120,10 +120,10 @@ const struct Beatscript script_karate_man_skipped_practice_entry[] = {
 };
 
 const struct SubScene sub_scene_karate_man_skipped_practice = {
-    /* start  */ (void (*)())gameplay_start_scene, NULL,
-    /* paused */ (void (*)())gameplay_update_paused_scene, NULL,
-    /* update */ (void (*)())gameplay_update_scene, NULL,
-    /* stop   */ (void (*)())gameplay_stop_scene, NULL,
+    /* start  */ (void (*)())gameplay_start_scene, 0,
+    /* paused */ (void (*)())gameplay_update_paused_scene, 0,
+    /* update */ (void (*)())gameplay_update_scene, 0,
+    /* stop   */ (void (*)())gameplay_stop_scene, 0,
     /* script */ script_karate_man_skipped_practice_entry,
 };
 
@@ -555,7 +555,7 @@ const struct Beatscript script_karate_man_main[] = {
     { 0x03, 0, (const void *)(gameplay_set_mercy_count), (uintptr_t)(2) },
     { 0x03, 0, (const void *)(gameplay_set_sound_tempo), (uintptr_t)(124) },
     { 0x03, 0, (const void *)(set_beatscript_tempo), (uintptr_t)(120) },
-    { 0x03, 0, (const void *)(&scene_set_music_volume), (uintptr_t)(150) },
+    { 0x03, 0, (const void *)(scene_set_music_volume), (uintptr_t)(150) },
     { 0x28, 0, (const void *)(DEFAULT_SOUND_PLAYER), (uintptr_t)(&s_karate_bgm_seqData) },
     { 0x03, 0, (const void *)(results_enable_input_tracking), (uintptr_t)(TRUE) },
     { 0x0D, 0, (const void *)(karate_man_sub_089edf88), (uintptr_t)(0) },
@@ -563,7 +563,7 @@ const struct Beatscript script_karate_man_main[] = {
     { 0x0D, 0, (const void *)(karate_man_sub_089ee57c), (uintptr_t)(0) },
     { 0x0D, 0, (const void *)(karate_man_sub_089ee9cc), (uintptr_t)(0) },
     { 0x03, 0, (const void *)(set_beatscript_tempo), (uintptr_t)(150) },
-    { 0x03, 0, (const void *)(&scene_set_music_volume), (uintptr_t)(100) },
+    { 0x03, 0, (const void *)(scene_set_music_volume), (uintptr_t)(100) },
     { 0x04, 0, (const void *)(gameplay_run_common_event), (uintptr_t)(0) },
     { 0x00, 0, NULL, (uintptr_t)(24) },
     { 0x04, 0, (const void *)(gameplay_run_common_event), (uintptr_t)(0) },
@@ -600,7 +600,7 @@ const struct Beatscript script_karate_man_main[] = {
     { 0x04, 1, (const void *)(gameplay_run_common_event), (uintptr_t)(0) },
     { 0x00, 0, NULL, (uintptr_t)(24) },
     { 0x03, 0, (const void *)(gameplay_set_reverb), (uintptr_t)(0) },
-    { 0x03, 0, (const void *)(&scene_set_music_volume), (uintptr_t)(150) },
+    { 0x03, 0, (const void *)(scene_set_music_volume), (uintptr_t)(150) },
     { 0x28, 0, (const void *)(DEFAULT_SOUND_PLAYER), (uintptr_t)(&s_karate_fan_seqData) },
     { 0x03, 0, (const void *)(gameplay_set_marking_criteria), (uintptr_t)(2) },
     { 0x00, 0, NULL, (uintptr_t)(24) },
@@ -621,7 +621,7 @@ const struct Beatscript script_karate_man_main[] = {
 
 const struct Beatscript script_karate_man_practice[] = {
     { 0x03, 0, (const void *)(set_beatscript_tempo), (uintptr_t)(124) },
-    { 0x03, 0, (const void *)(&scene_set_music_volume), (uintptr_t)(150) },
+    { 0x03, 0, (const void *)(scene_set_music_volume), (uintptr_t)(150) },
     { 0x28, 0, (const void *)(DEFAULT_SOUND_PLAYER), (uintptr_t)(&s_renshu_bgm1_seqData) },
     { 0x03, 0, (const void *)(results_enable_input_tracking), (uintptr_t)(FALSE) },
     { 0x03, 0, (const void *)(gameplay_set_engine_event_param), (uintptr_t)(FALSE) },
@@ -661,7 +661,7 @@ const struct Beatscript script_karate_man_practice[] = {
     { 0x04, START_TUTORIAL_LOOP, (const void *)(gameplay_run_engine_event), (uintptr_t)(karate_man_engine) },
     { 0x00, 0, NULL, (uintptr_t)(24) },
     { 0x00, 0, NULL, (uintptr_t)(24) },
-    { 0x03, 0, (const void *)(&scene_stop_music), (uintptr_t)(0) },
+    { 0x03, 0, (const void *)(scene_stop_music), (uintptr_t)(0) },
     { 0x00, 0, NULL, (uintptr_t)(24) },
     { 0x10, 0, NULL, (uintptr_t)(0) },
     { 0x03, 0, (const void *)(beatscript_disable_loops), (uintptr_t)(0) },
@@ -696,7 +696,7 @@ const struct Beatscript script_karate_man_practice[] = {
     { 0x04, START_TUTORIAL_LOOP, (const void *)(gameplay_run_engine_event), (uintptr_t)(karate_man_engine) },
     { 0x00, 0, NULL, (uintptr_t)(24) },
     { 0x00, 0, NULL, (uintptr_t)(24) },
-    { 0x03, 0, (const void *)(&scene_set_music_volume), (uintptr_t)(150) },
+    { 0x03, 0, (const void *)(scene_set_music_volume), (uintptr_t)(150) },
     { 0x03, 0, (const void *)(set_beatscript_tempo), (uintptr_t)(134) },
     { 0x10, 0, NULL, (uintptr_t)(0) },
     { 0x03, 0, (const void *)(beatscript_disable_loops), (uintptr_t)(0) },
@@ -759,7 +759,7 @@ const struct Beatscript script_karate_man_practice[] = {
 
 const struct Beatscript script_karate_man_skipped_practice[] = {
     { 0x03, 0, (const void *)(set_beatscript_tempo), (uintptr_t)(120) },
-    { 0x03, 0, (const void *)(&scene_set_music_volume), (uintptr_t)(256) },
+    { 0x03, 0, (const void *)(scene_set_music_volume), (uintptr_t)(256) },
     { 0x00, 0, NULL, (uintptr_t)(24) },
     { 0x03, 0, (const void *)(pause_menu_enabled), (uintptr_t)(TRUE) },
     { 0x00, 0, NULL, (uintptr_t)(24) },

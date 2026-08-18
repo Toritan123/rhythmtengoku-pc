@@ -38,7 +38,7 @@ const struct Beatscript script_scene_results_ver_rank[] = {
     { 0x00, 0, NULL, (uintptr_t)(24) },
     { 0x00, 0, NULL, (uintptr_t)(24) },
     { 0x03, 0, (const void *)(rank_results_play_bgm), (uintptr_t)(0) },
-    { 0x03, 0, (const void *)(&scene_set_music_volume), (uintptr_t)(50) },
+    { 0x03, 0, (const void *)(scene_set_music_volume), (uintptr_t)(50) },
     { 0x50, 0, (const void *)(256), (uintptr_t)(384) },
     { 0x03, 0, (const void *)(rank_results_append_encouragement), (uintptr_t)(0) },
     { 0x09, INT8, (const void *)(8), (uintptr_t)(TRUE) },

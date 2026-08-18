@@ -80,6 +80,9 @@ def split_macro_args(s):
     return out
 
 
+index_objects = set()
+
+
 def build_symbol_index(root):
     """identifier -> header that declares it.
 
@@ -88,6 +91,12 @@ def build_symbol_index(root):
     headers once and include exactly what each file needs.
     """
     index = {}
+    # Symbols whose declaration is a plain object — not an array, not a
+    # function, not already a pointer.  Using one as an address needs an
+    # explicit &, where an array or function name decays by itself.  Deciding
+    # this from the header beats guessing from the name, which is what the
+    # earlier *_seqData / scene_* special cases were doing.
+    objects = index_objects
     pats = [
         # extern <type> name(...)   /  extern <type> *name;  /  extern <type> name[];
         re.compile(r"^\s*extern\s+[^;()]*?\b(\w+)\s*\("),
@@ -107,10 +116,15 @@ def build_symbol_index(root):
                 except OSError:
                     continue
                 for line in txt.split("\n"):
-                    for pat in pats:
+                    for i, pat in enumerate(pats):
                         m = pat.match(line)
                         if m:
                             index.setdefault(m.group(1), rel)
+                            decays = (i == 0                      # function
+                                      or "[" in line              # array
+                                      or re.search(r"\*\s*" + re.escape(m.group(1)), line))
+                            if not decays:
+                                objects.add(m.group(1))
                             break
     return index
 
@@ -227,12 +241,39 @@ class Emitter:
             return f"&{t}"
         return t
 
+    def int_or_zero(self, tok):
+        """SubScene's callback parameters are s32, so NULL is a type error."""
+        t = tok.strip()
+        return "0" if t in ("NULL", "0") else f"(s32)({self.ref(t)})"
+
+    def classify_local(self):
+        """Register the blocks this file defines itself.
+
+        index_objects only knows what the headers declare, so a Scene or
+        SubScene defined in the same .bs was missing its & — 25 of the 49
+        remaining failures.  Classify them the same way render_struct does."""
+        self.local_objects = set()
+        for kind, name, items in self.blocks:
+            if kind != "struct":
+                continue          # scripts and text render as arrays: they decay
+            words  = [v for k, v in items if k == "w"]
+            hwords = [v for k, v in items if k == "h"]
+            single = (len(words) == 9 and not hwords) or \
+                     ((len(words) == 6 and len(hwords) == 1) or
+                      (len(words) == 7 and not hwords)) or \
+                     (len(words) == 2 and len(hwords) == 4)
+            if single:
+                self.local_objects.add(name)
+
     def ref(self, tok):
         """Render an operand that the assembler would have stored as an address."""
         t = tok.strip()
-        # Objects (not arrays/functions) must have their address taken:
-        # sound banks and Scene/SubScene structs.
-        if t.endswith("_seqData") or re.match(r"^(sub_)?scene_\w+$", t):
+        if not re.match(r"^[A-Za-z_]\w*$", t):
+            return t
+        # A plain object needs its address taken; arrays and functions decay.
+        # Header declarations feed index_objects; blocks defined in this same
+        # file are classified by classify_local().
+        if t in getattr(self, "local_objects", ()) or t in index_objects:
             return f"&{t}"
         return t
 
@@ -252,10 +293,10 @@ class Emitter:
         if len(words) == 9 and not hwords:
             f = words
             return (f"const struct SubScene {name} = {{\n"
-                    f"    /* start  */ (void (*)()){f[0]}, {f[1]},\n"
-                    f"    /* paused */ (void (*)()){f[2]}, {f[3]},\n"
-                    f"    /* update */ (void (*)()){f[4]}, {f[5]},\n"
-                    f"    /* stop   */ (void (*)()){f[6]}, {f[7]},\n"
+                    f"    /* start  */ (void (*)()){f[0]}, {self.int_or_zero(f[1])},\n"
+                    f"    /* paused */ (void (*)()){f[2]}, {self.int_or_zero(f[3])},\n"
+                    f"    /* update */ (void (*)()){f[4]}, {self.int_or_zero(f[5])},\n"
+                    f"    /* stop   */ (void (*)()){f[6]}, {self.int_or_zero(f[7])},\n"
                     f"    /* script */ {f[8]},\n"
                     f"}};")
 
@@ -307,6 +348,7 @@ class Emitter:
 
     def render(self, src, index=None):
         import re as _re
+        self.classify_local()
         extra = []
         if index:
             hdrs = {index[n] for n in self.referenced() if n in index}
