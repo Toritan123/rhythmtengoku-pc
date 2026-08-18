@@ -183,6 +183,7 @@ All are environment variables, off by default and free when unset.
 | `RTPC_AUDIO_TARGET=ms` | target output queue depth (default 30 ms) |
 | `RTPC_AUDIO_8BIT=1` | use the GBA's 8-bit DAC output instead of the high-resolution tap |
 | `RTPC_MIX_MULT=2\|3\|4` | run the MIDI mixer above the GBA's 13379 Hz |
+| `RTPC_VOLUME=<pct>` | master volume, default 160. The game's own mix is quiet (-16.2 dBFS RMS); 160 raises it to -12.8 with a soft limiter on the peaks. `100` is the exact hardware level. |
 | `RTPC_NO_PSG=1` | mute the PSG (square/wave/noise) channels |
 | `RTPC_PSG_TEST=<n>` | drive PSG channel 2 with a sustained square at frequency register n, for checking the synthesiser |
 
