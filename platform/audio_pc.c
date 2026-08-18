@@ -408,6 +408,14 @@ void audio_pc_push_frame(void)
     s_resample_pos -= (double)gba_samples;
     if (s_resample_pos < 0.0) s_resample_pos = 0.0;
 
+    // Mix in the PSG channels.  They are synthesised at the output rate rather
+    // than the GBA's 13379 Hz DirectSound rate — there is no reason to band-limit
+    // them to that, and it keeps them out of the resampler.
+    if (out_count > 0) {
+        extern void psg_pc_render(int16_t *out, unsigned frames, int sample_rate);
+        psg_pc_render(out, out_count, PC_SAMPLE_RATE);
+    }
+
     if (getenv("RTPC_AUDIO_STATS"))
         fprintf(stderr, "[AUD] avail=%u gba=%u out=%u q=%.1fms\n",
                 avail, gba_samples, out_count, audio_pc_queued_ms());

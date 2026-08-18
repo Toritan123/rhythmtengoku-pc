@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include "global.h"
 #include "src/midi/midi.h"
+#include "gba_mem.h"
 
 // Declared in asm_stubs.c
 extern u8  sPCMBufferArea[2][1568 * 4];
@@ -114,6 +115,10 @@ void midi_globals_init(void)
     // midi_asm_update_buffer.  On GBA this is done inside
     // midi_directsound_init (excluded from PC builds).
     midi_dsp_init_sample_table();
+    // Master sound enable.  On GBA this is set by midi_directsound_init, which
+    // is excluded from the PC build, so the PSG channels stayed gated off and
+    // psg_pc_render bailed out on every call.
+    *(volatile u16 *)(gba_io + 0x84) |= 0x80;   // REG_SOUNDCNT_X
     // midi_directsound_init (excluded on PC) sets this to TRUE after
     // copying the ARM/Thumb DSP blobs to IWRAM.  On PC we skip that
     // step entirely, so enable DirectSound output explicitly here.
