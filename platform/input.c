@@ -3,6 +3,7 @@
 #include "gba_mem.h"
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 // GBA REG_KEY offset inside IO array
 #define IO_KEY 0x130
@@ -61,7 +62,19 @@ void input_update_reg_key(void)
     {
         static int auto_on = -1;
         static uint32_t f = 0;
-        if (auto_on < 0) { const char *e = getenv("RTPC_AUTO"); auto_on = e ? atoi(e) : 0; }
+        if (auto_on < 0) {
+            const char *e = getenv("RTPC_AUTO");
+            auto_on = e ? atoi(e) : 0;
+            if (auto_on) {
+                // Loud on purpose: synthetic input looks like the game playing
+                // itself, which is confusing if RTPC_AUTO was left set by
+                // accident.
+                fprintf(stderr,
+                    "[INPUT] RTPC_AUTO=%d - AUTOPILOT ON, key presses are synthetic\n",
+                    auto_on);
+                fflush(stderr);
+            }
+        }
         if (auto_on) {
             f++;
             if ((f % 30) < 2) reg &= ~GBA_A;

@@ -141,6 +141,17 @@ make -f Makefile.pc win-dist
 
 `dist/windows/` then holds `rhythmtengoku.exe` and `SDL2.dll`.
 
+### Where the build goes
+
+Objects go to `build/<os>/` (`build/macos`, `build/windows`) and the finished
+thing to `dist/`: `dist/Rhythm Tengoku.app` and `dist/windows/`. Both are
+gitignored — they are build output and are not committed. They stay on disk
+until you delete them or run `make -f Makefile.pc clean`.
+
+`PLATFORM_PC`, the C define the port is guarded by, means "not the GBA" and
+applies to every desktop target; it is not the macOS build. The per-OS pieces
+are named for their OS.
+
 ### Controls
 
 | Key | GBA |
@@ -163,7 +174,8 @@ All are environment variables, off by default and free when unset.
 | `RTPC_TRACE=1` | log scene transitions |
 | `RTPC_BS=1` | log every beatscript command, with the callee's symbol name |
 | `RTPC_PROF=1\|2` | per-frame timing breakdown (`2` logs every frame) |
-| `RTPC_AUTO=1\|2\|3` | autopilot: tap A / also skip tutorials / mash everything |
+| `RTPC_AUTO=1\|2\|3` | autopilot: tap A / also skip tutorials / mash everything. For testing only — it synthesises key presses, so the game appears to play itself. It announces itself on stderr when on. |
+| `RTPC_HEADLESS=1` | no window, renderer or audio; runs the engine only (used by CI) |
 | `RTPC_SHOTS=N` | write a BMP screenshot every N frames |
 | `RTPC_AUDIO_DUMP=f.wav` | record the audio output for offline analysis |
 | `RTPC_AUDIO_STATS=1` | log audio device format, queue depth, underruns |

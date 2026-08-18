@@ -12,6 +12,7 @@
 .DS_Store
 .vscode/*
 __pycache__/
+build/
 build/*
 build_pc/
 build_win/

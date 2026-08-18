@@ -12,19 +12,26 @@
 ##############################################################################
 
 # ─── Target selection ───────────────────────────────────────────────────────
-#   make -f Makefile.pc                 native (macOS / Linux)
-#   make -f Makefile.pc PLATFORM=win    cross-compile a Windows .exe
+#   make -f Makefile.pc                      host (macOS / Linux)
+#   make -f Makefile.pc PLATFORM=windows     cross-compile a Windows .exe
+#
+# Note on names: the C define PLATFORM_PC means "not the GBA" and covers every
+# desktop target — it is not the macOS build.  The per-OS pieces are named for
+# their OS (build/macos, build/windows) so the two sides read symmetrically.
 #
 # The Windows build needs the SDL2 mingw development package unpacked
 # somewhere; point SDL2_WIN at the x86_64-w64-mingw32 directory inside it:
 #   make -f Makefile.pc PLATFORM=win SDL2_WIN=/path/to/SDL2-2.x.y/x86_64-w64-mingw32
-PLATFORM ?= native
+PLATFORM ?= host
+ifeq ($(PLATFORM),win)          # accepted spelling, normalised
+  override PLATFORM := windows
+endif
 SDL2_WIN ?= third_party/SDL2-mingw/x86_64-w64-mingw32
 
-ifeq ($(PLATFORM),win)
+ifeq ($(PLATFORM),windows)
   CC      := x86_64-w64-mingw32-gcc
   LD      := x86_64-w64-mingw32-gcc
-  BUILD   := build_win
+  BUILD   := build/windows
   TARGET  := $(BUILD)/rhythmtengoku.exe
   ARCHFLAGS :=
   BIN2SFLAGS :=
@@ -40,7 +47,8 @@ ifeq ($(PLATFORM),win)
 else
   CC      := clang
   LD      := clang
-  BUILD   := build_pc
+  HOST_OS := $(shell uname -s | tr A-Z a-z | sed 's/darwin/macos/')
+  BUILD   := build/$(HOST_OS)
   TARGET  := $(BUILD)/rhythmtengoku_pc
   # Match the architecture of the SDL2 that is actually installed rather than
   # hardcoding one.  A hardcoded -arch x86_64 breaks a runner whose Homebrew is
@@ -130,7 +138,7 @@ BIN_OBJS := $(patsubst %,$(BUILD)/%.o,$(BIN_SRCS))
 # first-definition-wins rule under --allow-multiple-definition is what keeps
 # the 735 real implementations that share a name with a stub.
 STUB_OBJ := $(BUILD)/platform/auto_stubs.o
-ifeq ($(PLATFORM),win)
+ifeq ($(PLATFORM),windows)
   OBJS := $(filter-out $(STUB_OBJ),$(C_OBJS)) $(BIN_OBJS) $(STUB_OBJ)
   LDFLAGS += -Wl,--allow-multiple-definition
 else
@@ -248,8 +256,8 @@ app: $(TARGET)
 # copied to a Windows machine and run as-is.
 .PHONY: win-dist
 win-dist:
-	@$(MAKE) -f Makefile.pc PLATFORM=win
+	@$(MAKE) -f Makefile.pc PLATFORM=windows
 	@mkdir -p dist/windows
-	@cp build_win/rhythmtengoku.exe dist/windows/
+	@cp build/windows/rhythmtengoku.exe dist/windows/
 	@cp $(SDL2_WIN)/bin/SDL2.dll dist/windows/
 	@echo "Built dist/windows/ (rhythmtengoku.exe + SDL2.dll)"

@@ -34,6 +34,17 @@ jobs:
           test -x "$bin"
           otool -L "$bin" | grep -q '@executable_path/../Frameworks/libSDL2' \
             || { echo "SDL2 was not relocated into the bundle"; exit 1; }
+      - name: Inspect the bundle
+        run: |
+          ls -l "dist/Rhythm Tengoku.app/Contents/Frameworks/"
+          otool -L "dist/Rhythm Tengoku.app/Contents/MacOS/rhythmtengoku"
+          file "dist/Rhythm Tengoku.app/Contents/MacOS/rhythmtengoku"
+          echo "--- first 5 s of output, unfiltered ---"
+          RTPC_HEADLESS=1 RTPC_TRACE=1 \
+            "dist/Rhythm Tengoku.app/Contents/MacOS/rhythmtengoku" > early.log 2>&1 &
+          sleep 5; kill $! 2>/dev/null || true
+          echo "bytes: $(wc -c < early.log)"; cat early.log | head -20
+
       - name: Smoke test
         run: |
           # No display on the runner. SDL's dummy video driver is not enough —
