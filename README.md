@@ -1,4 +1,12 @@
-# Rhythm Tengoku
+# Rhythm Tengoku — PC port
+
+A native PC build (macOS and Windows) of the Rhythm Tengoku decompilation.
+Jump to [PC port](#pc-port) for how to build and run it.
+
+The rest of this README is the upstream decompilation's, which this repository
+is a fork of and which the port is built on top of.
+
+---
 
 This is a decompilation of Rhythm Tengoku for the Gameboy Advance. It can build either a fully byte-for-byte matching ROM from scratch, or rebuild a different functionally equivalent ROM with a different memory layout to be easier to mod with. This can be controlled with the `NONMATCHING` parameter when building.
 

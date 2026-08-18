@@ -44,10 +44,14 @@ jobs:
           pid=$!
           sleep 40
           kill $pid 2>/dev/null || true
-          grep -q '\[CRASH\]' run.log && { echo "crashed:"; cat run.log; exit 1; }
+          if grep -q '\[CRASH\]' run.log; then
+            echo "crashed:"; cat run.log; exit 1
+          fi
           scenes=$(grep -c '\[SCENE\]' run.log || true)
           echo "scene transitions: $scenes"
-          test "$scenes" -ge 5 || { echo "did not get past boot"; cat run.log; exit 1; }
+          if [ "${scenes:-0}" -lt 5 ]; then
+            echo "did not get past boot"; cat run.log; exit 1
+          fi
       - uses: actions/upload-artifact@v4
         if: inputs.upload
         with:
@@ -86,15 +90,24 @@ jobs:
           cp /mingw64/bin/SDL2.dll dist/windows/
       - name: Smoke test
         run: |
+          file dist/windows/rhythmtengoku.exe || true
           export SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy RTPC_TRACE=1 RTPC_AUTO=2
-          ./dist/windows/rhythmtengoku.exe > run.log 2>&1 &
+          # Launch through cmd: MSYS2's bash refused to exec the GUI-subsystem
+          # binary directly ("Exec format error"), and cmd is what a user would
+          # start it with anyway.
+          cmd //c "dist\\windows\\rhythmtengoku.exe > run.log 2>&1" &
           pid=$!
           sleep 40
           kill $pid 2>/dev/null || true
-          grep -q '\[CRASH\]' run.log && { echo "crashed:"; cat run.log; exit 1; }
+          taskkill //IM rhythmtengoku.exe //F 2>/dev/null || true
+          if grep -q '\[CRASH\]' run.log; then
+            echo "crashed:"; cat run.log; exit 1
+          fi
           scenes=$(grep -c '\[SCENE\]' run.log || true)
           echo "scene transitions: $scenes"
-          test "$scenes" -ge 5 || { echo "did not get past boot"; cat run.log; exit 1; }
+          if [ "${scenes:-0}" -lt 5 ]; then
+            echo "did not get past boot"; cat run.log; exit 1
+          fi
       - uses: actions/upload-artifact@v4
         if: inputs.upload
         with:
