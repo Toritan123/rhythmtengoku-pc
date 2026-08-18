@@ -99,6 +99,7 @@ static struct PsgSquare s_sq[2];
 static struct PsgWave   s_wave;
 static struct PsgNoise  s_noise;
 static int              s_enabled = -1;
+static double           s_psg_gain = 1.0;  // RTPC_PSG_VOLUME/100
 
 void psg_pc_reset(void)
 {
@@ -169,7 +170,11 @@ void psg_pc_render(int16_t *out, unsigned frames, int sample_rate)
 
     if (s_enabled < 0) {
         const char *e = getenv("RTPC_NO_PSG");
+        const char *v = getenv("RTPC_PSG_VOLUME");
         s_enabled = (e && atoi(e)) ? 0 : 1;
+        s_psg_gain = v ? (atof(v) / 100.0) : 1.0;
+        if (s_psg_gain < 0.0) s_psg_gain = 0.0;
+        if (s_psg_gain > 4.0) s_psg_gain = 4.0;
         psg_pc_reset();
     }
 
@@ -185,7 +190,10 @@ void psg_pc_render(int16_t *out, unsigned frames, int sample_rate)
         if (!s_sq[1].on) PSG_REG(R_S2CNT_H) = (u16)(0x8000 | (f & 0x7FF));
         snd_l = PSG_REG(R_SNDCNT_L); snd_h = PSG_REG(R_SNDCNT_H);
         snd_x = PSG_REG(R_SNDCNT_X); master_on = 1;
-        master = 1.0; vol_l = vol_r = 1.0;
+        ratio  = snd_h & 0x3;
+        master = (ratio == 0) ? 0.25 : (ratio == 1) ? 0.5 : 1.0;
+        vol_l  = ((snd_l >> 4) & 0x7) / 7.0;
+        vol_r  = ((snd_l >> 0) & 0x7) / 7.0;
     }
     if (getenv("RTPC_AUDIO_STATS")) {
         static unsigned m = 0;
@@ -354,10 +362,13 @@ void psg_pc_render(int16_t *out, unsigned frames, int sample_rate)
             if (snd_l & (1 << 15)) r += amp;
         }
 
-        // Four channels at full tilt would clip; the DMG mixer scales the same
-        // way, and the DirectSound mix is already occupying most of the range.
-        l *= master * vol_l * 0.18;
-        r *= master * vol_r * 0.18;
+        // Four channels each in [-1,1], summed, so a quarter each puts all
+        // four at full tilt exactly at full scale — the DMG's own scaling.
+        // (This was 0.18, an unjustified safety margin picked before the
+        // master limiter existed; combined with the uninitialised 25 % output
+        // ratio it left PSG notes about 15 dB below where they belong.)
+        l *= master * vol_l * 0.25 * s_psg_gain;
+        r *= master * vol_r * 0.25 * s_psg_gain;
         {
             int sl = out[i * 2 + 0] + (int)(l * 32767.0);
             int sr = out[i * 2 + 1] + (int)(r * 32767.0);

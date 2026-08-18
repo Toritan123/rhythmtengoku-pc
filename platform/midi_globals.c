@@ -119,6 +119,11 @@ void midi_globals_init(void)
     // is excluded from the PC build, so the PSG channels stayed gated off and
     // psg_pc_render bailed out on every call.
     *(volatile u16 *)(gba_io + 0x84) |= 0x80;   // REG_SOUNDCNT_X
+    // PSG output ratio.  Bits 0-1 of SOUNDCNT_H are 0 = 25 %, 1 = 50 %,
+    // 2 = 100 %, and they too are left at 0 without the GBA init — so every
+    // PSG note played at a quarter of its intended level.
+    *(volatile u16 *)(gba_io + 0x82) =
+        (u16)((*(volatile u16 *)(gba_io + 0x82) & ~0x3) | 2);
     // midi_directsound_init (excluded on PC) sets this to TRUE after
     // copying the ARM/Thumb DSP blobs to IWRAM.  On PC we skip that
     // step entirely, so enable DirectSound output explicitly here.
