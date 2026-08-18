@@ -420,12 +420,11 @@ void audio_pc_push_frame(void)
     // touches well under 1 % of samples.
     if (s_volume < 0.0) {
         const char *e = getenv("RTPC_VOLUME");
-        // Default 160 %.  The game's own level is faithful to the GBA but sits
-        // at -16.2 dBFS RMS, which is quiet next to anything else on a desktop.
-        // 160 % lands at -12.8 dBFS with 1.3 % of samples entering the soft
-        // knee and 0.001 % reaching the rail — i.e. audibly louder, measurably
-        // undistorted.  RTPC_VOLUME=100 restores the exact hardware level.
-        s_volume = e ? (atof(e) / 100.0) : 1.6;
+        // Default 100 %: the game's own level, unaltered.  Raising it was the
+        // wrong fix for "the sound is quiet" — what was actually quiet was the
+        // PSG, for its own reasons.  The knob stays for anyone who wants it;
+        // 160 % measures -12.8 dBFS RMS against 100 %'s -16.2, soft-limited.
+        s_volume = e ? (atof(e) / 100.0) : 1.0;
         if (s_volume < 0.0)  s_volume = 0.0;
         if (s_volume > 8.0)  s_volume = 8.0;
     }
