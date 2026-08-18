@@ -89,7 +89,9 @@ If you have any other questions or concerns, join the [RHModding discord server]
 
 ## PC port
 
-This fork adds a native PC build of the game on top of the decompilation. It
+This is a fork of [arthurtilly/rhythmtengoku](https://github.com/arthurtilly/rhythmtengoku);
+all of the decompilation work is theirs. This fork adds a native PC build of
+the game on top of it. It
 runs the decompiled C directly — there is no emulator and no ROM involved at
 run time; the GBA hardware layer (PPU, DMA, sound FIFO, key registers, BIOS
 calls) is reimplemented in `platform/` against SDL2.
