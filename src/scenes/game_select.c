@@ -252,8 +252,9 @@ const char *get_campaign_gift_title(s32 id, s32 shortenSongTitle) {
             return reading_material_table[giftID].title;
 
         case CAMPAIGN_GIFT_NEW_GAME:
-            return "VƒQ[ƒ€"; // New Game
+            return "ï¿½Vï¿½Qï¿½[ï¿½ï¿½"; // New Game
     }
+    return ""; // unknown gift type: caller strcat()s this
 }
 
 
@@ -282,19 +283,19 @@ void start_campaign_notice(s32 id) {
     notice->y = campaign_gifts_table[id].y;
     level = get_level_data_from_grid_xy(notice->x, notice->y);
     string = notice->text;
-    memcpy(string, "‚½‚¾‚¢‚Üu", 11); // [Right now]
+    memcpy(string, "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Üu", 11); // [Right now]
     strcat(string, level->name); // "<game_name>"
-    strcat(string, "v‚Åƒp[ƒtƒFƒNƒg‚ğ’B¬‚·‚é‚Æ"); // Get a perfect on this
+    strcat(string, "ï¿½vï¿½Åƒpï¿½[ï¿½tï¿½Fï¿½Nï¿½gï¿½ï¿½Bï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½"); // Get a perfect on this
     if (!isSpecialSong) {
-        strcat(string, "‚à‚ê‚È‚­"); // game, and you'll receive
+        strcat(string, "ï¿½ï¿½ï¿½ï¿½È‚ï¿½"); // game, and you'll receive
     }
-    strcat(string, "u"); // "
+    strcat(string, "ï¿½u"); // "
     strcat(string, get_campaign_gift_title(id, FALSE)); // "<gift>"
-    strcat(string, "v"); // "
+    strcat(string, "ï¿½v"); // "
     if (isStandardSong) {
-        strcat(string, "‚Ì‹È"); // 's song
+        strcat(string, "ï¿½Ì‹ï¿½"); // 's song
     }
-    strcat(string, "‚ğƒvƒŒƒ[ƒ“ƒg!!"); // received as a present!!
+    strcat(string, "ï¿½ï¿½ï¿½vï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½g!!"); // received as a present!!
     text_printer_set_string(notice->printer, string);
 
     sprite_set_visible(gSpriteHandler, gGameSelect->selectionBorderSprite, FALSE);
@@ -1041,7 +1042,7 @@ void game_select_read_inputs(void) {
                     set_scene_trans_target(&scene_results_ver_rank, &scene_epilogue);
                     set_scene_trans_target(&scene_results_ver_score, &scene_game_select);
                     set_scene_trans_target(&scene_epilogue, &scene_game_select);
-                    set_scene_trans_var(&scene_epilogue, (s32)levelData);
+                    set_scene_trans_var(&scene_epilogue, (intptr_t)levelData);
                     gameplay_pause_menu_set_quit_destination(&scene_game_select);
                     if ((levelID == LEVEL_REMIX_6) && (levelState == LEVEL_STATE_OPEN)) {
                         sPlayCreditsAfterEpilogue = TRUE;
@@ -1053,7 +1054,7 @@ void game_select_read_inputs(void) {
                     if (levelID == LEVEL_LIVE_MENU) {
                         set_scene_trans_target(levelData->scene, &scene_epilogue);
                         set_scene_trans_target(&scene_epilogue, &scene_game_select);
-                        set_scene_trans_var(&scene_epilogue, (s32)levelData);
+                        set_scene_trans_var(&scene_epilogue, (intptr_t)levelData);
                         gameplay_pause_menu_set_quit_destination(&scene_game_select);
                     } else {
                         set_scene_trans_target(levelData->scene, &scene_game_select);
@@ -1461,6 +1462,7 @@ u32 game_select_set_level_event_target(s32 x, s32 y, u32 moveCursor, s24_8 scrol
     if (moveCursor) {
         game_select_move_cursor_to_grid_xy(x, y);
     }
+    return 0;
 }
 
 
@@ -1470,7 +1472,7 @@ u32 game_select_process_level_event_targets(const s8 *eventTargets) {
     s32 x, y;
 
     if (eventTargets == NULL) {
-        return;
+        return 0;
     }
 
     while ((eventTargets[0] >= 0) && (eventTargets[1] >= 0)) {
@@ -1512,6 +1514,7 @@ u32 game_select_process_level_event_targets(const s8 *eventTargets) {
 
         eventTargets += 2;
     }
+    return 0;
 }
 
 
@@ -1760,6 +1763,7 @@ u32 game_select_update_medal_pane_flicker(void) {
         sprite_set_visible(gSpriteHandler, gGameSelect->medalPaneDigit1, render);
         sprite_set_visible(gSpriteHandler, gGameSelect->medalPaneDigit2, render);
     }
+    return 0;
 }
 
 
@@ -2091,6 +2095,7 @@ u32 game_select_update_scores(void) {
 
     flowPane->previousScore = saveData->currentFlow;
     flowPane->currentScore = saveData->currentFlow = flow;
+    return TRUE; // scores were recalculated -> animate the flow pane
 }
 
 

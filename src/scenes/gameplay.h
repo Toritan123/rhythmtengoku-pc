@@ -26,7 +26,9 @@ struct GameplaySceneData {
 	u8 cueSpawnsEnabled;
     u8 cancelThisCueSpawning;
     u8 allowCueInputOverlap; // If multiple cues for the same input overlap, register the input for all cues (otherwise only consider the most relevant cue).
-    s32 engineFuncParam; // Parameter used when calling Engine-specific Functions
+    intptr_t engineFuncParam; // Parameter used when calling Engine-specific Functions
+    // Widened from s32: scripts pass string and Scene pointers through here
+    // (karate_man_print_textbox, common_event 2), which a 32-bit slot truncates.
     u8 unk64;
 	struct SongHeader *nextCueSpawnSfx;
 	struct SongHeader *nextCueHitSfx;
@@ -105,8 +107,8 @@ extern void gameplay_clear_palette_buffer(Palette buffer); // [func_08017168] Cl
 extern void gameplay_set_current_engine(const struct GameEngine *engine, u32 version); // [func_08017188] Load New Engine
 extern void *gameplay_get_engine_data(void); // [func_0801732c] Get Current Game Engine Data
 extern void gameplay_set_input_buttons(u16 press, u16 release); // [func_08017338] Set Input Button Filters
-extern s32  gameplay_run_common_event(s32 param, s32 id); // [func_08017348] Run Engine-Common Event
-extern void gameplay_set_engine_event_param(s32 param); // [func_08017380] Set Parameter for Engine-Specific Event
+extern s32  gameplay_run_common_event(intptr_t param, s32 id); // [func_08017348] Run Engine-Common Event
+extern void gameplay_set_engine_event_param(intptr_t param); // [func_08017380] Set Parameter for Engine-Specific Event
 extern s32  gameplay_run_engine_event(const struct GameEngine *engine, s32 id); // [func_0801738c] Run Engine-Specific Event
 extern void gameplay_inputs_enabled(u32 enable); // [func_080173c4] Enable Play Inputs
 extern void gameplay_assess_irrelevant_inputs(u32 assess); // [func_080173d0] Assess Non-Cue Inputs
@@ -132,7 +134,7 @@ extern void gameplay_start_perfect_campaign(void); // [func_08017604] Start Perf
 extern void gameplay_check_for_perfect(u32 assessInputs); // [func_08017648] Start/Stop Assessing Inputs for Perfect Campaign
 extern void gameplay_register_imperfect_input(void); // [func_0801765c] Register Imperfect Input
 extern void gameplay_register_perfect_input(void); // [func_080176cc] Register Perfect Input
-extern s32  gameplay_run_engine_event_w_param(const struct GameEngine *engine, u32 function, s32 param); // [func_08017728] Run Game Engine Event (convenience method)
+extern s32  gameplay_run_engine_event_w_param(const struct GameEngine *engine, u32 function, intptr_t param); // [func_08017728] Run Game Engine Event (convenience method)
 extern void gameplay_set_miss_punishment_duration(u32 duration); // [func_08017744] Set Miss Punishment Interval
 extern void gameplay_set_inter_engine_variable(u32 i, s32 val); // [func_08017758] Set Inter-Engine Variable
 extern s32  gameplay_get_inter_engine_variable(u32 i); // [func_0801777c] Get Inter-Engine Variable

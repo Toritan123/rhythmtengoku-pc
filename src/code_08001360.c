@@ -1,4 +1,9 @@
 #include "code_08001360.h"
+#include "code_080068f8.h"
+#ifdef PLATFORM_PC
+#include "platform/platform.h"
+#include <string.h>
+#endif
 
 // Can be better split
 
@@ -30,15 +35,32 @@ void func_08001380(void) {
 
 
 void func_080013a8(void) {
+#ifdef PLATFORM_PC
+    // On PC: handle events, render the frame, and pace to 60 fps.
+    if (platform_poll_events()) {
+        // User closed the window – exit cleanly.
+        platform_destroy();
+        exit(0);
+    }
+    // Simulate the GBA VBlank interrupt sequence before rendering:
+    //   func_08001380 – runs the per-frame game callback (sprite DMA, etc.)
+    //   func_08006e88 – flushes D_03004b10 shadow registers to gba_palette,
+    //                   gba_oam, and REG_DISPCNT so ppu_render_frame sees them.
+    func_08001380();
+    func_08006e88();
+    platform_frame_sync();
+    gPlatformVBlankFlag = 0;
+#else
     volatile s32 temp;
 
     if (!(REG_DISPCNT & DISPCNT_FORCE_BLANK)) {
         while (!D_03000098) {
-			temp = *((s32 *)GameROMBase + get_agb_random_var());
-		}
+            temp = *((s32 *)GameROMBase + get_agb_random_var());
+        }
     }
 
     D_03000098 = FALSE;
+#endif
 }
 
 
@@ -289,6 +311,12 @@ u32 key_rec_reached_end(void) {
 
 // DMA3 Set
 void dma3_set(const void *source, void *destination, u32 bytesToSet, u16 unit, u32 bytesPerInterrupt) {
+#ifdef PLATFORM_PC
+    // On PC there is no DMA hardware — just do a plain memcpy.
+    if (source != NULL && destination != NULL && bytesToSet > 0) {
+        memcpy(destination, source, bytesToSet);
+    }
+#else
     const void *src = source;
     void *dest = destination;
     u32 dmaSize = unit / 16;
@@ -314,11 +342,28 @@ void dma3_set(const void *source, void *destination, u32 bytesToSet, u16 unit, u
         dest += bytesPerInterrupt;
         bytesToSet -= bytesPerInterrupt;
     }
+#endif
 }
 
 
 // DMA3 Fill
 void dma3_fill(u32 value, void *destination, u32 bytesToFill, u16 unit, u32 bytesPerInterrupt) {
+#ifdef PLATFORM_PC
+    // On PC there is no DMA hardware — fill with repeated copies of 'value'.
+    if (destination != NULL && bytesToFill > 0) {
+        u8 *dest = (u8 *)destination;
+        u32 remaining = bytesToFill;
+        // Fill in 4-byte chunks, then handle remainder.
+        while (remaining >= 4) {
+            memcpy(dest, &value, 4);
+            dest += 4;
+            remaining -= 4;
+        }
+        if (remaining > 0) {
+            memcpy(dest, &value, remaining);
+        }
+    }
+#else
     void *dest = destination;
     u32 dmaSize = unit / 16;
 
@@ -342,6 +387,7 @@ void dma3_fill(u32 value, void *destination, u32 bytesToFill, u16 unit, u32 byte
         dest += bytesPerInterrupt;
         bytesToFill -= bytesPerInterrupt;
     }
+#endif
 }
 
 

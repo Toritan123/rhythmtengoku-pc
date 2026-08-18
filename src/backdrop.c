@@ -1,6 +1,8 @@
 #include "code_08003b28.h"
 
+#ifndef PLATFORM_PC
 asm(".include \"include/gba.inc\"");//Temporary
+#endif
 
 
 /* GRADIENT BACKDROP */
@@ -112,7 +114,9 @@ void func_08004058(void) {
 
 
 // Generate Gradient (https://decomp.me/scratch/2u6Wo)
+#ifndef PLATFORM_PC
 #include "asm/code_08003980/asm_08004070.s"
+#endif
 
 
 // Set Backdrop

@@ -18,7 +18,9 @@ struct CompressedData *epilogue_buffered_textures[] = {
     END_OF_BUFFERED_TEXTURES_LIST
 };
 
+#ifndef PLATFORM_PC
 asm(".include \"data/scenes/epilogue/ending_script.inc\"");
+#endif
 
 // [D_089d7b64] Epilogue Jingles
 struct SongHeader *epilogue_jingles[] = {

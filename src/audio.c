@@ -324,7 +324,7 @@ struct SoundPlayer *get_soundplayer_by_sound(struct SongHeader *song) {
     u32 i;
 
     if (song == NULL) {
-        return; // ???
+        return 0; // ???
     }
 
     for (i = 0; i < sound_player_count; i++) {
@@ -334,4 +334,5 @@ struct SoundPlayer *get_soundplayer_by_sound(struct SongHeader *song) {
             return soundPlayer;
         }
     }
+    return NULL; // search failed: GBA left garbage in r0
 }

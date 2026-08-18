@@ -7,7 +7,9 @@
 #include "src/scenes/gameplay.h"
 #include "src/lib_0804ca80.h"
 
+#ifndef PLATFORM_PC
 asm(".include \"include/gba.inc\""); // Temporary
+#endif
 
 // For readability.
 #define gPolyrhythm ((struct PolyrhythmEngineData *)gCurrentEngineData)
@@ -256,11 +258,17 @@ void polyrhythm_display_arrow(u32 lane, s32 blockID) {
 
 
 // (https://decomp.me/scratch/1esDB)
+#ifndef PLATFORM_PC
 #include "asm/engines/polyrhythm/asm_080361c0.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/polyrhythm/asm_08036250.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/polyrhythm/asm_080362e4.s"
+#endif
 
 
 // Piston Push
@@ -284,7 +292,9 @@ s32 polyrhythm_push_piston(u32 lane) {
 }
 
 
+#ifndef PLATFORM_PC
 #include "asm/engines/polyrhythm/asm_08036428.s"
+#endif
 
 
 // Get Lane X
@@ -329,7 +339,9 @@ s32 polyrhythm_get_block_z(u32 lane, s32 blockID) {
 }
 
 
+#ifndef PLATFORM_PC
 #include "asm/engines/polyrhythm/asm_080364f4.s"
+#endif
 
 
 // Init. Rods
@@ -360,7 +372,9 @@ s32 func_080365c8(struct PolyrhythmRod *rod, s32 h) {
 }
 
 
+#ifndef PLATFORM_PC
 #include "asm/engines/polyrhythm/asm_080365f8.s"
+#endif
 
 
 // Get Rod Next Horizontal
@@ -422,9 +436,13 @@ void func_08036630(struct PolyrhythmRod *rod) {
 }
 
 
+#ifndef PLATFORM_PC
 #include "asm/engines/polyrhythm/asm_08036758.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/polyrhythm/asm_08036848.s"
+#endif
 
 
 // Stub
@@ -507,8 +525,14 @@ void polyrhythm_event_spawn_rod(u32 lane) {
 }
 
 
+#ifndef PLATFORM_PC
 #include "asm/engines/polyrhythm/asm_08036b48.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/polyrhythm/asm_08036b94.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/polyrhythm/asm_08036be0.s"
+#endif

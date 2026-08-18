@@ -12,7 +12,9 @@
 #include "src/code_0800b778.h"
 #include "src/lib_0804ca80.h"
 
+#ifndef PLATFORM_PC
 asm(".include \"include/gba.inc\""); // Temporary
+#endif
 
 // For readability.
 #define gDrumStudio ((struct DrumStudioEngineData *)gCurrentEngineData)
@@ -142,41 +144,77 @@ void drum_lessons_set_teacher_expression(u32 expression) {
 }
 
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08027304.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08027350.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_0802739c.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080273e4.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_0802742c.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08027474.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080274d0.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08027518.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08027560.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080275a8.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080275d0.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080275f8.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08027668.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08027728.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08027744.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08027760.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_0802777c.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080277a0.s"
+#endif
 
 
 // Engine Event 0x0C (Loop Exit Condition)
@@ -216,13 +254,21 @@ void func_080277b8(void) {
 }
 
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08027888.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080278d0.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080278e8.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08027948.s"
+#endif
 
 
 // Init. Drum Lessons
@@ -276,13 +322,21 @@ void drum_lessons_show_dialogue(u32 show) {
 }
 
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08027bd8.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08027c54.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08027c90.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08027d08.s"
+#endif
 
 
 // Update Drum Lesson
@@ -367,7 +421,9 @@ void func_08027f90(void) {
 }
 
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08027fc8.s"
+#endif
 
 
 // Engine Event 14 (Calculate & Display Rank)
@@ -428,13 +484,21 @@ void drum_lessons_get_score(void) {
 }
 
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_0802818c.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080281c4.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080281e8.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080281fc.s"
+#endif
 
 
 // Change BG Monitor Palette
@@ -500,29 +564,53 @@ void drum_studio_event_stop_monitor(void) {
 }
 
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080283ac.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080283f8.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08028444.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080284a4.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08028504.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08028564.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080285d4.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08028634.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08028694.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080286f4.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_0802871c.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08028744.s"
+#endif
 
 
 // Init. Drum Kit
@@ -783,11 +871,17 @@ void drum_studio_select_button_exit(void) {
 }
 
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08029178.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_0802918c.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080291bc.s"
+#endif
 
 
 // Update Song Title
@@ -812,7 +906,9 @@ void drum_studio_update_song_title(void) {
 }
 
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080292e0.s"
+#endif
 
 
 // Engine Event 00 (Init. Studio Script & Recording)
@@ -1090,7 +1186,9 @@ void drum_studio_update_save_options(void) {
 }
 
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08029b8c.s"
+#endif
 
 
 // Game Engine Update
@@ -1141,9 +1239,13 @@ void func_08029cac(u32 drumKitID, u16 keys, u16 pressed, u16 released) {
 }
 
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08029cec.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08029d20.s"
+#endif
 
 
 // Cue - Spawn

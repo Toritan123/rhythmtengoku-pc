@@ -8,7 +8,9 @@
 #include "src/lib_0804ca80.h"
 #include "src/affine_sprite.h"
 
+#ifndef PLATFORM_PC
 asm(".include \"include/gba.inc\""); // Temporary
+#endif
 
 // For readability.
 #define gSickBeats ((struct SickBeatsEngineData *)gCurrentEngineData)
@@ -66,7 +68,9 @@ void sick_beats_play_particle_sound(void) {
 
 // https://decomp.me/scratch/N1kry
 // Process Particle
+#ifndef PLATFORM_PC
 #include "asm/engines/sick_beats/asm_080429e8.s"
+#endif
 
 // Process X Particles
 void sick_beats_process_x_particles(u32 particleAmount) {

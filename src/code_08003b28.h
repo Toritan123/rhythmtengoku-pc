@@ -5,7 +5,12 @@
 
 
 // MACROS
+#ifndef PLATFORM_PC
 #define BG_ANIM(ev, val)            (((ev) << 28) + ((u32)(val)))
+#else
+// On PC, store event and value separately so pointer values work in static initializers
+#define BG_ANIM(ev, val)            { (u32)(ev), (uintptr_t)(val) }
+#endif
 
 #define BG_ANIM_WRITE_RAW(val)      BG_ANIM(BG_ANIM_EV_WRITE_RAW, val)
 #define BG_ANIM_GOTO(val)           BG_ANIM(BG_ANIM_EV_GOTO, val)
@@ -43,7 +48,12 @@ enum BgAnimWriteFormatsEnum {
 
 
 // TYPES
+#ifndef PLATFORM_PC
 typedef u32 BgMapAnim;
+#else
+#include <stdint.h>
+typedef struct { u32 ev; uintptr_t val; } BgMapAnim;
+#endif
 typedef void (*BgMapFunc)();
 
 struct BgAnimator {

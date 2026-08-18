@@ -1,3 +1,5 @@
+#ifndef PLATFORM_PC
+
 #define DmaSet(dmaNum, src, dest, control)        \
 {                                                 \
     volatile u32 *dmaRegs = &REG_DMA##dmaNum; \
@@ -48,11 +50,33 @@
            dest,                                                                            \
            (DMACNT_ENABLE | DMACNT_START_MODE_IMMEDIATE | DMACNT_SRC_INC_TYPE_INCREMENT | DMACNT_DEST_INC_TYPE_INCREMENT) << 16 \
          | (size/2))
-		 
+
 #define DmaCopy32(dmaNum, src, dest, size)                                              \
     DmaSet(dmaNum,                                                                          \
            src,                                                                             \
            dest,                                                                            \
            (DMACNT_ENABLE | DMACNT_START_MODE_IMMEDIATE | DMACNT_SIZE | DMACNT_SRC_INC_TYPE_INCREMENT | DMACNT_DEST_INC_TYPE_INCREMENT) << 16 \
          | (size/4))
+
+#else // PLATFORM_PC
+
+// On PC: DMA operations become plain memset/memcpy.
+#include <string.h>
+
+#define DmaSet(dmaNum, src, dest, control)          /* no-op on PC */
+#define DmaFill16(dmaNum, value, dest, size)        memset((void*)(dest), (value) & 0xFF, (size))
+#define DmaFill32(dmaNum, value, dest, size)        \
+{                                                   \
+    uint32_t *_d = (uint32_t *)(dest);              \
+    uint32_t  _v = (uint32_t)(value);               \
+    size_t    _n = (size) / 4;                      \
+    for (size_t _i = 0; _i < _n; _i++) _d[_i] = _v; \
+}
+#define DMA_CLEAR(dmaNum, dest, size, bit)  memset((void*)(dest), 0, (size))
+#define DmaClear16(dmaNum, dest, size)      memset((void*)(dest), 0, (size))
+#define DmaClear32(dmaNum, dest, size)      memset((void*)(dest), 0, (size))
+#define DmaCopy16(dmaNum, src, dest, size)  memcpy((void*)(dest), (const void*)(src), (size))
+#define DmaCopy32(dmaNum, src, dest, size)  memcpy((void*)(dest), (const void*)(src), (size))
+
+#endif // PLATFORM_PC
 

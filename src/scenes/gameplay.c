@@ -1,8 +1,15 @@
 #include "global.h"
+#ifdef PLATFORM_PC
+#include <stdio.h>
+#include <stdlib.h>
+#endif
 #include "gameplay.h"
+#include "src/affine_param.h"
 #include "graphics/gameplay/gameplay_graphics.h"
 
+#ifndef PLATFORM_PC
 asm(".include \"include/gba.inc\"");//Temporary
+#endif
 
 
 // For readability.
@@ -265,16 +272,23 @@ void gameplay_set_current_engine(const struct GameEngine *engine, u32 version) {
         gGameplay->cueDefinitions[i] = NULL;
     }
 
-    for (i = 0; (i < 12) && (engine->cueDefinitions[i] != (void *)-1); i++) {
-        gGameplay->cueDefinitions[i] = engine->cueDefinitions[i];
+    // An engine with no cues (e.g. the prologue engines) leaves this NULL.
+    // On GBA the loop then reads address 0, which the BIOS answers with
+    // garbage that is never -1, so the copy is harmless; on PC it faults.
+    if (engine->cueDefinitions != NULL) {
+        for (i = 0; (i < 12) && (engine->cueDefinitions[i] != (void *)-1); i++) {
+            gGameplay->cueDefinitions[i] = engine->cueDefinitions[i];
+        }
     }
 
     for (i = 0; i < 3; i++) {
         gGameplay->commonFunctions[i] = NULL;
     }
 
-    for (i = 0; (i < 3) && (engine->commonFunctions[i] != (void *)-1); i++) {
-        gGameplay->commonFunctions[i] = engine->commonFunctions[i];
+    if (engine->commonFunctions != NULL) {
+        for (i = 0; (i < 3) && (engine->commonFunctions[i] != (void *)-1); i++) {
+            gGameplay->commonFunctions[i] = engine->commonFunctions[i];
+        }
     }
 
     temp = engine;
@@ -299,7 +313,7 @@ void gameplay_set_input_buttons(u16 press, u16 release) {
 
 
 // [func_08017348] Run Engine-Common Event
-s32 gameplay_run_common_event(s32 param, s32 id) {
+s32 gameplay_run_common_event(intptr_t param, s32 id) {
     s32 returnVal = 0;
     EngineEvent *functions = gGameplay->commonFunctions;
 
@@ -319,7 +333,7 @@ s32 gameplay_run_common_event(s32 param, s32 id) {
 
 
 // [func_08017380] Set Parameter for Engine-Specific Event
-void gameplay_set_engine_event_param(s32 param) {
+void gameplay_set_engine_event_param(intptr_t param) {
     gGameplay->engineFuncParam = param;
 }
 
@@ -523,7 +537,7 @@ void gameplay_register_perfect_input(void) {
 
 
 // [func_08017728] Run Game Engine Event (convenience method)
-s32 gameplay_run_engine_event_w_param(const struct GameEngine *engine, u32 function, s32 param) {
+s32 gameplay_run_engine_event_w_param(const struct GameEngine *engine, u32 function, intptr_t param) {
     gameplay_set_engine_event_param(param);
     return gameplay_run_engine_event(engine, function);
 }
@@ -651,6 +665,13 @@ u32 gameplay_get_marking_criteria(void) {
 // [func_08017928] Register Cue Result
 void gameplay_add_cue_result(u32 markingCriteria, u32 cueResult, s32 timingOffset) {
     u32 noCue = (cueResult == CUE_RESULT_NONE);
+#ifdef PLATFORM_PC
+    if (getenv("RTPC_TRACE")) {
+        static const char *nm[] = {"NONE","HIT","BARELY","MISS","?4","?5"};
+        fprintf(stderr, "[RES] %s off=%d\n", nm[cueResult < 6 ? cueResult : 0], timingOffset);
+        fflush(stderr);
+    }
+#endif
 
     if (!gGameplay->assessIrrelevantInputs && noCue) {
         return;

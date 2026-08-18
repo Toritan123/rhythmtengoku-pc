@@ -3,7 +3,9 @@
 #include "memory_heap.h"
 #include "src/lib_0804ca80.h"
 
+#ifndef PLATFORM_PC
 asm(".include \"include/gba.inc\"");//Temporary
+#endif
 
 
   //  //  //  BITMAP FONT  //  //  //
@@ -425,7 +427,9 @@ const char *bmp_font_obj_convert_latin_hw_to_fw(const char *string) {
 
 
 // Create Animation. (https://decomp.me/scratch/QO7Bu)
+#ifndef PLATFORM_PC
 #include "asm/code_08003980/asm_080049f0.s"
+#endif
 
 
 // Get Animation (Unaligned, default FontStyle and Palette).

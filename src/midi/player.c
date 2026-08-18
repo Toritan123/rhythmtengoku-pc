@@ -1120,6 +1120,7 @@ u32 midi_direct_player_read_sequence(void) {
     }
 
     sDirectLength = sequenceLength;
+    return 0;
 }
 
 

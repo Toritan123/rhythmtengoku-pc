@@ -1,6 +1,8 @@
 #include "lib_0804e564.h"
 
+#ifndef PLATFORM_PC
 asm(".include \"include/gba.inc\"");//Temporary
+#endif
 
 // Initialise GPIO
 void func_0804e564(void) {

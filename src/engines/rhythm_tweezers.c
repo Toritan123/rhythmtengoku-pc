@@ -5,7 +5,9 @@
 #include "src/text_printer.h"
 #include "src/affine_sprite.h"
 #include "src/lib_0804ca80.h"
+#ifndef PLATFORM_PC
 asm(".include \"include/gba.inc\""); // Temporary
+#endif
 
 // For readability.
 #define gRhythmTweezers ((struct RhythmTweezersEngineData *)gCurrentEngineData)
@@ -399,7 +401,9 @@ u32 rhythm_tweezers_cue_update_short(struct Cue *cue, struct RhythmTweezersCue *
 
 // !TODO - It's always with these cue functions, I swear: https://decomp.me/scratch/xtw97
 // [func_0802ef68] Cue - Update (Long Hair)
+#ifndef PLATFORM_PC
 #include "asm/engines/rhythm_tweezers/asm_0802ef68.s"
+#endif
 
 
 // [func_0802f164] Cue - Despawn

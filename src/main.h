@@ -9,7 +9,7 @@
 struct SceneTransition {
     struct Scene *initial;
     struct Scene *target;
-    s32 variable;
+    intptr_t variable; // may carry a pointer (e.g. struct LevelData *)
 };
 
 extern u8 D_03004498;
@@ -34,12 +34,12 @@ extern void set_next_scene(struct Scene *next);
 extern void clear_scene_trans(void);
 extern struct SceneTransition *get_scene_trans(struct Scene *scene);
 extern struct Scene *get_scene_trans_target(struct Scene *scene);
-extern s32 get_scene_trans_var(struct Scene *scene);
+extern intptr_t get_scene_trans_var(struct Scene *scene);
 extern struct Scene *get_current_scene_trans_target(void);
-extern s32 get_current_scene_trans_var(void);
+extern intptr_t get_current_scene_trans_var(void);
 extern struct SceneTransition *alloc_scene_trans(struct Scene *scene);
 extern void dealloc_scene_trans(struct Scene *scene);
 extern void set_scene_trans_target(struct Scene *scene, struct Scene *target);
-extern void set_scene_trans_var(struct Scene *scene, s32 variable);
-extern void func_080006f0(struct Scene *target, s32 variable);
+extern void set_scene_trans_var(struct Scene *scene, intptr_t variable);
+extern void func_080006f0(struct Scene *target, intptr_t variable);
 extern struct Scene *get_current_scene(void);

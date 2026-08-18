@@ -24,8 +24,17 @@ extern s8_8 D_089361cc[];
 struct Beatscript {
     u32 command:8;
     u32 param1:24;
+#ifdef PLATFORM_PC
+    // On PC (64-bit) these fields must be pointer-sized so that C-defined
+    // beatscript arrays can hold native function/data pointers.
+    // GBA beatscripts come from assembled .bs files (not this C struct), so
+    // changing the layout here does not affect the GBA build.
+    const void *param2;
+    uintptr_t   param3;
+#else
     u32 param2;
     u32 param3;
+#endif
 };
 
 // Scene Data

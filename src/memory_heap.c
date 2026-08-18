@@ -1,6 +1,116 @@
 #include "memory_heap.h"
+#ifdef PLATFORM_PC
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#endif
 
+#ifndef PLATFORM_PC
 asm(".include \"include/gba.inc\"");//Temporary
+#endif
+
+#ifdef PLATFORM_PC
+// ─── PC malloc-based heap ─────────────────────────────────────────────────────
+// On GBA the heap lives inside EWRAM (256 KB), which is far too small once
+// x86-64 pointer sizes (8 bytes vs 4 bytes) double the size of every struct.
+// On PC we back every allocation with a plain malloc so there is no size limit.
+//
+// We keep a flat table of { ptr, id } so we can implement dealloc_with_id.
+// 4096 simultaneous live allocations is generous for a GBA game.
+
+#define PC_HEAP_MAX_ALLOCS 4096
+
+struct PcHeapEntry {
+    void *ptr;
+    u16   id;
+};
+
+static struct PcHeapEntry pc_heap[PC_HEAP_MAX_ALLOCS];
+static int pc_heap_used = 0;
+
+void mem_heap_init(u32 *heapStart, u32 heapSize) {
+    (void)heapStart; (void)heapSize;
+    // free any left-over allocations from a previous heap init
+    for (int i = 0; i < PC_HEAP_MAX_ALLOCS; i++) {
+        if (pc_heap[i].ptr) {
+            free(pc_heap[i].ptr);
+            pc_heap[i].ptr = NULL;
+        }
+    }
+    pc_heap_used = 0;
+    memset(&D_03004ad0, 0, sizeof(D_03004ad0));
+}
+
+void *mem_heap_alloc(u32 size) {
+    return mem_heap_alloc_id(0, size);
+}
+
+void *mem_heap_alloc_id(u16 id, u32 size) {
+    if (size == 0) size = 4;
+
+    // Find an empty slot
+    int slot = -1;
+    for (int i = 0; i < PC_HEAP_MAX_ALLOCS; i++) {
+        if (!pc_heap[i].ptr) { slot = i; break; }
+    }
+    if (slot < 0) {
+        fprintf(stderr, "[HEAP-PC] alloc table full (max %d live allocs)\n",
+                PC_HEAP_MAX_ALLOCS);
+        D_03004ad0.unk0 = 1;
+        return NULL;
+    }
+
+    void *p = calloc(1, size);
+    if (!p) {
+        fprintf(stderr, "[HEAP-PC] malloc(%u) failed\n", size);
+        D_03004ad0.unk0 = 1;
+        return NULL;
+    }
+
+    pc_heap[slot].ptr = p;
+    pc_heap[slot].id  = id;
+    if (slot >= pc_heap_used) pc_heap_used = slot + 1;
+    return p;
+}
+
+// mem_heap_dealloc_block is not needed on PC (GBA-internal helper).
+void mem_heap_dealloc_block(u32 block, s32 prevBlock) {
+    (void)block; (void)prevBlock;
+}
+
+void mem_heap_dealloc(void *data) {
+    if (!data) return;
+    for (int i = 0; i < pc_heap_used; i++) {
+        if (pc_heap[i].ptr == data) {
+            free(pc_heap[i].ptr);
+            pc_heap[i].ptr = NULL;
+            pc_heap[i].id  = 0;
+            return;
+        }
+    }
+    // Not found in our table — could be a stack/static pointer; ignore.
+}
+
+void mem_heap_dealloc_with_id(u16 id) {
+    if (id == 0) return;  // matches GBA behaviour
+    for (int i = 0; i < pc_heap_used; i++) {
+        if (pc_heap[i].ptr && pc_heap[i].id == id) {
+            free(pc_heap[i].ptr);
+            pc_heap[i].ptr = NULL;
+            pc_heap[i].id  = 0;
+        }
+    }
+}
+
+void mem_heap_get_allocated_space(void) {
+    u32 total = 0;
+    for (int i = 0; i < pc_heap_used; i++) {
+        if (pc_heap[i].ptr) total += 16; // rough estimate per slot
+    }
+    D_03004ad0.unkC = total;
+}
+
+#else  // GBA ──────────────────────────────────────────────────────────────────
 
 // These functions handle allocation and deallocation from the main memory heap.
 // The heap consists of a sequence of variable-sized blocks of data.
@@ -16,8 +126,8 @@ asm(".include \"include/gba.inc\"");//Temporary
 
 extern void *mem_heap_alloc_block_rom;
 extern void *mem_heap_alloc_block_rom_end;
-
 static u32 mem_heap_alloc_block_code[20];
+
 static s32 (*mem_heap_alloc_block)(u32 *memHeap, s32 memHeapSize, s32 length);
 
 static u32 *sMemoryHeap;
@@ -44,7 +154,6 @@ void mem_heap_init(u32 *heapStart, u32 heapSize) {
     D_03004ad0.unkC = 0;
 
 	// The allocation function is handwritten assembly DMAd into IWRAM for performance.
-
 	DmaCopy32(3, &mem_heap_alloc_block_rom, &mem_heap_alloc_block_code, ((uintptr_t)&mem_heap_alloc_block_rom_end - (uintptr_t)&mem_heap_alloc_block_rom));
     mem_heap_alloc_block = (void *)&mem_heap_alloc_block_code;
 }
@@ -202,3 +311,5 @@ void mem_heap_get_allocated_space(void) {
 
     D_03004ad0.unkC = allocatedWords * 4;
 }
+
+#endif // PLATFORM_PC

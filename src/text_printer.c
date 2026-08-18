@@ -1,18 +1,25 @@
 #include "global.h"
+#ifdef PLATFORM_PC
+#include <stdio.h>
+#endif
 #include "text_printer.h"
 
 #include "src/memory_heap.h"
 #include "src/lib_0804ca80.h"
 #include "data/text_printer_data.h"
 
+#ifndef PLATFORM_PC
 asm(".include \"include/gba.inc\"");//Temporary
+#endif
 
 
   //  //  //  TEXT PRINTER  //  //  //
 
 
 typedef void (PrintGlyphToVRAMFunc)(void *args);
+#ifndef PLATFORM_PC
 extern PrintGlyphToVRAMFunc text_print_glyph_to_vram_rom;
+#endif
 
 #define GLYPH_BUFFER_SIZE 0x80
 static struct FormattedGlyph {
@@ -41,7 +48,9 @@ static s8 sPrinterShadowColors; // Printer Shadow Colors
 
 // Init. Static Variables
 void text_printer_init(void) {
+#ifndef PLATFORM_PC
     dma3_set(text_print_glyph_to_vram_rom, text_print_glyph_to_vram_code, sizeof(text_print_glyph_to_vram_code), 0x20, 0x100);
+#endif
     sGlyphBuffer = mem_heap_alloc(GLYPH_BUFFER_SIZE * sizeof(struct FormattedGlyph));
     sModifyPrinterSettings = NULL;
 }
@@ -103,6 +112,7 @@ s32 text_font_calculate_string_width(s32 font, const char *string) {
 
 // Print Glyph to VRAM
 void text_printer_print_glyph(s32 tileOfsX, s32 tileOfsY, s32 font, s32 glyphID, s32 lineColors) {
+#ifndef PLATFORM_PC
     PrintGlyphToVRAMFunc *printGlyphToVRAM = (PrintGlyphToVRAMFunc *)(&text_print_glyph_to_vram_code);
     u32 args[4];
 
@@ -113,6 +123,9 @@ void text_printer_print_glyph(s32 tileOfsX, s32 tileOfsY, s32 font, s32 glyphID,
     args[2] = ((tileOfsX & 7) << 2) + lineColors;
     args[3] = font;
     printGlyphToVRAM(args);
+#else
+    (void)tileOfsX; (void)tileOfsY; (void)font; (void)glyphID; (void)lineColors;
+#endif
 }
 
 
@@ -365,7 +378,137 @@ s32 text_printer_print_formatted_line(s32 tileBaseX, s32 tileBaseY, s32 font, co
 
 
 // Create Animation (https://decomp.me/scratch/CQpoA)
+#ifndef PLATFORM_PC
 #include "asm/code_080092cc/asm_08009de4.s"
+#endif
+
+
+#ifdef PLATFORM_PC
+// PC implementation of func_08009de4 (originally hand-coded ARM thumb in
+// asm/code_080092cc/asm_08009de4.s).
+//
+// Renders text glyphs into VRAM via text_printer_print_(un)formatted_line,
+// then builds an OAM cel array that lays the rendered tiles out as a row
+// of OBJ sprites.  The animation returned is heap-allocated and freed by
+// text_printer_delete_anim, which frees both anim and anim->cel.
+//
+// Cel format (consumed by func_0804cb88 / func_0804e418):
+//   u16  count
+//   u16  attr0, attr1, attr2  // for each OBJ entry
+//
+// Sprite decomposition (matches GBA assembly):
+//   widthTiles = ceil(lineWidth / 8)
+//   count32 = widthTiles / 4      → wide 32x16 sprites (4 tiles wide)
+//   widthTiles %= 4
+//   count16 = widthTiles / 2      → square 16x16 sprites (2 tiles wide)
+//   widthTiles %= 2
+//   count8  = widthTiles           → tall   8x16  sprites (1 tile wide)
+struct Animation *func_08009de4(u32 memID, s32 tileBaseX, s32 tileBaseY, s32 font,
+                                 const char **string, u32 anchor, s32 lineColors,
+                                 s32 maxWidth, s32 ignoreFormatting,
+                                 s32 indentWidth, s32 shadowColors)
+{
+    s32 lineWidth;
+    s32 widthTiles;
+    s32 count32, count16, count8, total;
+    s32 yOffset;
+    s32 xPosBase;
+    u16 *cel;
+    u16 *p;
+    u16 tileBase;
+    struct Animation *anim;
+    s32 i;
+
+    if (ignoreFormatting) {
+        lineWidth = text_printer_print_unformatted_line(
+            tileBaseX * 8, tileBaseY + 64, font, *string, maxWidth, lineColors);
+    } else {
+        lineWidth = text_printer_print_formatted_line(
+            tileBaseX * 8, tileBaseY + 64, font, string, maxWidth, lineColors,
+            indentWidth, shadowColors);
+    }
+    sCurrentLineWidth = lineWidth;
+
+    widthTiles = (lineWidth + 7) >> 3;
+    count32 = 0;
+    while (widthTiles > 3) { widthTiles -= 4; count32++; }
+    count16 = 0;
+    while (widthTiles > 1) { widthTiles -= 2; count16++; }
+    count8 = widthTiles;
+    total = count32 + count16 + count8;
+
+    // Allocate Animation array (anim[0] + terminator).
+    anim = mem_heap_alloc_id((u16)memID, sizeof(struct Animation) * 2);
+    anim[1].cel = NULL;
+    anim[1].duration = 0;
+    anim[0].duration = 100;
+
+    if (total == 0) {
+        // Empty line: just a count-0 cel so sprite_create has something valid.
+        cel = mem_heap_alloc_id((u16)memID, 2);
+        cel[0] = 0;
+        anim[0].cel = cel;
+        return anim;
+    }
+
+    cel = mem_heap_alloc_id((u16)memID, total * 6 + 2);
+    anim[0].cel = cel;
+    cel[0] = (u16)total;
+    p = &cel[1];
+
+    // Anchor adjusts the sprite OAM y/x relative to the sprite's screen position.
+    // Values from the original ASM (D_089380ac[font].unkA = font height).
+    switch (anchor) {
+        case 1:  // CENTER
+            xPosBase = -(lineWidth >> 1);
+            yOffset = -(s32)D_089380ac[font].unkA;
+            break;
+        case 2:  // ??? (anchor that only shifts Y)
+            xPosBase = 0;
+            yOffset = -(s32)D_089380ac[font].unkA;
+            break;
+        case 3:  // BOTTOM
+            xPosBase = -lineWidth;
+            yOffset = -(s32)D_089380ac[font].unkA;
+            break;
+        case 0:  // TOP_LEFT
+        default:
+            xPosBase = 0;
+            yOffset = 0;
+            break;
+    }
+
+    // Base tile = X + (Y + 64) * 32 in VRAM tile coordinates.
+    tileBase = (u16)(tileBaseX + (tileBaseY + 64) * 32);
+
+    // 32x16 wide sprites (4 tiles)
+    for (i = 0; i < count32; i++) {
+        *p++ = (u16)((yOffset & 0xFF) | 0x4000);            // shape=wide
+        *p++ = (u16)((xPosBase & 0x1FF) | 0x8000);           // size=01 → 32x8 (asm uses 0x8000 in attr1 high half)
+        *p++ = tileBase;
+        xPosBase += 32;
+        tileBase = (u16)(tileBase + 4);
+    }
+    // 16x16 square sprites (2 tiles wide)
+    for (i = 0; i < count16; i++) {
+        *p++ = (u16)(yOffset & 0xFF);                        // shape=square (no 0x4000)
+        *p++ = (u16)((xPosBase & 0x1FF) | 0x4000);           // size=01 → 16x16
+        *p++ = tileBase;
+        xPosBase += 16;
+        tileBase = (u16)(tileBase + 2);
+    }
+    // 8x16 tall sprites (1 tile wide)
+    for (i = 0; i < count8; i++) {
+        *p++ = (u16)((yOffset & 0xFF) | 0x8000);             // shape=tall
+        *p++ = (u16)(xPosBase & 0x1FF);                       // size=00 → 8x16
+        *p++ = tileBase;
+        xPosBase += 8;
+        tileBase = (u16)(tileBase + 1);
+    }
+
+    return anim;
+}
+#endif
 
 
 // Get Animation (Type 1)
@@ -1508,7 +1651,7 @@ s16 func_0800b32c(struct Listbox *listbox) {
     s32 temp;
     
     if (listbox == NULL) {
-        return; // !UB: no return value
+        return 0; // !UB: no return value
     }
 
     temp = listbox->scrollIndex + listbox->selMinLine + listbox->selLine;

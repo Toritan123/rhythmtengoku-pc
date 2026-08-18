@@ -36,6 +36,7 @@ s32 get_saved_replay_block_data(struct DrumReplaySaveAlloc *allocator, s32 saveI
 
     *blockBaseReq = allocator->replayStartBlocks[saveID];
     *blockCountReq = (allocator->replaySizes[saveID] + 0xff) / REPLAY_BLOCK_SIZE;
+    return 0;
 }
 
 

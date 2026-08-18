@@ -1,4 +1,6 @@
+#ifndef PLATFORM_PC
 asm(".include \"include/gba.inc\""); // Temporary
+#endif
 
 #include "engines/showtime.h"
 
@@ -69,10 +71,14 @@ void showtime_engine_event_stub() {
 }
 
 
+#ifndef PLATFORM_PC
 #include "asm/engines/showtime/asm_0802bd44.s"
+#endif
 
 
+#ifndef PLATFORM_PC
 #include "asm/engines/showtime/asm_0802be10.s"
+#endif
 
 
 void showtime_engine_stop() {
@@ -100,7 +106,9 @@ void showtime_cue_despawn_gray(struct Cue *cue, struct ShowtimeCue *info) {
 }
 
 
+#ifndef PLATFORM_PC
 #include "asm/engines/showtime/asm_0802be78.s"
+#endif
 
 
 u32 showtime_cue_update_black(struct Cue *cue, struct ShowtimeCue *info, u32 runningTime, u32 duration) {
@@ -116,17 +124,23 @@ void showtime_cue_despawn_black(struct Cue *cue, struct ShowtimeCue *info) {
 }
 
 
+#ifndef PLATFORM_PC
 #include "asm/engines/showtime/asm_0802beb0.s"
+#endif
 
 
+#ifndef PLATFORM_PC
 #include "asm/engines/showtime/asm_0802bec8.s"
+#endif
 
 
 void showtime_cue_despawn_white_fast(struct Cue *cue, struct ShowtimeCue *info) {
 }
 
 
+#ifndef PLATFORM_PC
 #include "asm/engines/showtime/asm_0802bee8.s"
+#endif
 
 
 u32 showtime_cue_update_white_fast_swing(struct Cue *cue, struct ShowtimeCue *info, u32 runningTime, u32 duration) {
@@ -169,9 +183,13 @@ void showtime_cue_hit(struct Cue *cue, struct ShowtimeCue *info, u32 pressed, u3
 }
 
 
+#ifndef PLATFORM_PC
 #include "asm/engines/showtime/asm_0802bf88.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/showtime/asm_0802c078.s"
+#endif
 
 
 void showtime_input_event(u32 pressed, u32 released) {
@@ -184,11 +202,17 @@ void showtime_input_event(u32 pressed, u32 released) {
 }
 
 
+#ifndef PLATFORM_PC
 #include "asm/engines/showtime/asm_0802c0c8.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/showtime/asm_0802c150.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/showtime/asm_0802c1cc.s"
+#endif
 
 
 void func_0802c1f0(u32 unused, s16 sprite, u32 arg2) {
@@ -242,7 +266,9 @@ void func_0802c334() {
 }
 
 
+#ifndef PLATFORM_PC
 #include "asm/engines/showtime/asm_0802c36c.s"
+#endif
 
 
 u32 func_0802c3d0(u32 arg) {
@@ -259,23 +285,41 @@ u32 func_0802c3d0(u32 arg) {
 }
 
 
+#ifndef PLATFORM_PC
 #include "asm/engines/showtime/asm_0802c40c.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/showtime/asm_0802c4b0.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/showtime/asm_0802c4c0.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/showtime/asm_0802c4f4.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/showtime/asm_0802c528.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/showtime/asm_0802c55c.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/showtime/asm_0802c5c8.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/showtime/asm_0802ce70.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/showtime/asm_0802cf8c.s"
+#endif
 
 
 void func_0802cfa4(u32 arg) {
@@ -284,9 +328,13 @@ void func_0802cfa4(u32 arg) {
 }
 
 
+#ifndef PLATFORM_PC
 #include "asm/engines/showtime/asm_0802cfc8.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/showtime/asm_0802cfe0.s"
+#endif
 
 
 u32 func_0802d068(u32 arg) {
@@ -318,11 +366,17 @@ void func_0802d0dc(u32 arg0, s16 sprite) {
 }
 
 
+#ifndef PLATFORM_PC
 #include "asm/engines/showtime/asm_0802d104.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/showtime/asm_0802d250.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/showtime/asm_0802d2bc.s"
+#endif
 
 
 // stack pointer moment
@@ -331,11 +385,17 @@ void func_0802d38c(void) {
 }
 
 
+#ifndef PLATFORM_PC
 #include "asm/engines/showtime/asm_0802d394.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/showtime/asm_0802d43c.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/showtime/asm_0802d81c.s"
+#endif
 
 
 void func_0802d8bc(u32 arg) {
@@ -353,14 +413,26 @@ void func_0802d8bc(u32 arg) {
 }
 
 
+#ifndef PLATFORM_PC
 #include "asm/engines/showtime/asm_0802d918.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/showtime/asm_0802d96c.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/showtime/asm_0802d9fc.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/showtime/asm_0802da84.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/showtime/asm_0802db08.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/showtime/asm_0802dc54.s"
+#endif

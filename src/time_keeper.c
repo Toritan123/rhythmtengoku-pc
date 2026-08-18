@@ -1,5 +1,10 @@
 #include "global.h"
 #include "time_keeper.h"
+#ifdef PLATFORM_PC
+#include <limits.h>
+#define UINT_MAX  0xFFFFFFFFu
+#define USHRT_MAX 0xFFFFu
+#endif
 
 static u32 sTotalPlayTime;      // [0x03001304]
 static u32 sTotalActiveTime;    // [0x03001308]

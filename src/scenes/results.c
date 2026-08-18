@@ -608,7 +608,7 @@ u32 results_get_negative_comments(void) {
     commentsText = gResults->negativeCommentsText;
     gResults->singleCommentTryAgain = FALSE;
 
-    for (criteriaTable; *criteriaTable != NULL; tracker++, criteriaTable++) {
+    for (criteriaTable; (criteriaTable != NULL) && (*criteriaTable != NULL); tracker++, criteriaTable++) {
         const struct MarkingCriteria *criteria;
         u32 checkAvgHits, overrideOtherComments;
         u32 failedThisCriterion;
@@ -697,7 +697,7 @@ s24_8 results_get_positive_comments(void) {
     imperfectionPenalty = 0;
     commentsText = mem_heap_alloc(0x100);
 
-    for (criteriaTable; *criteriaTable != NULL; tracker++, criteriaTable++) {
+    for (criteriaTable; (criteriaTable != NULL) && (*criteriaTable != NULL); tracker++, criteriaTable++) {
         const struct MarkingCriteria *criteria;
         struct Animation *anim;
         u16 sprite;
@@ -863,7 +863,7 @@ void results_publish_comments(void) {
 
     update_plays_until_next_campaign();
 
-    while (*criteriaTable != NULL) {
+    while ((criteriaTable != NULL) && (*criteriaTable != NULL)) {
         if (tracker->totalInputs > 0) {
             results_tracker_calculate_averages(tracker);
         }

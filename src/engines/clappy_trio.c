@@ -1,7 +1,9 @@
 #include "engines/clappy_trio.h"
 #include "src/text_printer.h"
 
+#ifndef PLATFORM_PC
 asm(".include \"include/gba.inc\""); // Temporary
+#endif
 
 // For readability.
 
@@ -24,7 +26,9 @@ struct Animation *clappy_trio_get_anim(enum ClappyTrioAnimationsEnum anim) {
 }
 
 // Init. Lion Sprites (https://decomp.me/scratch/kp2vu)
+#ifndef PLATFORM_PC
 #include "asm/engines/clappy_trio/asm_080303a4.s"
+#endif
 
 // Graphics Init. 3
 void clappy_trio_init_gfx3(void) {
@@ -183,7 +187,9 @@ void clappy_trio_cue_despawn(void) {
 }
 
 // Cue - Hit (https://decomp.me/scratch/UAIPR)
+#ifndef PLATFORM_PC
 #include "asm/engines/clappy_trio/asm_080308f4.s"
+#endif
 
 // This function works as intended when the Makefile's NONMATCHING is set to 1
 /*
@@ -243,7 +249,9 @@ void clappy_trio_input_event(u32 pressed, u32 released) {
 }
 
 // Common Event 0 (Beat Animation) (https://decomp.me/scratch/UuWC8)
+#ifndef PLATFORM_PC
 #include "asm/engines/clappy_trio/asm_08030a60.s"
+#endif
 
 // This function works as intended when the Makefile's NONMATCHING is set to 1
 /*

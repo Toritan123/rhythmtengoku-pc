@@ -253,7 +253,9 @@ extern void sprite_set_affine_params(struct SpriteHandler *, s16 id, s32 affineI
 extern void func_0804dc8c(struct SpriteHandler *, s16 id, u32 args); // Set Affine & Double Size Flags
 extern void sprite_set_anim_speed(struct SpriteHandler *, s16 id, u8_8 speed);
 extern u32  sprite_get_cel_dimensions(u16 *cel, u32 requestedDataType);
-extern s32  sprite_get_data(struct SpriteHandler *, s16 id, u32 requestedDataType);
+// Returns intptr_t: pointer-valued data types (animation, callback, origins)
+// must survive the round-trip on 64-bit hosts.
+extern intptr_t sprite_get_data(struct SpriteHandler *, s16 id, u32 requestedDataType);
 extern void sprite_set_callback_cel(struct SpriteHandler *, s16 id, s8 cel);
 extern void sprite_run_callback_every_cel(struct SpriteHandler *, s16 id);
 extern void sprite_id_set_data(struct SpriteHandler *, u16 memID, u32 targetDataType, u32 arg);

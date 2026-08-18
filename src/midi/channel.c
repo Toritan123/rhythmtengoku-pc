@@ -2,6 +2,7 @@
 #include "sound.h"
 #include "midi.h"
 
+static u32 midi_key_to_freq(struct MidiBus *midiBus, u8 key);
 
 /* AUDIO LIBRARY - MIDI CHANNELS */
 

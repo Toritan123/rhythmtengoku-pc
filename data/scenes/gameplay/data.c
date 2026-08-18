@@ -27,7 +27,9 @@ struct CompressedData *gameplay_common_buffered_textures[] = {
     END_OF_BUFFERED_TEXTURES_LIST
 };
 
+#ifndef PLATFORM_PC
 asm(".include \"data/scenes/gameplay/fade_out_script.inc\"");
+#endif
 
 // [D_089cfde0] Pause Menu Definition
 struct PauseMenuDefinition gameplay_pause_menu_data = {

@@ -1,4 +1,7 @@
 #include "global.h"
+#ifdef PLATFORM_PC
+#include <stdio.h>
+#endif
 #include "code_0800b778.h"
 #include "syscall.h"
 
@@ -17,7 +20,9 @@
 
 // Could use better split
 
+#ifndef PLATFORM_PC
 asm(".include \"include/gba.inc\"");//Temporary
+#endif
 
 
 /* BEATSCRIPT SCENE HANDLER */
@@ -482,7 +487,7 @@ u32 scene_change_music(struct SongHeader *music, u32 override, s32 soundPlayer) 
 
     if (music == NULL) {
         D_030053c0.musicPlayer = NULL;
-        return;
+        return 0;
     }
 
     gMidiLFOMode = LFO_MODE_DISABLED;
@@ -495,6 +500,7 @@ u32 scene_change_music(struct SongHeader *music, u32 override, s32 soundPlayer) 
     set_soundplayer_volume(D_030053c0.musicPlayer, D_030053c0.musicVolume);
     set_soundplayer_track_volume(D_030053c0.musicPlayer, D_030053c0.musicTrkTargets, D_030053c0.musicTrkVolume);
     set_soundplayer_key(D_030053c0.musicPlayer, D_030053c0.musicKey);
+    return 0;
 }
 
 
@@ -807,7 +813,9 @@ u32 func_0800c398(void) {
 
 // Convert Script Tatums to Real-Time Frames
 s32 ticks_to_frames(u32 beats) {
-    fast_divsi3(INT_TO_FIXED(beats), D_030053c0.deltaTime);
+    // GBA: the result of fast_divsi3 stays in r0 and is implicitly returned.
+    // That doesn't hold on other ABIs, so return it explicitly.
+    return fast_divsi3(INT_TO_FIXED(beats), D_030053c0.deltaTime);
 }
 
 
@@ -1304,7 +1312,9 @@ s16 beatscript_stream_get_sprite_for_motion(s16 *spritePool, s16 args, s16 *dest
 
 
 // Beatscript Stream - Update
+#ifndef PLATFORM_PC
 #include "asm/code_0800b778/asm_0800cb28.s"
+#endif
 
 
 // Stub
@@ -2060,7 +2070,7 @@ u16 *func_0800ed64(u16 arg0, u16 arg1, u16 arg2) {
     u16 *gradientBuffer = mem_heap_alloc_id(get_current_mem_id(), 160 * sizeof(u16));
     func_0800edc8(gradientBuffer, arg0, arg1, arg2);
     func_0800402c(gradientBuffer, ((u16 *)PaletteRAMBase) + arg2, 1, 0);
-    //return gradientBuffer; // ?
+    return gradientBuffer;
 }
 
 
@@ -2116,7 +2126,9 @@ void func_0800ee9c(void *objPalette) {
 }
 
 
+#ifndef PLATFORM_PC
 #include "asm/code_0800b778/asm_0800eebc.s"
+#endif
 
 
 // Set String

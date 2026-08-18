@@ -1,12 +1,21 @@
-# Object files
-*.o
-*.elf
 
 # General project-specific ignores
-build/*
-tools/agbcc/*
-*.gba
-*.sav
+# Object files
+# PC port
+**/.DS_Store
+*.bak
 *.dump
+*.elf
+*.gba
+*.o
+*.sav
+.DS_Store
 .vscode/*
+__pycache__/
+build/*
+build_pc/
+build_win/
 ctx.c
+dist/
+third_party/
+tools/agbcc/*

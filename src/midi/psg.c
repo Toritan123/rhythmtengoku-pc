@@ -25,7 +25,9 @@ void midi_psg_init(void) {
         sChannelJustStarted[i] = FALSE;
     }
 
-    *sPrevWavetable = 0;
+#ifndef PLATFORM_PC
+    *sPrevWavetable = 0; // Bug: sPrevWavetable is never written, so this is a NULL deref on PC
+#endif
 }
 
 

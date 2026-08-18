@@ -3,7 +3,12 @@
 #include "task_pool.h"
 #include "memory_heap.h"
 
+#ifndef PLATFORM_PC
 asm(".include \"include/gba.inc\"");//Temporary
+#endif
+
+// Decompression cache lookup: returns cached decompressed pointer, or src unchanged.
+extern void *func_0800869c(const void *src);
 
 
 /* GRAPHICS TABLE LOADER */
@@ -25,6 +30,12 @@ extern struct TaskMethods D_089363fc;
 // Ensure Valid Destination Pointer..?
 // Removes the highest bit from a pointer, since that shouldn't be set (not that this keeps the pointer in range though).
 void *func_08002a54(void *dest) {
+#ifdef PLATFORM_PC
+    // On PC, 'dest' is a full 64-bit pointer to gba_vram (or a sub-region).
+    // The GBA trick of using the sign bit to signal indirection doesn't apply;
+    // always return dest unchanged.
+    return dest;
+#endif
     if ((s32)dest < 0) {
         dest = *(void **)((s32)dest & 0x7fffffff);
     }
@@ -108,8 +119,8 @@ void func_08002b10(struct GfxTableLoader *info) {
                 if (info->size == 0) {
                     break;
                 }
-                (void *)info->src += size;
-                (void *)info->dest += size;
+                info->src = (void *)((u8 *)info->src + size);
+                info->dest = (void *)((u8 *)info->dest + size);
                 continue;
 
             case COMPRESSION_LEVEL_RLE:
@@ -200,23 +211,41 @@ void func_08002b10(struct GfxTableLoader *info) {
     }
 }
 
+#ifndef PLATFORM_PC
 #include "asm/code_08001360/asm_08002db0.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/code_08001360/asm_08002db8.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/code_08001360/asm_08002dc4.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/code_08001360/asm_08002dec.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/code_08001360/asm_08002e18.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/code_08001360/asm_08002e2c.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/code_08001360/asm_08002e44.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/code_08001360/asm_08002e5c.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/code_08001360/asm_08002e78.s"
+#endif
 
 
 // LoadGfxTableTask Start
@@ -246,15 +275,25 @@ s32 func_08002ee0(u16 memID, const struct GraphicsTable *gfxTable, u32 limit) {
 }
 
 
+#ifndef PLATFORM_PC
 #include "asm/code_08001360/asm_08002f04.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/code_08001360/asm_08002f40.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/code_08001360/asm_08002f48.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/code_08001360/asm_08002f54.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/code_08001360/asm_08002f5c.s"
+#endif
 
 
 // Graphics Table Loader Task Methods

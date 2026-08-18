@@ -3,6 +3,9 @@
 #include "memory_heap.h"
 #include "src/lib_0804ca80.h"
 
+// Decompression cache lookup (defined in asm or asm_stubs.c)
+extern void *func_0800869c(const void *src);
+
 
 /* COMPRESSED BG MAP */
 
@@ -99,8 +102,15 @@ void bg_anim_update_script(struct BgAnimator *animator) {
 
     while ((animator->clockPos < animator->clockSpeed) && !readStopped) {
         BgMapAnim line = *animator->scriptCurrent++;
+#ifndef PLATFORM_PC
         event = line >> 28;
         value = line & 0x0FFFFFFF;
+        uintptr_t ptrval = (uintptr_t)value;
+#else
+        event = line.ev >> 28;
+        value = (u32)(line.val & 0x0FFFFFFF);
+        uintptr_t ptrval = line.val;
+#endif
 
         switch (event) {
             case BG_ANIM_EV_WRITE_RAW:
@@ -112,7 +122,7 @@ void bg_anim_update_script(struct BgAnimator *animator) {
                         break;
                     default:
                         animator->writePending = TRUE;
-                        animator->srcBG = (void *)value;
+                        animator->srcBG = (void *)ptrval;
                         animator->writeFormat = BG_ANIM_WRITE_RAW;
                         animator->framesRead++;
                         offsetBgPos = FALSE;
@@ -122,12 +132,12 @@ void bg_anim_update_script(struct BgAnimator *animator) {
                 break;
 
             case BG_ANIM_EV_GOTO:
-                animator->scriptStart = animator->scriptCurrent = (void *)value;
+                animator->scriptStart = animator->scriptCurrent = (void *)ptrval;
                 animator->framesRead = -1;
                 break;
 
             case BG_ANIM_EV_CALL_FUNC:
-                ((BgMapFunc)value)(animator->funcArg);
+                ((BgMapFunc)ptrval)(animator->funcArg);
                 break;
 
             case BG_ANIM_EV_SET_FUNC_ARG:
@@ -144,7 +154,7 @@ void bg_anim_update_script(struct BgAnimator *animator) {
 
             case BG_ANIM_EV_WRITE_COMP:
                 animator->writePending = TRUE;
-                animator->srcBG = (void *)value;
+                animator->srcBG = (void *)ptrval;
                 animator->writeFormat = BG_ANIM_WRITE_COMP;
                 animator->framesRead++;
                 animator->clockPos += animator->frameTime;
@@ -152,7 +162,7 @@ void bg_anim_update_script(struct BgAnimator *animator) {
                 break;
 
             case BG_ANIM_EV_SET_DEST:
-                animator->destBG = (void *)value;
+                animator->destBG = (void *)ptrval;
                 break;
 
             case BG_ANIM_EV_SET_OFS:
@@ -169,7 +179,7 @@ void bg_anim_update_script(struct BgAnimator *animator) {
                 animator->framesRead++;
                 animator->clockPos += animator->frameTime;
                 offsetBgPos = TRUE;
-                compBg = (struct CompressedData *)value;
+                compBg = (struct CompressedData *)ptrval;
                 break;
         }
     }
@@ -211,13 +221,36 @@ void func_08003e00(const u16 *srcData, u32 srcWidth, u32 srcHeight, u16 *destDat
 extern s32 (*D_03004af0)(const u16 *src, u16 *dest, const u8 *rleData, u32 sizeData);
 extern u8 D_030053b0;
 
+#ifndef PLATFORM_PC
 extern void *func_08000a00;
 extern void *func_08000a00_end;
+#else
+#include <string.h>
+// PC implementation of the RLE decompressor.
+// When rleData == NULL the data is already raw/decompressed: just memcpy src→dest.
+// sizeData packs: upper 16 bits = total halfwords (rleSize), lower 16 bits = budget.
+// Return a value large enough to exhaust the caller's processLimit in one shot.
+static s32 pc_rle_decompress(const u16 *src, u16 *dest, const u8 *rleData, u32 sizeData) {
+    u32 n_halfwords = sizeData >> 16;
+    if (rleData == NULL && src != NULL && dest != NULL) {
+        if (n_halfwords > 0) {
+            memcpy(dest, src, (u32)n_halfwords * 2);
+        }
+    }
+    D_030053b0 = FALSE; // signal: decompression complete
+    // Return the full frame budget so processLimit drops to 0 and the loop exits.
+    return (s32)((sizeData & 0xFFFF) * 4);
+}
+#endif
 
 // Load RLE Decompression Function to RAM
 void func_08003e64(void) {
+#ifndef PLATFORM_PC
     dma3_set(&func_08000a00, D_030005c8, (uintptr_t)&func_08000a00_end - (uintptr_t)&func_08000a00, 16, 0x100);
     D_03004af0 = (s32 (*)(const u16 *, u16 *, const u8 *, u32))D_030005c8;
+#else
+    D_03004af0 = pc_rle_decompress;
+#endif
     D_030053b0 = FALSE;
 }
 

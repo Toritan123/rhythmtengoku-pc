@@ -1,6 +1,8 @@
 #include "engines/quiz_show.h"
 
+#ifndef PLATFORM_PC
 asm(".include \"include/gba.inc\""); // Temporary
+#endif
 
 // For readability.
 #define gQuizShow ((struct QuizShowEngineData *)gCurrentEngineData)
@@ -9,7 +11,9 @@ asm(".include \"include/gba.inc\""); // Temporary
 /* QUIZ SHOW */
 
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_0803709c.s"
+#endif
 
 void func_08037178(void) {
     u32 i;
@@ -36,80 +40,158 @@ void func_08037178(void) {
     func_0803709c();
 }
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_08037280.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_080372c0.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_080372e8.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_08037378.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_080373ac.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_080373dc.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_080373f4.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_08037404.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_08037434.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_08037460.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_08037858.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_0803785c.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_080378d8.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_08037a64.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_08037a78.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_08037be0.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_08037bf4.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_08037cb8.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_08037cd0.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_08037cf4.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_08037d00.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_08037d0c.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_08037d1c.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_08037d2c.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_08037d6c.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_08037d90.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_08037dc8.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_08037e24.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_08037e4c.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_08037e50.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_08037e54.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_08037e70.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_08037e74.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_08037e78.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_08037e7c.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_08037e80.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_08037f58.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_08037f5c.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_08037f60.s"
+#endif

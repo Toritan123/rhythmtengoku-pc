@@ -1,0 +1,102 @@
+name: PC port
+
+# Builds the PC port for macOS and Windows on every push, so a change that
+# breaks one platform is caught immediately rather than at release time.
+#
+# Artifacts are NOT uploaded by default.  The built executable has the game's
+# graphics and audio compiled into it (that is what makes it ~20 MB), and a
+# CI artifact on a public repository is downloadable by anyone who can read the
+# repo — the same exposure as publishing a release. Run the workflow manually
+# with "upload artifacts" checked if that is what you intend.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      upload:
+        description: "Upload built artifacts"
+        type: boolean
+        default: false
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install SDL2
+        run: brew install sdl2
+      - name: Build app bundle
+        run: make -f Makefile.pc -j$(sysctl -n hw.ncpu) app
+      - name: Verify the bundle is self-contained
+        run: |
+          bin="dist/Rhythm Tengoku.app/Contents/MacOS/rhythmtengoku"
+          test -x "$bin"
+          otool -L "$bin" | grep -q '@executable_path/../Frameworks/libSDL2' \
+            || { echo "SDL2 was not relocated into the bundle"; exit 1; }
+      - name: Smoke test
+        run: |
+          # No display on the runner, so drive the offscreen video/audio
+          # backends: this still exercises boot, the scene table, the
+          # beatscript VM and the mixer, which is where breakage shows up.
+          export SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy RTPC_TRACE=1 RTPC_AUTO=2
+          "dist/Rhythm Tengoku.app/Contents/MacOS/rhythmtengoku" > run.log 2>&1 &
+          pid=$!
+          sleep 40
+          kill $pid 2>/dev/null || true
+          grep -q '\[CRASH\]' run.log && { echo "crashed:"; cat run.log; exit 1; }
+          scenes=$(grep -c '\[SCENE\]' run.log || true)
+          echo "scene transitions: $scenes"
+          test "$scenes" -ge 5 || { echo "did not get past boot"; cat run.log; exit 1; }
+      - uses: actions/upload-artifact@v4
+        if: inputs.upload
+        with:
+          name: rhythmtengoku-macos
+          path: dist/Rhythm Tengoku.app
+
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            make
+            python
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-SDL2
+            mingw-w64-x86_64-pkg-config
+      - name: Build
+        # Built natively here rather than cross-compiled, so CC and the SDL2
+        # flags are overridden; everything else in the win branch applies.
+        run: |
+          make -f Makefile.pc PLATFORM=win -j$(nproc) \
+            CC=gcc LD=gcc \
+            SDL2_CFLAGS="$(sdl2-config --cflags)" \
+            SDL2_LIBS="$(sdl2-config --libs)"
+      - name: Stage dist
+        run: |
+          mkdir -p dist/windows
+          cp build_win/rhythmtengoku.exe dist/windows/
+          cp /mingw64/bin/SDL2.dll dist/windows/
+      - name: Smoke test
+        run: |
+          export SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy RTPC_TRACE=1 RTPC_AUTO=2
+          ./dist/windows/rhythmtengoku.exe > run.log 2>&1 &
+          pid=$!
+          sleep 40
+          kill $pid 2>/dev/null || true
+          grep -q '\[CRASH\]' run.log && { echo "crashed:"; cat run.log; exit 1; }
+          scenes=$(grep -c '\[SCENE\]' run.log || true)
+          echo "scene transitions: $scenes"
+          test "$scenes" -ge 5 || { echo "did not get past boot"; cat run.log; exit 1; }
+      - uses: actions/upload-artifact@v4
+        if: inputs.upload
+        with:
+          name: rhythmtengoku-windows
+          path: dist/windows

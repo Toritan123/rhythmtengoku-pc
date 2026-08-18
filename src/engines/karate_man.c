@@ -1,5 +1,4 @@
 #include "engines/karate_man.h"
-
 #include "syscall.h"
 #include "src/code_08001360.h"
 #include "src/code_08007468.h"
@@ -319,6 +318,7 @@ u32 karate_cue_update(struct Cue *cue, struct KarateManCue *data, u32 runningTim
     struct KarateJoe *joe = &gKarateMan->joe;
     u16 temp;
     u32 zero;
+
 
     if (runningTime > ticks_to_frames(0x78)) {
         return TRUE; // Cue is over

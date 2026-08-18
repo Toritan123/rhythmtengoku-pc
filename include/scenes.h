@@ -9,6 +9,7 @@
 #include "global.h"
 #include "lib_agb.h"
 #include "data/beatscript_scene_data.h"
+#include "src/bitmap_font.h"
 
 
 // Scene Static Info

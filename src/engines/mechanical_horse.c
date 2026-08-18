@@ -1,6 +1,8 @@
 #include "engines/mechanical_horse.h"
 
+#ifndef PLATFORM_PC
 asm(".include \"include/gba.inc\""); // Temporary
+#endif
 
 // For readability.
 #define gMechanicalHorse ((struct MechanicalHorseEngineData *)gCurrentEngineData)
@@ -48,9 +50,13 @@ void func_08040d10() {
     gMechanicalHorse->unk2fe = gMechanicalHorse->unk2ff;
 }
 
+#ifndef PLATFORM_PC
 #include "asm/engines/mechanical_horse/asm_08040d90.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/mechanical_horse/asm_08040dd8.s"
+#endif
 
 void func_08040e80() {
     if (gMechanicalHorse->unk300 == 0 && gMechanicalHorse->unk306 >= 0) {
@@ -59,7 +65,9 @@ void func_08040e80() {
     func_08040c58();
 }
 
+#ifndef PLATFORM_PC
 #include "asm/engines/mechanical_horse/asm_08040eb0.s"
+#endif
 
 void mechanical_horse_init_gfx3() {
     func_0800c604(0);
@@ -214,7 +222,9 @@ void func_08041444(int arg0) {
 
 }
 
+#ifndef PLATFORM_PC
 #include "asm/engines/mechanical_horse/asm_080415c0.s"
+#endif
 
 // prints specified text?
 void func_080416cc(const char* string) {
@@ -237,9 +247,13 @@ void func_08041744(u32 arg0) {
     }
 }
 
+#ifndef PLATFORM_PC
 #include "asm/engines/mechanical_horse/asm_080417ac.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/mechanical_horse/asm_0804188c.s"
+#endif
 
 u8 func_08041940(void) {
     u8 i;
@@ -326,20 +340,34 @@ void func_08041970(void) {
     }
 }
 
+#ifndef PLATFORM_PC
 #include "asm/engines/mechanical_horse/asm_08041c98.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/mechanical_horse/asm_08041ddc.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/mechanical_horse/asm_08041f80.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/mechanical_horse/asm_08042020.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/mechanical_horse/asm_080420c0.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/mechanical_horse/asm_0804231c.s"
+#endif
 
 // https://decomp.me/scratch/58myn
+#ifndef PLATFORM_PC
 #include "asm/engines/mechanical_horse/asm_08042438.s"
+#endif
 
 void func_0804249c(void) {
     u32 temp = gMechanicalHorse->unk2e4;
@@ -360,9 +388,13 @@ void func_080424f0(u16 unk) {
     gMechanicalHorse->unk2ee = unk;
 }
 
+#ifndef PLATFORM_PC
 #include "asm/engines/mechanical_horse/asm_08042504.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/mechanical_horse/asm_08042548.s"
+#endif
 
 void mechanical_horse_engine_update() {
     func_080420c0();
@@ -379,9 +411,13 @@ void mechanical_horse_engine_update() {
 void mechanical_horse_engine_stop() {
 }
 
+#ifndef PLATFORM_PC
 #include "asm/engines/mechanical_horse/asm_08042758.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/engines/mechanical_horse/asm_080427b0.s"
+#endif
 
 void mechanical_horse_cue_despawn(struct Cue *cue, struct MechanicalHorseCue *data) {
 }

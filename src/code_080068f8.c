@@ -1,4 +1,5 @@
 #include "code_080068f8.h"
+#include "src/affine_param.h"
 #include "code_08003b28.h"
 #include "code_08005e54.h"
 #include "memory_heap.h"
@@ -6,7 +7,9 @@
 
 // Can be better split
 
+#ifndef PLATFORM_PC
 asm(".include \"include/gba.inc\"");//Temporary
+#endif
 
 #define PALETTE_RAM ((volatile u16 *)(PaletteRAMBase))
 
@@ -352,7 +355,6 @@ void func_08006e88(void) {
     volatile u32 dummy1, dummy2;
     u16 *srcPalette;
     s32 offset;
-
     if (!D_03004b10.updateDisplay) return;
 
     DmaCopy32(3, D_03004b10.BG_CNT, &REG_BG0CNT, 24);
@@ -442,7 +444,9 @@ void func_0800714c() {
 }
 
 
+#ifndef PLATFORM_PC
 #include "asm/code_080068f8/asm_0800716c.s"
+#endif
 
 
 // Update Palette Transition

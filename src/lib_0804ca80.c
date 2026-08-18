@@ -1,6 +1,8 @@
 #include "lib_0804ca80.h"
 
+#ifndef PLATFORM_PC
 asm(".include \"include/gba.inc\"");//Temporary
+#endif
 
 
 // Set Functions for Memory Allocation & Deallocation
@@ -459,6 +461,9 @@ s16 sprite_create(struct SpriteHandler *handler, struct Animation *anim, s8 star
     sprite->xOrigin = &D_08bd0cac;
     sprite->memID = handler->memID;
     sprite->animationSpeed = INT_TO_FIXED(1.0);
+#ifdef PLATFORM_PC
+    sprite->affineParams = NULL; // slot may be recycled with a stale pointer
+#endif
     sprite_update_z_link(handler, id);
     sprite_set_anim_cel(handler, id, startCel);
     sprite->visible = ((loopType & 0x8000) == 0);
@@ -499,6 +504,9 @@ s16 sprite_create_w_attr(struct SpriteHandler *handler, struct Animation *anim, 
     sprite->xOrigin = &D_08bd0cac;
     sprite->memID = handler->memID;
     sprite->animationSpeed = INT_TO_FIXED(1.0);
+#ifdef PLATFORM_PC
+    sprite->affineParams = NULL; // slot may be recycled with a stale pointer
+#endif
     sprite_update_z_link(handler, id);
     sprite_set_anim_cel(handler, id, startCel);
     sprite->visible = ((loopType & 0x8000) == 0);
@@ -995,11 +1003,11 @@ u32 sprite_get_cel_dimensions(u16 *cel, u32 requestedDataType) {
             if (y < topEdge) {
                 topEdge = y;
             }
-            (s32)dimensions = y + dimensions->height; // ???????????
-            if ((s32)dimensions > bottomEdge) {
-                bottomEdge = (s32)dimensions;
-            }
-        
+            { s32 _tmp = y + dimensions->height; // ???????????
+            if (_tmp > bottomEdge) {
+                bottomEdge = _tmp;
+            } }
+
             cel += 3;
             i--;
         } while (i != 0);
@@ -1027,9 +1035,11 @@ u32 sprite_get_cel_dimensions(u16 *cel, u32 requestedDataType) {
 
 
 // Get Sprite Data
-s32 sprite_get_data(struct SpriteHandler *handler, s16 id, u32 requestedDataType) {
+// Returns intptr_t: some data types (SPRITE_DATA_ANIMATION, _CALLBACK_FUNC,
+// _ORIGIN_X/_Y) are pointers, which don't fit in 32 bits on PC.
+intptr_t sprite_get_data(struct SpriteHandler *handler, s16 id, u32 requestedDataType) {
     struct Sprite *sprite;
-    s32 output;
+    intptr_t output;
 
     D_03004428 = SPRITE_OPERATION_GET_DATA;
     if (sprite_is_invalid(handler, id)) {
@@ -1060,7 +1070,7 @@ s32 sprite_get_data(struct SpriteHandler *handler, s16 id, u32 requestedDataType
             output = sprite->zDepth;
             break;
         case SPRITE_DATA_ANIMATION:
-            output = (u32)sprite->animation;
+            output = (intptr_t)sprite->animation;
             break;
         case SPRITE_DATA_CURRENT_CEL_TIME_LEFT:
             output = (s8)FIXED_TO_INT(sprite->currentCelTime);
@@ -1081,7 +1091,7 @@ s32 sprite_get_data(struct SpriteHandler *handler, s16 id, u32 requestedDataType
             output = sprite->baseTile;
             break;
         case SPRITE_DATA_CALLBACK_FUNC:
-            output = (u32)sprite->callbackFunc;
+            output = (intptr_t)sprite->callbackFunc;
             break;
         case SPRITE_DATA_CALLBACK_ARG:
             output = sprite->callbackArg;
@@ -1090,10 +1100,10 @@ s32 sprite_get_data(struct SpriteHandler *handler, s16 id, u32 requestedDataType
             output = sprite->memID;
             break;
         case SPRITE_DATA_ORIGIN_X:
-            output = (u32)sprite->xOrigin;
+            output = (intptr_t)sprite->xOrigin;
             break;
         case SPRITE_DATA_ORIGIN_Y:
-            output = (u32)sprite->yOrigin;
+            output = (intptr_t)sprite->yOrigin;
             break;
         case SPRITE_DATA_ANIM_SPEED:
             output = sprite->animationSpeed;
@@ -1296,7 +1306,9 @@ void sprite_handler_set_global_x_y(struct SpriteHandler *handler, u16 x, u16 y) 
 
 
 // Update Sprite Library (https://decomp.me/scratch/THxdI)
+#ifndef PLATFORM_PC
 #include "asm/lib_0804ca80/asm_0804e1c8.s"
+#endif
 
 
 // Get Total Active Sprites

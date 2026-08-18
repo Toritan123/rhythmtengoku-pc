@@ -2,7 +2,9 @@
 #include "sound.h"
 #include "midi.h"
 
+#ifndef PLATFORM_PC
 asm(".include \"include/gba.inc\"");//Temporary
+#endif
 
 
 /* AUDIO LIBRARY - DIRECTSOUND */
@@ -179,7 +181,9 @@ void midi_sampler_set_enable_eq(u32 id, u32 enable) {
 
 
 // Initialise DirectSound (https://decomp.me/scratch/ohUd1)
+#ifndef PLATFORM_PC
 #include "asm/lib_midi/asm_08049490.s"
+#endif
 
 
 // Update DirectSound (https://decomp.me/scratch/jRyYQ)

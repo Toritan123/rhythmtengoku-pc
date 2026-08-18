@@ -8,7 +8,9 @@
 #include "src/scenes/gameplay.h"
 #include "src/lib_0804ca80.h"
 
+#ifndef PLATFORM_PC
 asm(".include \"include/gba.inc\""); // Temporary
+#endif
 
 // For readability.
 #define gNightWalk ((struct NightWalkEngineData *)gCurrentEngineData)
@@ -317,6 +319,7 @@ s32 night_walk_scroll_stars(void) {
         }
         sprite_set_x_y(gSpriteHandler, star->sprite, FIXED_TO_INT(star->x), FIXED_TO_INT(star->y));
     }
+    return 0;
 }
 
 
@@ -543,7 +546,9 @@ void play_drumtech_seq_from_beatscript(s32 args) {
 }
 
 
+#ifndef PLATFORM_PC
 #include "asm/engines/night_walk/asm_0802ab7c.s"
+#endif
 
 
 // Set DrumTech Bank

@@ -1,5 +1,9 @@
 #include "global.h"
+#ifdef PLATFORM_PC
+#include <stdio.h>
+#endif
 #include "riq_main_scene.h"
+#include "src/affine_param.h"
 
 #include "src/main.h"
 #include "src/code_08001360.h"
@@ -63,6 +67,7 @@ u32 func_0801d8d8(void) {
             }
             /* Otherwise, update Script. */
             update_active_beatscript_scene();
+        
             if (beatscript_scene_is_inactive()) {
                 func_0801d98c();
                 return TRUE;
@@ -134,6 +139,7 @@ void func_0801d98c(void) {
 
 
 u32 func_0801d9cc(void) {
+    return 0;
 }
 
 
@@ -302,7 +308,7 @@ struct DebugText *create_new_dev_text(u16 memID, u32 layer, u16 *arg2, u32 tiles
 
 
 // [D_089dd908] ?
-char D_089dd908[] = "QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ";
+char D_089dd908[] = "ï¿½Qï¿½Qï¿½Qï¿½Qï¿½Qï¿½Qï¿½Qï¿½Qï¿½Qï¿½Qï¿½Qï¿½Qï¿½Qï¿½Qï¿½Qï¿½Qï¿½Qï¿½Qï¿½Qï¿½Qï¿½Qï¿½Qï¿½Qï¿½Qï¿½Qï¿½Qï¿½Qï¿½Qï¿½Qï¿½Qï¿½Qï¿½Q";
 
 // Print DebugText object.
 void dev_text_print(struct DebugText *debugText, const char *string) {
@@ -317,7 +323,7 @@ void dev_text_print(struct DebugText *debugText, const char *string) {
     debugText->xOffset = -1;
 
     bgMap = debugText->cursorMap;
-    bmp_font_bg_print_text(debugText->bgFont, bgMap, 32, "Q", debugText->palette);
+    bmp_font_bg_print_text(debugText->bgFont, bgMap, 32, "ï¿½Q", debugText->palette);
     t1 = bgMap[0];
     t2 = bgMap[32];
     bgMap++;

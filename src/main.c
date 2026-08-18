@@ -1,8 +1,15 @@
 #include "main.h"
+#ifdef PLATFORM_PC
+#include <stdio.h>
+#include <stdlib.h>
+#endif
 #include "memory.h"
 #include "code_08003b28.h"
 #include "bitmap_font.h"
 #include "memory_heap.h"
+#ifdef PLATFORM_PC
+#include <stdlib.h>
+#endif
 
 
 static struct Scene *gCurrentScene;
@@ -10,7 +17,7 @@ static struct Scene *gNextScene;
 static struct SceneTransition gSceneTrans[10];
 static u8 D_03000080;
 static struct Scene *D_03000084;
-static s32 D_03000088;
+static intptr_t D_03000088;
 
 
 // Default Interrupt Procedure (Do Nothing)
@@ -65,27 +72,33 @@ void func_08000224(void) {
 
 
 void agb_main(void) {
+#ifndef PLATFORM_PC
 	REG_WAITCNT = (WAITCNT_SRAM_8
 		| WAITCNT_WS0_N_3 | WAITCNT_WS0_S_1
 		| WAITCNT_WS1_N_3 | WAITCNT_WS1_S_1
 		| WAITCNT_WS2_N_3 | WAITCNT_WS2_S_1
 		| WAITCNT_PHI_OUT_NONE | WAITCNT_PREFETCH_ENABLE | WAITCNT_TYPE_GBA);
+#endif
 
     // Clear RAM
 	DmaFill32(3, 0, ExternWorkRAMBase, 0x40000);
 	DmaFill32(3, 0, InternWorkRAMBase, 0x7E00);
 
-    // Set up interrupt handler
+#ifndef PLATFORM_PC
+    // Set up interrupt handler (GBA only – PC has no hardware interrupts)
 	DmaCopy32(3, &interrupt_handler_rom, &interrupt_handler, 0x200);
 	DmaCopy32(3, &interrupt_handler_jtbl_rom, &interrupt_handler_jtbl, 0x38);
 	REG_INTERRUPT = &interrupt_handler;
+#endif
 
     // Clear VRAM
 	DmaFill32(3, 0, VRAMBase, 0x18000);
 	*(u16 *)PaletteRAMBase = 0x7FFF;
 
 	REG_DISPCNT = 0;
+#ifndef PLATFORM_PC
 	REG_IME = 0;
+#endif
 
 	D_03004498 = FALSE;
 
@@ -96,10 +109,12 @@ void agb_main(void) {
 	midi_player_set_reverb(35, 2, 2, 4);
 	set_sound_mode(D_030046a8->data.unk294[8]); // Set DirectSound Mode (Stereo/Mono)
 
+#ifndef PLATFORM_PC
 	REG_DISPSTAT = 8;
 	REG_IE = (INTERRUPT_CART | INTERRUPT_DMA2 | INTERRUPT_TIMER3 | INTERRUPT_VBLANK);
 	REG_IF = 0xFFFF;
 	REG_IME = 1;
+#endif
 
 	func_0801d860(FALSE); // Init. Script Operator (Init. Static Variables)
 	init_scenes(&scene_warning);
@@ -177,6 +192,9 @@ void process_scenes(void) {
 
 		gCurrentScene = gNextScene;
 		gNextScene = NULL;
+#ifdef PLATFORM_PC
+		if (getenv("RTPC_TRACE")) { extern int gPcFrameNo; fprintf(stderr, "[SCENE] f=%d enter %p mem=%d\n", gPcFrameNo, (void*)gCurrentScene, (int)gCurrentScene->requiredMemory); fflush(stderr); }
+#endif
 		D_03000080 = FALSE;
 
 		if (gCurrentScene->requiredMemory != 0) {
@@ -243,7 +261,7 @@ struct Scene *get_scene_trans_target(struct Scene *scene) {
 
 
 // Get Transition Variable
-s32 get_scene_trans_var(struct Scene *scene) {
+intptr_t get_scene_trans_var(struct Scene *scene) {
 	struct SceneTransition *transData = get_scene_trans(scene);
 
 	if (transData == NULL) {
@@ -261,7 +279,7 @@ struct Scene *get_current_scene_trans_target(void) {
 
 
 // Get Transition Variable for Current
-s32 get_current_scene_trans_var(void) {
+intptr_t get_current_scene_trans_var(void) {
 	return get_scene_trans_var(gCurrentScene);
 }
 
@@ -316,7 +334,7 @@ void set_scene_trans_target(struct Scene *scene, struct Scene *target) {
 
 
 // Set Transition Variable
-void set_scene_trans_var(struct Scene *scene, s32 variable) {
+void set_scene_trans_var(struct Scene *scene, intptr_t variable) {
 	struct SceneTransition *transData;
 
 	if (((transData = get_scene_trans(scene)) != NULL) || ((transData = alloc_scene_trans(scene)) != NULL)) {
@@ -326,7 +344,7 @@ void set_scene_trans_var(struct Scene *scene, s32 variable) {
 
 
 // Set ? Scene Transition
-void func_080006f0(struct Scene *target, s32 variable) {
+void func_080006f0(struct Scene *target, intptr_t variable) {
 	D_03000080 = TRUE;
 	D_03000084 = target;
 	D_03000088 = variable;

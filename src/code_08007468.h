@@ -62,10 +62,12 @@ extern void interp_screen_window_size(u16 memID, u32 window, u32 duration,
                                         s32 targetX1, s32 targetY1, s32 targetX2, s32 targetY2);
 
 /* STRING */
+#ifndef PLATFORM_PC
 extern char *strncpy(char *s1, const char *s2, u32 len);
 extern char *strcat(char *s1, const char *s2);
 extern char *strncat(char *s1, const char *s2, u32 len);
 extern s32 strncmp(const char *s1, const char *s2, u32 len);
+#endif
 extern void strint(char *s, u32 n);
 extern void strnint(char *s, u32 n, u32 len);
 extern void strintf(char *s, u32 n);

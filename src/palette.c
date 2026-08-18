@@ -14,6 +14,7 @@ enum PaletteInterpolatorSourceTypesEnum {
 };
 
 
+#ifndef PLATFORM_PC
 #define FAST_BLEND_PAL_TO_PAL_SIZE ((u32)fast_blend_pal_to_pal_end - (u32)fast_blend_pal_to_pal)
 #define FAST_BLEND_COL_TO_PAL_SIZE ((u32)fast_blend_col_to_pal_end - (u32)fast_blend_col_to_pal)
 
@@ -23,6 +24,40 @@ extern void fast_blend_col_to_pal(void *args);
 extern void *fast_blend_col_to_pal_end;
 
 static s32 fast_blend_pal_code[32]; // Palette Interpolation Function
+#endif // !PLATFORM_PC
+
+#ifdef PLATFORM_PC
+// PC implementations of the GBA ARM Thumb palette blend routines.
+// BGR555 format: bits [4:0]=R, [9:5]=G, [14:10]=B
+// prog is Q24.8: 0=all color/srcA, 256=all palette/srcB
+static void pc_fast_blend_col_to_pal(u16 color, const u16 *src, u16 *dst, u32 count, s32 prog) {
+    s32 rc = color & 0x1F;
+    s32 gc = (color >> 5) & 0x1F;
+    s32 bc = (color >> 10) & 0x1F;
+    u32 i;
+    for (i = 0; i < count; i++) {
+        s32 rp = src[i] & 0x1F;
+        s32 gp = (src[i] >> 5) & 0x1F;
+        s32 bp = (src[i] >> 10) & 0x1F;
+        s32 r  = rc + FIXED_POINT_MUL(rp - rc, prog);
+        s32 g  = gc + FIXED_POINT_MUL(gp - gc, prog);
+        s32 b  = bc + FIXED_POINT_MUL(bp - bc, prog);
+        dst[i] = (u16)(r | (g << 5) | (b << 10));
+    }
+}
+
+static void pc_fast_blend_pal_to_pal(const u16 *srcA, const u16 *srcB, u16 *dst, u32 count, s32 prog) {
+    u32 i;
+    for (i = 0; i < count; i++) {
+        s32 ra = srcA[i] & 0x1F, ga = (srcA[i] >> 5) & 0x1F, ba = (srcA[i] >> 10) & 0x1F;
+        s32 rb = srcB[i] & 0x1F, gb = (srcB[i] >> 5) & 0x1F, bb = (srcB[i] >> 10) & 0x1F;
+        s32 r  = ra + FIXED_POINT_MUL(rb - ra, prog);
+        s32 g  = ga + FIXED_POINT_MUL(gb - ga, prog);
+        s32 b  = ba + FIXED_POINT_MUL(bb - ba, prog);
+        dst[i] = (u16)(r | (g << 5) | (b << 10));
+    }
+}
+#endif // PLATFORM_PC
 
 
 // Stub
@@ -32,57 +67,99 @@ void func_08001a24_stub(void) {
 
 // Immediately Blend Palette (Array->Color)
 void fast_blend_pal_to_col(const u16 *sourceA, u32 valueB, u16 *outputDest, u32 totalColors, u24_8 progress) {
-    void (*interpolatePalette)() = (void *)(fast_blend_pal_code);
-    u32 args[5];
-
-    args[0] = (u32)(valueB);
-    args[1] = (u32)(sourceA);
-    args[2] = (u32)(outputDest);
-    args[3] = (u32)(totalColors);
-    args[4] = (u32)(INT_TO_FIXED(1.0) - progress);
-    dma3_set(fast_blend_col_to_pal, interpolatePalette, sizeof(fast_blend_pal_code), 0x20, 0x100);
-    interpolatePalette(args);
+#ifdef PLATFORM_PC
+    pc_fast_blend_col_to_pal((u16)valueB, sourceA, outputDest, totalColors, (s32)(INT_TO_FIXED(1.0) - progress));
+#else
+    {
+        void (*interpolatePalette)() = (void *)(fast_blend_pal_code);
+        u32 args[5];
+        args[0] = (u32)(valueB);
+        args[1] = (u32)(sourceA);
+        args[2] = (u32)(outputDest);
+        args[3] = (u32)(totalColors);
+        args[4] = (u32)(INT_TO_FIXED(1.0) - progress);
+        dma3_set(fast_blend_col_to_pal, interpolatePalette, sizeof(fast_blend_pal_code), 0x20, 0x100);
+        interpolatePalette(args);
+    }
+#endif
 }
 
 
 // Blend Palette with Interpolator
 void pal_interp_blend(struct PaletteInterpolator *task, u32 startIndex) {
-    void (*interpolatePalette)() = (void *)(fast_blend_pal_code);
     s32 runningTime = task->runningTime;
     s32 duration = task->duration;
     s24_8 progress = INT_TO_FIXED(runningTime) / duration;
-    u32 args[5];
 
     switch (task->sourceType) {
         case SOURCE_TYPE_PAL_PAL:
         case SOURCE_TYPE_PAL_PAL_2:
-            args[0] = (u32)(task->sourceA + startIndex);
-            args[1] = (u32)(task->sourceB + startIndex);
-            args[2] = (u32)(task->outputDest + startIndex);
-            args[3] = (u32)(task->totalPalettes * 16);
-            args[4] = (u32)(progress);
-            dma3_set(fast_blend_pal_to_pal, interpolatePalette, sizeof(fast_blend_pal_code), 0x20, 0x100);
-            interpolatePalette(args);
+#ifdef PLATFORM_PC
+            pc_fast_blend_pal_to_pal(
+                task->sourceA + startIndex,
+                task->sourceB + startIndex,
+                task->outputDest + startIndex,
+                task->totalPalettes * 16,
+                (s32)progress);
+#else
+            {
+                void (*interpolatePalette)() = (void *)(fast_blend_pal_code);
+                u32 args[5];
+                args[0] = (u32)(task->sourceA + startIndex);
+                args[1] = (u32)(task->sourceB + startIndex);
+                args[2] = (u32)(task->outputDest + startIndex);
+                args[3] = (u32)(task->totalPalettes * 16);
+                args[4] = (u32)(progress);
+                dma3_set(fast_blend_pal_to_pal, interpolatePalette, sizeof(fast_blend_pal_code), 0x20, 0x100);
+                interpolatePalette(args);
+            }
+#endif
             break;
 
         case SOURCE_TYPE_COL_PAL:
-            args[0] = (u32)(task->sourceA);
-            args[1] = (u32)(task->sourceB + startIndex);
-            args[2] = (u32)(task->outputDest + startIndex);
-            args[3] = (u32)(task->totalPalettes * 16);
-            args[4] = (u32)(progress);
-            dma3_set(fast_blend_col_to_pal, interpolatePalette, sizeof(fast_blend_pal_code), 0x20, 0x100);
-            interpolatePalette(args);
+#ifdef PLATFORM_PC
+            pc_fast_blend_col_to_pal(
+                (u16)(uintptr_t)task->sourceA,
+                task->sourceB + startIndex,
+                task->outputDest + startIndex,
+                task->totalPalettes * 16,
+                (s32)progress);
+#else
+            {
+                void (*interpolatePalette)() = (void *)(fast_blend_pal_code);
+                u32 args[5];
+                args[0] = (u32)(task->sourceA);
+                args[1] = (u32)(task->sourceB + startIndex);
+                args[2] = (u32)(task->outputDest + startIndex);
+                args[3] = (u32)(task->totalPalettes * 16);
+                args[4] = (u32)(progress);
+                dma3_set(fast_blend_col_to_pal, interpolatePalette, sizeof(fast_blend_pal_code), 0x20, 0x100);
+                interpolatePalette(args);
+            }
+#endif
             break;
 
         case SOURCE_TYPE_PAL_COL:
-            args[0] = (u32)(task->sourceB);
-            args[1] = (u32)(task->sourceA + startIndex);
-            args[2] = (u32)(task->outputDest + startIndex);
-            args[3] = (u32)(task->totalPalettes * 16);
-            args[4] = (u32)(INT_TO_FIXED(1.0) - progress);
-            dma3_set(fast_blend_col_to_pal, interpolatePalette, sizeof(fast_blend_pal_code), 0x20, 0x100);
-            interpolatePalette(args);
+#ifdef PLATFORM_PC
+            pc_fast_blend_col_to_pal(
+                (u16)(uintptr_t)task->sourceB,
+                task->sourceA + startIndex,
+                task->outputDest + startIndex,
+                task->totalPalettes * 16,
+                (s32)(INT_TO_FIXED(1.0) - progress));
+#else
+            {
+                void (*interpolatePalette)() = (void *)(fast_blend_pal_code);
+                u32 args[5];
+                args[0] = (u32)(task->sourceB);
+                args[1] = (u32)(task->sourceA + startIndex);
+                args[2] = (u32)(task->outputDest + startIndex);
+                args[3] = (u32)(task->totalPalettes * 16);
+                args[4] = (u32)(INT_TO_FIXED(1.0) - progress);
+                dma3_set(fast_blend_col_to_pal, interpolatePalette, sizeof(fast_blend_pal_code), 0x20, 0x100);
+                interpolatePalette(args);
+            }
+#endif
             // break;
     }
 }

@@ -30,9 +30,25 @@ extern u8 D_03004440; // Rumble Enabled
 
 extern s32 (*D_030064d4)(void); // Read Gyro Data Function?
 
+#ifdef PLATFORM_PC
+// These three hold cartridge GPIO addresses (GameROMBase + 0xC4/C6/C8) — the
+// rumble/gyro pak's registers.  A PC has no such hardware and the ROM address
+// is unmapped, so writing through them faults; the reset-button combo in
+// agb_main reaches func_08009548 -> the rumble write, which is why holding
+// A+B+START+SELECT together used to crash the game.  Redirect the writes to a
+// dummy word.  (The symbols cannot simply be given PC values: the same
+// auto-generated names are already defined as graphics constants in
+// graphics/gameplay/gameplay_unused_warioware_graphics.c, and the linker
+// merges them.)
+extern volatile u16 gPcGpioDummy[3];
+#define D_08bd0cc8 (&gPcGpioDummy[0])
+#define D_08bd0ccc (&gPcGpioDummy[1])
+#define D_08bd0cd0 (&gPcGpioDummy[2])
+#else
 extern volatile u16 *D_08bd0cc8; // GPIO Data Pointer
 extern volatile u16 *D_08bd0ccc; // GPIO Direction Pointer
 extern volatile u16 *D_08bd0cd0; // GPIO Control Pointer
+#endif
 extern u8 D_08bd0cd4[4];
 
 

@@ -85,3 +85,87 @@ When modding, it is recommended to compile the ROM in nonmatching mode in order 
 Now you are free to make any changes! After you make a change, run `make -j` to rebuild the ROM and see your changes in action. By default the `make` command will only rebuild changed files in order to save time when building. This can occasionally lead to dependency issues, so you can run `make clean` to force the repository to build from scratch to occasionally help with strange issues when building.
 
 If you have any other questions or concerns, join the [RHModding discord server](https://discord.com/invite/ps4rq53)!
+---
+
+## PC port
+
+This fork adds a native PC build of the game on top of the decompilation. It
+runs the decompiled C directly — there is no emulator and no ROM involved at
+run time; the GBA hardware layer (PPU, DMA, sound FIFO, key registers, BIOS
+calls) is reimplemented in `platform/` against SDL2.
+
+Building the GBA ROM is unaffected: `make` still works exactly as described
+above, and the PC port lives behind `PLATFORM_PC` so it never enters that build.
+
+### Building
+
+Requires SDL2 and a C compiler. devkitPro is **not** needed for the PC build.
+
+**macOS**
+
+```
+brew install sdl2
+make -f Makefile.pc app
+```
+
+This produces `dist/Rhythm Tengoku.app`. SDL2 (and, if Homebrew's `sdl2` is
+really `sdl2-compat`, the SDL3 it loads) is copied inside the bundle, so the
+app runs on a Mac without Homebrew installed.
+
+**Windows**
+
+Natively under MSYS2 (MINGW64 shell):
+
+```
+pacman -S make python mingw-w64-x86_64-gcc mingw-w64-x86_64-SDL2
+make -f Makefile.pc PLATFORM=win CC=gcc LD=gcc \
+     SDL2_CFLAGS="$(sdl2-config --cflags)" SDL2_LIBS="$(sdl2-config --libs)"
+```
+
+Or cross-compiled from macOS/Linux with mingw-w64, against the SDL2 mingw
+development package unpacked into `third_party/SDL2-mingw`:
+
+```
+make -f Makefile.pc win-dist
+```
+
+`dist/windows/` then holds `rhythmtengoku.exe` and `SDL2.dll`.
+
+### Controls
+
+| Key | GBA |
+| --- | --- |
+| K / J | A / B |
+| W A S D or arrows | D-pad |
+| Q / E | L / R |
+| Enter | START |
+| Backspace | SELECT |
+| Esc | quit |
+
+A+B+START+SELECT together is the GBA soft-reset combo, as on hardware.
+
+### Diagnostics
+
+All are environment variables, off by default and free when unset.
+
+| Variable | Effect |
+| --- | --- |
+| `RTPC_TRACE=1` | log scene transitions |
+| `RTPC_BS=1` | log every beatscript command, with the callee's symbol name |
+| `RTPC_PROF=1\|2` | per-frame timing breakdown (`2` logs every frame) |
+| `RTPC_AUTO=1\|2\|3` | autopilot: tap A / also skip tutorials / mash everything |
+| `RTPC_SHOTS=N` | write a BMP screenshot every N frames |
+| `RTPC_AUDIO_DUMP=f.wav` | record the audio output for offline analysis |
+| `RTPC_AUDIO_STATS=1` | log audio device format, queue depth, underruns |
+| `RTPC_AUDIO_BUF=N` | SDL device buffer size in frames (default 512) |
+| `RTPC_AUDIO_TARGET=ms` | target output queue depth (default 30 ms) |
+| `RTPC_AUDIO_8BIT=1` | use the GBA's 8-bit DAC output instead of the high-resolution tap |
+| `RTPC_MIX_MULT=2\|3\|4` | run the MIDI mixer above the GBA's 13379 Hz |
+
+### Status
+
+Playable through Karate Man to the results screen. Most other scenes reach
+their engine but are not verified end to end. `tools/bs2c.py` translates the
+`.bs` scene scripts into C so scenes use their real scripts rather than
+hand-written stand-ins; 135 of them parse, and the ones not yet compiled into
+the build are the remaining work.

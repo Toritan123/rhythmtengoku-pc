@@ -20,8 +20,10 @@ static s32 math_sqrt_code[120];
 
 // Init. sqrt()
 void init_math_sqrt(void) {
+#ifndef PLATFORM_PC
     DmaCopy32(3, math_sqrt_rom, math_sqrt_code, FUNC_SQRT_SIZE);
     math_sqrt = (void *)math_sqrt_code;
+#endif
 }
 
 

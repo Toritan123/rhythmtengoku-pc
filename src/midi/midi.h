@@ -203,7 +203,13 @@ extern u8 midi_direct_player_tempo;
 /* ASSEMBLY */
 
 typedef void (*ThumbFunc)();
-#define ALIGN_THUMB_FUNC(x) (ThumbFunc)((u32)&x|1)
+/* On GBA: take address of IWRAM code blob and set Thumb bit.
+ * On PC:  the symbol is a function-pointer variable; just use its value. */
+#ifdef PLATFORM_PC
+#  define ALIGN_THUMB_FUNC(x) (ThumbFunc)(x)
+#else
+#  define ALIGN_THUMB_FUNC(x) (ThumbFunc)((u32)&x|1)
+#endif
 
 extern ThumbFunc midi_asm_init_mode;
 extern ThumbFunc midi_asm_read_pcm_accurate;

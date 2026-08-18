@@ -1,4 +1,8 @@
 #include "task_pool.h"
+#ifdef PLATFORM_PC
+#include <stdio.h>
+#include <stdint.h>
+#endif
 
 #define TASK_POOL_DEFAULT_ID -1
 #define TASK_POOL_SIZE 48
@@ -112,6 +116,19 @@ s32 start_new_task(u16 memID, const struct TaskMethods *methods, void *inputs, T
     }
 
     if (methods->start != NULL) {
+#ifdef PLATFORM_PC
+        // Validate methods pointer before calling — detect corruption
+        uintptr_t start_addr = (uintptr_t)methods->start;
+        if (start_addr < 0x100000000ULL || start_addr > 0x200000000ULL) {
+            fprintf(stderr, "[TASK] CORRUPT methods->start=%p methods=%p\n",
+                    (void*)methods->start, (void*)methods);
+            // print first 4 words of the methods struct for diagnosis
+            const uintptr_t *w = (const uintptr_t*)methods;
+            fprintf(stderr, "[TASK] methods[0..3]=%016lx %016lx %016lx %016lx\n",
+                    w[0], w[1], w[2], w[3]);
+            return TASK_POOL_DEFAULT_ID;
+        }
+#endif
         info = methods->start(inputs);
     } else {
         info = NULL;

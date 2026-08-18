@@ -1,5 +1,6 @@
 #include "global.h"
 #include "src/code_08007468.h"
+#include "src/affine_param.h"
 #include "src/code_08003b28.h"
 #include "src/bitmap_font.h"
 #include "src/memory_heap.h"
@@ -7,7 +8,9 @@
 
 // Can be better split
 
+#ifndef PLATFORM_PC
 asm(".include \"include/gba.inc\"");//Temporary
+#endif
 
 
 /* GRAPHICS UTIL */
@@ -360,14 +363,20 @@ static s32 fast_udivsi3_code[136];
 
 // Init.
 void init_fast_udivsi3(void) {
+#ifndef PLATFORM_PC
     DmaCopy32(3, fast_udivsi3_rom, fast_udivsi3_code, FAST_UDIVSI3_SIZE);
     fast_udivsi3 = (void *)fast_udivsi3_code;
+#endif
 }
 
 
 // Divides two signed integers using a fast algorithm contained in IWRAM.
 // Much quicker than the versions contained in libc and libagbsyscall.
 s32 fast_divsi3(s32 dividend, s32 divisor) {
+#ifdef PLATFORM_PC
+    if (divisor == 0) return 0;
+    return dividend / divisor;
+#else
     u32 quotient;
     u32 isNegative = FALSE;
 
@@ -383,6 +392,7 @@ s32 fast_divsi3(s32 dividend, s32 divisor) {
 
     quotient = fast_udivsi3(dividend, divisor);
     return isNegative ? -quotient : quotient;
+#endif
 }
 
 
@@ -731,9 +741,10 @@ void interp_screen_window_size(u16 memID, u32 window, u32 duration,
 /* STRING */
 
 
-extern char D_08936c64[]; // "?¿½O?¿½P?¿½Q?¿½R?¿½S?¿½T?¿½U?¿½V?¿½W?¿½X"
+extern char D_08936c64[]; // "?ï¿½ï¿½O?ï¿½ï¿½P?ï¿½ï¿½Q?ï¿½ï¿½R?ï¿½ï¿½S?ï¿½ï¿½T?ï¿½ï¿½U?ï¿½ï¿½V?ï¿½ï¿½W?ï¿½ï¿½X"
 
 
+#ifndef PLATFORM_PC
 // Copy Substring
 char *strncpy(char *s1, const char *s2, u32 len) {
     char *s = s1;
@@ -798,6 +809,7 @@ s32 strncmp(const char *s1, const char *s2, u32 len) {
 
     return 0;
 }
+#endif // !PLATFORM_PC
 
 
 // Integer to String (Halfwidth)
@@ -1060,27 +1072,47 @@ u32 decompress_gfx_resume(struct GFXDecompressProgress *progress) {
     return decompress_gfx(progress);
 }
 
+#ifndef PLATFORM_PC
 #include "asm/code_08007468/asm_08008608.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/code_08007468/asm_0800861c.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/code_08007468/asm_08008628.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/code_08007468/asm_08008658.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/code_08007468/asm_0800869c.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/code_08007468/asm_080086c4.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/code_08007468/asm_08008720.s"
+#endif
 
 // D_08936c9c function 1
+#ifndef PLATFORM_PC
 #include "asm/code_08007468/asm_0800873c.s"
+#endif
 
 // D_08936c9c function 2
+#ifndef PLATFORM_PC
 #include "asm/code_08007468/asm_08008758.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/code_08007468/asm_080087b4.s"
+#endif
 
 
 /* ? */
@@ -1098,21 +1130,37 @@ s32 clamp_int32(s32 var, s32 min, s32 max) {
 }
 
 
+#ifndef PLATFORM_PC
 #include "asm/code_08007468/asm_080087e8.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/code_08007468/asm_08008910.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/code_08007468/asm_08008938.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/code_08007468/asm_08008968.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/code_08007468/asm_08008990.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/code_08007468/asm_080089c0.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/code_08007468/asm_08008a70.s"
+#endif
 
+#ifndef PLATFORM_PC
 #include "asm/code_08007468/asm_08008ab8.s"
+#endif
 
 void func_08008b00(u32 unused_arg0, u32 unused_arg1, s16 arg2, s24_8 arg3, s24_8 arg4,
     s16 arg5, s24_8 arg6, s24_8 arg7, u16 arg8,

@@ -1,4 +1,5 @@
 #include "affine_sprite.h"
+#include "src/affine_param.h"
 #include "code_08001360.h"
 #include "code_08003b28.h"
 #include "memory_heap.h"
@@ -173,7 +174,8 @@ void affine_sprite_set_param_id(struct AffineSprite *affineData, u32 setIndex) {
         }
     } else if (!setIndex) {
         if (affineData->affineID >= 0) {
-            func_080021b8();
+            // GBA: called with no args — r0 happened to still hold affineID.
+            func_080021b8(affineData->affineID);
             affineData->affineID = -1;
             assign_sprite_affine_param(affineData->sprite, -1);
         }
@@ -492,7 +494,7 @@ void affine_sprite_set_base_tile(struct AffineSprite *affineData, u32 baseTile) 
 // Get Base Sprite X
 u32 affine_sprite_get_base_sprite_x(struct AffineSprite *affineData) {
     if (affineData == NULL) {
-        return;
+        return 0;
     }
 
     return sprite_get_data(gSpriteHandler, affineData->sprite, 4);
@@ -502,7 +504,7 @@ u32 affine_sprite_get_base_sprite_x(struct AffineSprite *affineData) {
 // Get Base Sprite Y
 u32 affine_sprite_get_base_sprite_y(struct AffineSprite *affineData) {
     if (affineData == NULL) {
-        return;
+        return 0;
     }
 
     return sprite_get_data(gSpriteHandler, affineData->sprite, 5);
@@ -512,7 +514,7 @@ u32 affine_sprite_get_base_sprite_y(struct AffineSprite *affineData) {
 // Get Base Sprite Z-Depth (Layer)
 u32 affine_sprite_get_base_sprite_z(struct AffineSprite *affineData) {
     if (affineData == NULL) {
-        return;
+        return 0;
     }
 
     return sprite_get_data(gSpriteHandler, affineData->sprite, 6);
@@ -542,7 +544,7 @@ void affine_sprite_set_anim_speed(struct AffineSprite *affineData, u8_8 speed) {
 // Get Current Animation Cel
 s8 affine_sprite_get_anim_cel(struct AffineSprite *affineData) {
     if (affineData == NULL) {
-        return;
+        return 0;
     }
 
     return sprite_get_anim_cel(gSpriteHandler, affineData->sprite);
@@ -552,7 +554,7 @@ s8 affine_sprite_get_anim_cel(struct AffineSprite *affineData) {
 // Get Current Animation Progress
 u8 affine_sprite_get_anim_progress(struct AffineSprite *affineData) {
     if (affineData == NULL) {
-        return;
+        return 0;
     }
 
     return sprite_get_anim_progress(gSpriteHandler, affineData->sprite);
@@ -612,7 +614,7 @@ void affine_sprite_set_callback_cel(struct AffineSprite *affineData, s8 arg) {
 // Get Total Animation Cels
 u32 affine_sprite_get_total_cels(struct AffineSprite *affineData) {
     if (affineData == NULL) {
-        return;
+        return 0;
     }
 
     return sprite_get_data(gSpriteHandler, affineData->sprite, 2);

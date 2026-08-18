@@ -1,5 +1,7 @@
 #pragma once
 
+#ifndef PLATFORM_PC
+
 #define BIOSROMBase		0x00000000 // To 0x00004000 (16kb)
 #define ExternWorkRAMBase	0x02000000 // To 0x02040000 (256kb)
 #define InternWorkRAMBase	0x03000000 // To 0x03008000 (32kb)
@@ -34,3 +36,23 @@
 #include "include/gba/gba_timer_regs.h"
 #include "include/gba/gba_sound_regs.h"
 #include "include/gba/macros.h"
+
+#else // PLATFORM_PC
+
+// On PC: base addresses come from our emulated GBA memory arrays.
+// The concrete definitions live in platform/gba_mem.h which is included
+// at the top of each translation unit via the compiler -include flag.
+// Sub-headers that define REG_* still need to be pulled in so the
+// register constants are visible; the address macros they reference
+// are already overridden by gba_mem.h.
+#include <stdint.h>
+#include "platform/gba_mem.h"
+#include "include/gba/gba_graphics_regs.h"
+#include "include/gba/gba_dma_regs.h"
+#include "include/gba/gba_input_regs.h"
+#include "include/gba/gba_interrupt_regs.h"
+#include "include/gba/gba_timer_regs.h"
+#include "include/gba/gba_sound_regs.h"
+#include "include/gba/macros.h"
+
+#endif // PLATFORM_PC
