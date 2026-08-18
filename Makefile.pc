@@ -42,10 +42,16 @@ else
   LD      := clang
   BUILD   := build_pc
   TARGET  := $(BUILD)/rhythmtengoku_pc
-  ARCHFLAGS := -arch x86_64
+  # Match the architecture of the SDL2 that is actually installed rather than
+  # hardcoding one.  A hardcoded -arch x86_64 breaks a runner whose Homebrew is
+  # arm64; dropping the flag entirely breaks a machine running Intel Homebrew
+  # under Rosetta.  Probing the library is right in both cases.
+  SDL2_PREFIX := $(shell sdl2-config --prefix 2>/dev/null)
+  SDL2_ARCH := $(shell lipo -archs $(SDL2_PREFIX)/lib/libSDL2.dylib 2>/dev/null | awk '{print $$1}')
+  ARCHFLAGS := $(if $(SDL2_ARCH),-arch $(SDL2_ARCH),)
   # Apple's assembler needs bin2s's Mach-O dialect; everything else takes GNU.
   BIN2SFLAGS := --apple-llvm
-  SDL2_CFLAGS := $(shell sdl2-config --cflags)
+  SDL2_CFLAGS := $(shell sdl2-config --cflags) $(if $(SDL2_PREFIX),-I$(SDL2_PREFIX)/include,)
   SDL2_LIBS   := $(shell sdl2-config --libs)
   COMPATFLAGS :=
 endif
@@ -136,10 +142,14 @@ endif
 
 all: $(TARGET)
 
+# The object list is ~2100 paths, well past Windows' 32 KB command-line limit,
+# so the link died there with no diagnostic.  A linker response file keeps the
+# actual command short on every platform.
 $(TARGET): $(OBJS)
 	@echo "Linking $@"
 	@mkdir -p $(dir $@)
-	$(LD) $(OBJS) $(LDFLAGS) -o $@
+	@printf '%s\n' $(OBJS) > $(BUILD)/objects.rsp
+	$(LD) @$(BUILD)/objects.rsp $(LDFLAGS) -o $@
 
 $(BUILD)/%.o: %.c
 	@mkdir -p $(dir $@)
