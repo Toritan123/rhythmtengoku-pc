@@ -1,5 +1,9 @@
 #include "global.h"
 #include "code_08047e50.h"
+// Without this the gameplay_* helpers are implicitly declared as returning
+// int, which truncates the pointers this file parks in and retrieves from the
+// inter-engine variables.
+#include "src/scenes/gameplay.h"
 
 
 /* MISCELLANEOUS SCRIPT FUNCTIONS */
@@ -56,7 +60,7 @@ void remix7_start_last_remix1_bgm(void) {
 
     soundPlayer = play_sound_in_player(MUSIC_PLAYER_1, &Lesson1_seqData);
     set_soundplayer_speed(soundPlayer, INT_TO_FIXED(1.08984375));
-    gameplay_set_inter_engine_variable(0, (s32)soundPlayer);
+    gameplay_set_inter_engine_variable(0, (intptr_t)soundPlayer);
 }
 
 

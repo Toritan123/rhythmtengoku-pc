@@ -550,7 +550,7 @@ void gameplay_set_miss_punishment_duration(u32 duration) {
 
 
 // [func_08017758] Set Inter-Engine Variable
-void gameplay_set_inter_engine_variable(u32 i, s32 val) {
+void gameplay_set_inter_engine_variable(u32 i, intptr_t val) {
     if (i >= ARRAY_COUNT(gGameplay->interEngineVariableSpace)) {
         return;
     }
@@ -560,7 +560,7 @@ void gameplay_set_inter_engine_variable(u32 i, s32 val) {
 
 
 // [func_0801777c] Get Inter-Engine Variable
-s32 gameplay_get_inter_engine_variable(u32 i) {
+intptr_t gameplay_get_inter_engine_variable(u32 i) {
     if (i >= ARRAY_COUNT(gGameplay->interEngineVariableSpace)) {
         return 0;
     }

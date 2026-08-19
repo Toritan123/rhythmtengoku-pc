@@ -68,7 +68,10 @@ struct GameplaySceneData {
     s8  latenessRangeMax; // Input Timing Window Duration - Late, Max.
     u16 sfxTempo; // Assumed original tempo of any sound effect played.
     u16 skipTutorialButton; // Button filter for skipping tutorials.
-    s32 interEngineVariableSpace[64];
+    // Widened from s32: engines stash pointers here and read them back
+    // (remix7_start_last_remix1_bgm parks a SoundPlayer *), which a 32-bit
+    // slot truncates on a 64-bit host.
+    intptr_t interEngineVariableSpace[64];
     u8  dpadCannotOverlap;
     u8  dpadIsOpen;
     u8  dpadClosedTimer;
@@ -136,8 +139,8 @@ extern void gameplay_register_imperfect_input(void); // [func_0801765c] Register
 extern void gameplay_register_perfect_input(void); // [func_080176cc] Register Perfect Input
 extern s32  gameplay_run_engine_event_w_param(const struct GameEngine *engine, u32 function, intptr_t param); // [func_08017728] Run Game Engine Event (convenience method)
 extern void gameplay_set_miss_punishment_duration(u32 duration); // [func_08017744] Set Miss Punishment Interval
-extern void gameplay_set_inter_engine_variable(u32 i, s32 val); // [func_08017758] Set Inter-Engine Variable
-extern s32  gameplay_get_inter_engine_variable(u32 i); // [func_0801777c] Get Inter-Engine Variable
+extern void gameplay_set_inter_engine_variable(u32 i, intptr_t val); // [func_08017758] Set Inter-Engine Variable
+extern intptr_t gameplay_get_inter_engine_variable(u32 i); // [func_0801777c] Get Inter-Engine Variable
 extern void gameplay_prevent_dpad_overlap(u32 preventOverlap); // [func_080177a4] Set D-Pad Input Overlap Handling
 extern void gameplay_enable_mercy(u32 enable); // [func_080177c8] Enable Mercy
 extern void gameplay_set_mercy_count(u32 total); // [func_080177dc] Set Total Forgivable Misses
