@@ -698,9 +698,21 @@ u32 bmp_font_obj_update_multi_printer(struct BitmapFontOBJPrinter *info) {
         return TRUE;
     }
 
+    // GBA convention: bit 31 of a pointer means "this is a pointer to a
+    // pointer".  That works there because addresses fit in 32 bits, leaving
+    // the sign bit free.  On a 64-bit host (s32)p keeps only the low word, so
+    // whether this branch is taken depends on bit 31 of an arbitrary address.
+    // It happens to be clear for the addresses this build produces, but a
+    // different layout would send it off to dereference garbage.
+    //
+    // Nothing in the decompiled data sets the flag, so the correct behaviour
+    // here is to never take the indirect path.  Saying so explicitly turns an
+    // address-dependent accident into a decision.
+#ifndef PLATFORM_PC
     if ((s32)string < 0) {
         string = *((const char **)((s32)string & 0x7fffffff));
     }
+#endif
 
     switch (data->alignment) {
         case 0:
@@ -1262,8 +1274,9 @@ void import_scene_object(struct SpriteHandler *spriteHandler, struct BitmapFontO
             data = object.text;
             poolID = data->poolID;
 
-            if ((s32)data->textTable < 0) {
-                string = *((char **)((u32)data->textTable & 0x7fffffff));
+            // Same sign-bit indirection as above; never taken on PC.
+            if (0) {
+                string = *((char **)((uintptr_t)data->textTable & 0x7fffffff));
             } else {
                 string = data->textTable[sSceneTextCurrentStringId];
             }
