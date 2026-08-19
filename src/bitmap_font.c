@@ -429,6 +429,98 @@ const char *bmp_font_obj_convert_latin_hw_to_fw(const char *string) {
 // Create Animation. (https://decomp.me/scratch/QO7Bu)
 #ifndef PLATFORM_PC
 #include "asm/code_08003980/asm_080049f0.s"
+#else
+// C translation of asm/code_08003980/asm_080049f0.s.
+//
+// Every OBJ-font path in this file goes through here, so while it was an
+// auto_stub returning 0 any engine that drew text died on the spot — the
+// callers dereference the result immediately.  That accounted for all five
+// engines that crashed on entry.
+//
+// The GBA version hardcodes offsets into PrintedTextAnim (+0x10 for the OAM
+// count, +0x12 for the entries).  Those assume a 4-byte pointer, so this uses
+// the struct members instead and sizes the allocation with sizeof.
+struct PrintedTextAnim *bmp_font_obj_print_text(struct BitmapFontOBJ *textObj, const char *string,
+                                                u32 *widthReq, u32 fontStyle, u32 palette) {
+    struct PrintedTextAnim *anim;
+    const struct BitmapFontData *font;
+    u32 totalWidth = 0;
+    u32 glyphCount = 0;
+    u32 glyphWidth = 0;
+    u16 *oam;
+    u32 total;
+
+    if (textObj->parseString != NULL) {
+        textObj->parseString(textObj->parsedOutput, string);
+        string = textObj->parsedOutput;
+    }
+
+    // Three OAM halfwords per glyph, plus the leading count.
+    total = bmp_font_obj_get_anim_total(string);
+    anim = mem_heap_alloc_id(textObj->memID,
+                             sizeof(struct PrintedTextAnim) + sizeof(u16) * (3 * total + 1));
+
+    sObjFontStyle = fontStyle;
+    anim->oam[0] = 0;              // OAM entry count, read back as cel[0]
+    oam = &anim->oam[1];
+
+    while (*string != '\0') {
+        u16 glyph;
+
+        if (*string == '.') {               // ".<hex>" selects the palette
+            palette = bmp_font_obj_parse_hex_digit(string[1]) & 0xFF;
+            string += 2;
+            continue;
+        }
+        if (*string == ':') {               // ":<hex>" selects the font style
+            sObjFontStyle = bmp_font_obj_parse_hex_digit(string[1]);
+            string += 2;
+            continue;
+        }
+
+        font = &textObj->fonts[sObjFontStyle];
+
+        if (totalWidth != 0) {
+            totalWidth += font->spacingWidth;
+        }
+
+        if (bmp_font_obj_glyph_is_whitespace(string)) {
+            totalWidth += font->whitespaceWidth;
+            string += 2;
+            continue;
+        }
+
+        glyph = bmp_font_obj_print_glyph(textObj, string, &glyphWidth);
+        if (glyph == 0xFFFF) {
+            break;                          // out of tile space
+        }
+
+        oam[0] = bmp_font_obj_get_latin_glyph_type(string) ? font->descensionHeight : 0;
+        oam[1] = (totalWidth & 0x1FF) | 0x4000;
+        oam[2] = (palette << 12) | glyph;
+        oam += 3;
+
+        totalWidth += glyphWidth;
+
+        if (glyphCount <= 0x3F) {
+            sObjStringGlyphWidths[glyphCount] = glyphWidth;
+            glyphCount++;
+        }
+        anim->oam[0]++;
+
+        string += 2;
+    }
+
+    anim->frames[0].cel = (AnimationCel *)anim->oam;
+    anim->frames[0].duration = 100;
+    anim->frames[1].cel = NULL;
+    anim->frames[1].duration = 0;
+
+    if (widthReq != NULL) {
+        *widthReq = totalWidth;
+    }
+    return anim;
+}
 #endif
 
 

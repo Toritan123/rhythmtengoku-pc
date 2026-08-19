@@ -107,8 +107,13 @@ void bg_anim_update_script(struct BgAnimator *animator) {
         value = line & 0x0FFFFFFF;
         uintptr_t ptrval = (uintptr_t)value;
 #else
-        event = line.ev >> 28;
-        value = (u32)(line.val & 0x0FFFFFFF);
+        // The PC form of BG_ANIM stores the event number in its own field
+        // rather than packing it into the top nibble, so it must not be
+        // shifted.  Shifting made every line read as event 0 (WRITE_RAW):
+        // GOTO never fired, the reader ran off the end of the script and
+        // eventually dereferenced garbage.
+        event = line.ev;
+        value = (u32)line.val;
         uintptr_t ptrval = line.val;
 #endif
 

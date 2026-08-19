@@ -1,4 +1,6 @@
 #include "main.h"
+#include <string.h>
+#include <stdlib.h>
 #ifdef PLATFORM_PC
 #if defined(__APPLE__) || defined(__linux__)
 #include <dlfcn.h>
@@ -122,7 +124,35 @@ void agb_main(void) {
 #endif
 
 	func_0801d860(FALSE); // Init. Script Operator (Init. Static Variables)
+#ifdef PLATFORM_PC
+	// RTPC_SCENE=<name> boots straight into a named scene.  Reaching a given
+	// game engine by navigating menus is not practical to do for all of them,
+	// and most of the engines have never been exercised at all.
+	{
+		const char *want = getenv("RTPC_SCENE");
+		extern const struct { const char *name; struct Scene *scene; } gPcSceneTable[];
+		extern const int gPcSceneTableCount;
+		struct Scene *start = &scene_warning;
+		if (want) {
+			int i, found = 0;
+			for (i = 0; i < gPcSceneTableCount; i++) {
+				if (strcmp(gPcSceneTable[i].name, want) == 0) {
+					start = gPcSceneTable[i].scene; found = 1; break;
+				}
+			}
+			if (!found) {
+				fprintf(stderr, "[SCENE] no such scene '%s'; known scenes:\n", want);
+				for (i = 0; i < gPcSceneTableCount; i++)
+					fprintf(stderr, "  %s\n", gPcSceneTable[i].name);
+				exit(1);
+			}
+			fprintf(stderr, "[SCENE] booting directly into %s\n", want);
+		}
+		init_scenes(start);
+	}
+#else
 	init_scenes(&scene_warning);
+#endif
 	set_scene_trans_target(&scene_warning, D_08935fac); // Title Screen
 	update_key_listener();
 

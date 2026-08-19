@@ -258,7 +258,7 @@ extern u32  sprite_get_cel_dimensions(u16 *cel, u32 requestedDataType);
 extern intptr_t sprite_get_data(struct SpriteHandler *, s16 id, u32 requestedDataType);
 extern void sprite_set_callback_cel(struct SpriteHandler *, s16 id, s8 cel);
 extern void sprite_run_callback_every_cel(struct SpriteHandler *, s16 id);
-extern void sprite_id_set_data(struct SpriteHandler *, u16 memID, u32 targetDataType, u32 arg);
+extern void sprite_id_set_data(struct SpriteHandler *, u16 memID, u32 targetDataType, uintptr_t arg);
 extern u16  func_0804e0a0(struct SpriteHandler *); // Increment Unknown Counter
 extern void sprite_handler_set_mem_id(struct SpriteHandler *, u16 memID);
 extern u16  sprite_handler_get_mem_id(struct SpriteHandler *);

@@ -1153,7 +1153,7 @@ void sprite_run_callback_every_cel(struct SpriteHandler *handler, s16 id) {
 
 
 // Set Values by Mem. ID
-void sprite_id_set_data(struct SpriteHandler *handler, u16 memID, u32 targetDataType, u32 arg) {
+void sprite_id_set_data(struct SpriteHandler *handler, u16 memID, u32 targetDataType, uintptr_t arg) {
     s16 spriteID = handler->zLinkStart;
 
     while (spriteID >= 0) {
@@ -1189,7 +1189,11 @@ void sprite_id_set_data(struct SpriteHandler *handler, u16 memID, u32 targetData
                     sprite_set_base_palette(handler, spriteID, arg);
                     break;
                 case SPRITE_ACT_SET_ORIGIN_XY:
-                    sprite_set_origin_x_y(handler, spriteID, *(s16 **)arg, *(s16 **)((u32 *)arg + 1));
+                    // The caller hands over an s16*[2]; stepping by (u32 *)
+                    // assumed a 4-byte pointer and read the second element
+                    // from the middle of the first.
+                    sprite_set_origin_x_y(handler, spriteID,
+                                          ((s16 **)arg)[0], ((s16 **)arg)[1]);
                     break;
                 case SPRITE_ACT_SET_ANIM_SPEED:
                     sprite_set_anim_speed(handler, spriteID, arg);
