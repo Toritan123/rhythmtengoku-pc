@@ -7,7 +7,10 @@
 
 struct GFXDecompressProgress {
     const u16 *data;
-    u32 size;
+    // Named "size" by the decompilation, but every caller passes a destination
+    // address (graphics_table.c computes info->dest + offset - ...), so it has
+    // to be pointer-width.
+    uintptr_t size;
     u32 count;
     u32 curwin1;
     u32 curwin2;

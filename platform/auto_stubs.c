@@ -314,10 +314,9 @@ RTPC_WEAK int fireworks_remix_5_bg_tiles_4(void) { return 0; }
 RTPC_WEAK int func_08002e78(void) { return 0; }
 RTPC_WEAK int func_08004070(void) { return 0; }
 RTPC_WEAK int func_0800716c(void) { return 0; }
-RTPC_WEAK int func_08008608(void) { return 0; }
-RTPC_WEAK int func_0800861c(void) { return 0; }
-RTPC_WEAK int func_08008628(void) { return 0; }
-RTPC_WEAK int func_0800869c(void) { return 0; }
+
+
+
 RTPC_WEAK int func_08008910(void) { return 0; }
 // func_0800cb28 implemented in asm_stubs.c with proper BeatscriptThread handling
 RTPC_WEAK int func_0800eebc(void) { return 0; }
@@ -585,7 +584,6 @@ RTPC_WEAK int game_select_bg_map_perfect_notice(void) { return 0; }
 RTPC_WEAK int game_select_bg_tiles(void) { return 0; }
 RTPC_WEAK int game_select_obj(void) { return 0; }
 RTPC_WEAK int gameplay_obj(void) { return 0; }
-RTPC_WEAK int init_texture_loader_task(void) { return 0; }
 RTPC_WEAK int karate_man_bg_map(void) { return 0; }
 RTPC_WEAK int karate_man_bg_map_serious(void) { return 0; }
 RTPC_WEAK int karate_man_bg_tiles(void) { return 0; }
@@ -1290,7 +1288,6 @@ RTPC_WEAK int staff_credit_tap_trial_bg_map(void) { return 0; }
 RTPC_WEAK int staff_credit_tap_trial_bg_tiles(void) { return 0; }
 RTPC_WEAK int staff_credit_toss_boys_bg_map(void) { return 0; }
 RTPC_WEAK int staff_credit_toss_boys_bg_tiles(void) { return 0; }
-RTPC_WEAK int start_new_texture_loader(void) { return 0; }
 RTPC_WEAK int studio_bg_map(void) { return 0; }
 RTPC_WEAK int studio_bg_map_warning(void) { return 0; }
 RTPC_WEAK int studio_bg_tiles(void) { return 0; }
@@ -1421,7 +1418,6 @@ RTPC_WEAK int tram_pauline_prologue_obj(void) { return 0; }
 RTPC_WEAK int tram_pauline_remix_3_bg_map(void) { return 0; }
 RTPC_WEAK int tram_pauline_remix_3_bg_tiles(void) { return 0; }
 RTPC_WEAK int tram_pauline_remix_3_obj(void) { return 0; }
-RTPC_WEAK int update_texture_loader_task(void) { return 0; }
 RTPC_WEAK int verify_sram_fast_code(void) { return 0; }
 RTPC_WEAK int verify_sram_fast_rom(void) { return 0; }
 RTPC_WEAK int warning_bg_map(void) { return 0; }

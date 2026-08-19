@@ -1040,14 +1040,14 @@ s32 schedule_function_call(u16 memID, void *function, s32 param, u32 delay) {
 static struct GFXDecompressProgress D_030010d0;
 extern u32 decompress_gfx_rom(struct GFXDecompressProgress *);
 
-u32 decompress_gfx_init(struct CompressedGFX *gfx, u32 size, u32 limit, struct GFXDecompressProgress *progress) {
+u32 decompress_gfx_init(struct CompressedGFX *gfx, uintptr_t dest, u32 limit, struct GFXDecompressProgress *progress) {
     u32 (*decompress_gfx)(struct GFXDecompressProgress *);
 
     if (!progress) {
         progress = &D_030010d0;
     }
     progress->data = gfx->data;
-    progress->size = size;
+    progress->size = dest;
     progress->count = ((gfx->count - 1) << 16) | 0x2020;
     progress->curwin1 = *gfx->window1;
     progress->curwin2 = *gfx->window2;
@@ -1113,6 +1113,190 @@ u32 decompress_gfx_resume(struct GFXDecompressProgress *progress) {
 #ifndef PLATFORM_PC
 #include "asm/code_08007468/asm_080087b4.s"
 #endif
+#ifdef PLATFORM_PC
+/* ── Buffered textures / texture loader (C translation) ─────────────────────
+ * This whole cluster was assembly, so on PC every entry point was an
+ * auto_stub returning 0.  Two consequences:
+ *   - start_new_texture_loader registered no task, so engines that load their
+ *     graphics through the loader (rather than the beatscript's load_graphics
+ *     opcode) never got them, and drew a flat fill;
+ *   - func_0800869c returned NULL, and graphics_table.c dereferences its
+ *     result immediately.
+ *
+ * From asm/code_08007468/{asm_08008608, asm_0800861c, asm_08008628,
+ * asm_08008658, asm_0800869c, asm_080086c4, asm_08008720, asm_0800873c,
+ * asm_08008758, asm_080087b4}.s.
+ */
+
+// One texture that has had its GFX layer expanded into a heap buffer, so a
+// texture shared by several engines is only decompressed once.  Singly linked.
+//
+// `view` is not bookkeeping: func_0800869c hands its address back to the
+// graphics-table loader as a CompressedData, describing the same texture with
+// the expansion already done (doubleCompressed cleared, so only the RLE stage
+// is left).  On GBA the two are literally overlaid at entry+4; keeping a real
+// struct here says the same thing without depending on field offsets.
+struct BufferedTexture {
+    struct CompressedData *src;
+    struct CompressedData  view;
+    struct BufferedTexture *next;
+};
+
+static struct BufferedTexture *sBufferedTextures;   // [D_0300536c]
+
+// [func_080086c4] Find `src` in the cache, or add an entry with a buffer big
+// enough for it.  Returns NULL when the texture needs no buffering, or is
+// already present — i.e. non-NULL means "now go and fill this one in".
+static struct BufferedTexture *texture_cache_add(struct CompressedData *src) {
+    struct BufferedTexture *e;
+
+    if (src->doubleCompressed == 0) {
+        return NULL;
+    }
+    for (e = sBufferedTextures; e != NULL; e = e->next) {
+        if (e->src == src) {
+            return NULL;                 // already buffered
+        }
+    }
+
+    e = mem_heap_alloc(sizeof(struct BufferedTexture));
+    e->src  = src;
+    e->next = sBufferedTextures;
+    sBufferedTextures = e;
+
+    // `size` is the expanded length in halfwords.  (`count` is the number of
+    // compression units, which is smaller — using it undersizes the buffer.)
+    e->view.data = mem_heap_alloc(((struct CompressedGFX *)src->data)->size * 2);
+    e->view.rleData          = src->rleData;
+    e->view.rleSize          = src->rleSize;
+    e->view.rleOffset        = src->rleOffset;
+    e->view.doubleCompressed = 0;
+    return e;
+}
+
+// [func_0800861c] Drop the whole cache without freeing — for when the heap it
+// lives in is being reset wholesale.
+void func_0800861c(void) {
+    sBufferedTextures = NULL;
+}
+
+// [func_08008628] Free every buffered texture and its buffer.
+void func_08008628(void) {
+    struct BufferedTexture *e = sBufferedTextures;
+
+    while (e != NULL) {
+        struct BufferedTexture *next = e->next;
+        mem_heap_dealloc((void *)e->view.data);
+        mem_heap_dealloc(e);
+        e = next;
+    }
+    sBufferedTextures = NULL;
+}
+
+// [func_08008658] Drop one texture from the cache.
+void func_08008658(struct CompressedData *src) {
+    struct BufferedTexture *e = sBufferedTextures;
+    struct BufferedTexture *prev = NULL;
+
+    while (e != NULL) {
+        if (e->src == src) {
+            if (prev == NULL) {
+                sBufferedTextures = e->next;
+            } else {
+                prev->next = e->next;
+            }
+            mem_heap_dealloc((void *)e->view.data);
+            mem_heap_dealloc(e);
+            return;
+        }
+        prev = e;
+        e = e->next;
+    }
+}
+
+// [func_0800869c] Substitute the buffered form of `src` if there is one.
+void *func_0800869c(const void *src) {
+    struct BufferedTexture *e;
+
+    for (e = sBufferedTextures; e != NULL; e = e->next) {
+        if (e->src == src) {
+            return &e->view;
+        }
+    }
+    return (void *)src;
+}
+
+// [func_08008608] Expand one texture in a single call (no frame budget, and no
+// progress block — decompress_gfx_init falls back to its own static one).
+u32 func_08008608(struct CompressedGFX *gfx, void *dest) {
+    return decompress_gfx_init(gfx, (uintptr_t)dest, 0x7fffffff, NULL);
+}
+
+// [func_08008720] Buffer one texture immediately, if it isn't already.
+void func_08008720(struct CompressedData *src) {
+    struct BufferedTexture *e = texture_cache_add(src);
+    if (e != NULL) {
+        func_08008608((struct CompressedGFX *)src->data, (void *)e->view.data);
+    }
+}
+
+// The loader task's own state.  On GBA a 0x2C-byte block: list cursor at +0,
+// decompression progress at +4, busy flag at +0x28.
+struct TextureLoader {
+    struct CompressedData **list;
+    struct GFXDecompressProgress progress;
+    u8 busy;
+};
+
+// [init_texture_loader_task] D_08936c9c function 1
+struct TextureLoader *init_texture_loader_task(struct TextureLoaderInputs *inputs) {
+    struct TextureLoader *st = mem_heap_alloc(sizeof(struct TextureLoader));
+    st->list = (struct CompressedData **)inputs;
+    st->busy = 0;
+    return st;
+}
+
+// [update_texture_loader_task] D_08936c9c function 2.
+// Returns non-zero once the whole list has been expanded.  Each call does at
+// most 0x1000 units of work and resumes where it left off, so a long list is
+// spread over frames instead of stalling one.
+u32 update_texture_loader_task(struct TextureLoader *st) {
+    u32 finished;
+
+    if (st->busy) {
+        finished = decompress_gfx_resume(&st->progress);
+    } else {
+        for (;;) {
+            struct CompressedData *src = *st->list++;
+            struct BufferedTexture *e;
+
+            if (src == NULL) {
+                return 1;                // end of list
+            }
+            e = texture_cache_add(src);
+            if (e == NULL) {
+                continue;                // already buffered, or not compressed
+            }
+            finished = decompress_gfx_init((struct CompressedGFX *)src->data,
+                                           (uintptr_t)e->view.data,
+                                           0x1000, &st->progress);
+            st->busy = 1;
+            break;
+        }
+    }
+
+    if (finished != 0) {
+        st->busy = 0;                    // this texture is done; next call takes the next one
+    }
+    return 0;
+}
+
+// [start_new_texture_loader] Register the loader as a pool task.
+u32 start_new_texture_loader(u16 memID, struct CompressedData **textureList) {
+    return start_new_task(memID, &D_08936c9c, textureList, NULL, 0);
+}
+#endif
+
 
 
 /* ? */

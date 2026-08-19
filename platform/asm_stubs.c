@@ -100,80 +100,10 @@ u8 sPCMBufferArea[2][1568 * 4];
 s32 sPCMScratchArea[0x80 * 2];
 
 // ─── GFX decompression ───────────────────────────────────────────────────────
-//
-// GBA BIOS decompression format (4-byte header):
-//   byte 0      – compression type: 0x10=LZ77, 0x20=Huffman, 0x30=RLE
-//   bytes 1-3   – decompressed size (little-endian)
-//
-// LZ77 (SWI 0x11):
-//   Flag byte (MSB = first unit); for each bit:
-//     0 → literal byte, copy verbatim
-//     1 → back-reference: 2 bytes:
-//           b0 = (len-3)<<4 | disp_hi    len  = (b0>>4)+3
-//           b1 = disp_lo                 disp = ((b0&0xF)<<8|b1)+1
-//           copy len bytes from out[-disp]
-//
-// RLE (SWI 0x14):
-//   Flag byte for 8 units (MSB first); for each bit:
-//     0 → literal:    1-byte count+1, copy count+1 bytes verbatim
-//     1 → compressed: 1-byte count+3, 1-byte value, repeat count+3 times
-//
-void decompress_gfx_rom(const void *src, void *dest)
-{
-    const u8 *in  = (const u8 *)src;
-    u8       *out = (u8 *)dest;
-
-    if (!in || !out) return;
-
-    u8  type             = in[0] & 0xF0;
-    u32 decompressed_size = (u32)in[1] | ((u32)in[2] << 8) | ((u32)in[3] << 16);
-    in += 4;
-
-    u8 *out_end = out + decompressed_size;
-
-    if (type == 0x10) {
-        /* LZ77 */
-        while (out < out_end) {
-            u8 flags = *in++;
-            for (int bit = 7; bit >= 0 && out < out_end; bit--) {
-                if (flags & (1u << bit)) {
-                    /* back-reference */
-                    u8  b0  = *in++;
-                    u8  b1  = *in++;
-                    int len  = (b0 >> 4) + 3;
-                    int disp = (((b0 & 0xF) << 8) | b1) + 1;
-                    u8 *ref  = out - disp;
-                    for (int j = 0; j < len && out < out_end; j++)
-                        *out++ = *ref++;
-                } else {
-                    /* literal */
-                    *out++ = *in++;
-                }
-            }
-        }
-    } else if (type == 0x30) {
-        /* RLE */
-        while (out < out_end) {
-            u8 flag = *in++;
-            if (flag & 0x80) {
-                /* compressed: repeat value (count+3) times */
-                int count = (flag & 0x7F) + 3;
-                u8  val   = *in++;
-                for (int j = 0; j < count && out < out_end; j++)
-                    *out++ = val;
-            } else {
-                /* uncompressed: copy (count+1) bytes verbatim */
-                int count = (flag & 0x7F) + 1;
-                for (int j = 0; j < count && out < out_end; j++)
-                    *out++ = *in++;
-            }
-        }
-    } else {
-        /* Huffman or unknown – copy raw (fallback) */
-        u32 copy = decompressed_size < 0x10000u ? decompressed_size : 0x10000u;
-        memcpy(dest, src + 4, copy);
-    }
-}
+// decompress_gfx_rom lives in platform/gfx_decompress.c — a translation of the
+// game's own ARM routine.  It used to be a hand-written GBA-BIOS LZ77/RLE
+// decompressor here, which was both the wrong algorithm and the wrong
+// signature for the way decompress_gfx_init calls it.
 
 // ─── SRAM (save) I/O stubs ───────────────────────────────────────────────────
 
@@ -224,14 +154,9 @@ void read_sram(const u8 *src, u8 *dest, u32 size)
 void func_0804e938(void) {}
 
 // ─── GFX decompression cache lookup ─────────────────────────────────────────
-// On GBA this walks a linked-list cache of already-decompressed textures.
-// If the src is found in the cache, returns a pointer to the cached data.
-// If not found, returns src unchanged.
-// On PC there is no cache, so we always return src directly.
-void *func_0800869c(const void *src)
-{
-    return (void *)src;
-}
+// func_0800869c used to be stubbed here as "return src unchanged", which was
+// harmless only because nothing was ever buffered.  It is now translated from
+// assembly in src/code_08007468.c along with the rest of the cache.
 
 // ─── Synchronous GFX table loader (PC replacement) ───────────────────────────
 // func_08002e78: synchronous version of func_08002ee0 – loads a GFX table all
@@ -247,41 +172,11 @@ void func_08002e78(const struct GraphicsTable *gfxTable)
     }
 }
 
-// ─── Texture loader task (PC replacement) ────────────────────────────────────
-// On GBA, start_new_texture_loader decompresses sprite sheets from ROM into
-// VRAM over several frames using DMA.  On PC there is no VRAM, so the task
-// just needs to exist long enough for the caller to call run_func_after_task,
-// then complete on the very next delayed-update tick so the callback fires.
-//
-// This strong definition overrides the __attribute__((weak)) stub in auto_stubs.c
-// and fixes every call site that does:
-//   task = start_new_texture_loader(...);
-//   run_func_after_task(task, next_init_func, 0);
-// so that next_init_func is actually called.
-
-static void *pc_texture_loader_start(void *inputs)
-{
-    (void)inputs;
-    return NULL;   // no heap allocation needed
-}
-
-static u32 pc_texture_loader_update(void *info)
-{
-    (void)info;
-    return 1;      // signal "done" immediately; task_stop fires onFinish
-}
-
-static const struct TaskMethods pc_texture_loader_methods = {
-    .start         = pc_texture_loader_start,
-    .delayedUpdate = pc_texture_loader_update,
-    .constantUpdate = NULL,
-    .stop          = NULL,
-};
-
-u32 start_new_texture_loader(u16 memID, struct CompressedData **textureList)
-{
-    (void)textureList;   // nothing to decompress on PC
-    return (u32)start_new_task(memID, &pc_texture_loader_methods, NULL, NULL, 0);
-}
+// ─── Texture loader task ─────────────────────────────────────────────────
+// The stand-in that used to live here returned "done" immediately without
+// decompressing anything, on the reasoning that a PC has no VRAM.  It does
+// have one (gba_vram, which the PPU draws from), so engines that load their
+// graphics through this task got none.  The real loader is now translated
+// from assembly in src/code_08007468.c.
 
 #endif // PLATFORM_PC

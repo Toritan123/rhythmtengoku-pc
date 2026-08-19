@@ -84,15 +84,15 @@ extern u32 update_scheduled_function_task(struct ScheduledFunctionTask *task);
 extern s32 schedule_function_call(u16 memID, void *function, s32 param, u32 delay);
 
 /* BUFFERED TEXTURE */
-extern u32 decompress_gfx_init(struct CompressedGFX *gfx, u32 size, u32 limit, struct GFXDecompressProgress *progress);
+extern u32 decompress_gfx_init(struct CompressedGFX *gfx, uintptr_t dest, u32 limit, struct GFXDecompressProgress *progress);
 extern u32 decompress_gfx_resume(struct GFXDecompressProgress *progress);
-// extern ? func_08008608(?);
-// extern ? func_0800861c(?);
-// extern ? func_08008628(?);
-// extern ? func_08008658(?);
-// extern ? func_0800869c(?);
+extern u32 func_08008608(struct CompressedGFX *gfx, void *dest);  // Expand one texture now
+extern void func_0800861c(void);                        // Forget all buffered textures
+extern void func_08008628(void);                        // Free all buffered textures
+extern void func_08008658(struct CompressedData *src);  // Free one buffered texture
+extern void *func_0800869c(const void *src);            // Buffered form of a texture, if any
 // extern ? func_080086c4(?);
-// extern ? func_08008720(?);
+extern void func_08008720(struct CompressedData *src);            // Buffer one texture now
 extern struct TextureLoader *init_texture_loader_task(struct TextureLoaderInputs *inputs);
 extern u32 update_texture_loader_task(struct TextureLoader *task);
 extern u32 start_new_texture_loader(u16 memID, struct CompressedData **textureList);
