@@ -237,7 +237,7 @@ void process_scenes(void) {
 		D_03000080 = FALSE;
 
 		if (gCurrentScene->requiredMemory != 0) {
-			gCurrentSceneData = mem_heap_alloc(gCurrentScene->requiredMemory);
+			gCurrentSceneData = mem_heap_alloc(GBA_STRUCT_BYTES(gCurrentScene->requiredMemory));
 		}
 
 		if (gCurrentScene->initFunc != NULL) {

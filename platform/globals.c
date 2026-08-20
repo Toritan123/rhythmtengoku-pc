@@ -54,7 +54,7 @@ void *gCurrentEngineData = NULL;
 struct BeatscriptScene D_030053c0;
 
 // Beatscript thread-local state pointers (set in set_beatscript_subscenes)
-u32 *D_03005588 = NULL;
+uintptr_t *D_03005588 = NULL;
 s16 *D_0300558c = NULL;
 
 #endif // PLATFORM_PC

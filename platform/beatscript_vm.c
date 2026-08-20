@@ -39,9 +39,13 @@
 // via _call_via_r6 with 0-2 arguments in r0/r1; on any modern ABI passing a
 // full-width argument to a callee that only reads the low 32 bits is safe, so
 // the widest prototype is used and every callee sees the arguments it expects.
-typedef s32 (*BsFunc0)(void);
-typedef s32 (*BsFunc1)(uintptr_t);
-typedef s32 (*BsFunc2)(uintptr_t, uintptr_t);
+// The return value feeds D_030053c0.globalVariable, which opcode 0xB0 then
+// jumps to as a script address — so it has to be pointer-sized.  As s32 it
+// clipped the top half off, and drum_studio_drumming jumped to 0x008d41e0
+// instead of 0x1008d41e0 on its first call_result.
+typedef intptr_t (*BsFunc0)(void);
+typedef intptr_t (*BsFunc1)(uintptr_t);
+typedef intptr_t (*BsFunc2)(uintptr_t, uintptr_t);
 
 void func_0800cb28(u32 threadID) {
     struct BeatscriptThread *thread = &D_030053c0.threads[threadID];
@@ -107,7 +111,7 @@ void func_0800cb28(u32 threadID) {
                 thread->jumpStack[thread->stackCounter] = thread->currentCmd;
             thread->stackCounter = (thread->stackCounter + 1) & 0xF;
             thread->currentCmd =
-                (const struct Beatscript *)(uintptr_t)D_030053c0.globalVariable;
+                (const struct Beatscript *)D_030053c0.globalVariable;
         }
         break;
 

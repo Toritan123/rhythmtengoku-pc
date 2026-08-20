@@ -655,7 +655,12 @@ struct TextPrinter *text_printer_create_new(u16 memID, u32 totalLines, u32 maxWi
     textPrinter->lineSprites = mem_heap_alloc_id(memID, totalLines * sizeof(s16));
     textPrinter->lineWidths = mem_heap_alloc_id(memID, totalLines * sizeof(s16));
     textPrinter->lineAlignments = mem_heap_alloc_id(memID, totalLines * sizeof(u8));
-    textPrinter->lineStrings = mem_heap_alloc_id(memID, totalLines * sizeof(u32));
+    // sizeof(*lineStrings), not sizeof(u32): these are pointers, and on a
+    // 64-bit host the u32 sizing allocated half the space the loop below
+    // writes.  The overflow landed in whatever followed on the heap — for the
+    // text scenes, usually a scheduled-function task, whose function pointer
+    // then got called.
+    textPrinter->lineStrings = mem_heap_alloc_id(memID, totalLines * sizeof(*textPrinter->lineStrings));
     textPrinter->lineShadowSprites = mem_heap_alloc_id(memID, totalLines * sizeof(s16));
 
     for (i = 0; i < totalLines; i++) {

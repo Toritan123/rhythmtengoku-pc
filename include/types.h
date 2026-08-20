@@ -106,9 +106,11 @@ extern struct BeatscriptScene {
     s8_8 musicPitchSrc1;
     s8_8 musicPitchSrc2;
     s8_8 musicPitch;
-    u32 globalVariable; // [D_030053c0 + 0x24] Global (Main Scene) Variable
+    // Pointer-sized, not u32: opcode 0xB0 (call_result) jumps to whatever the
+    // last script function returned, so this slot carries script addresses.
+    uintptr_t globalVariable; // [D_030053c0 + 0x24] Global (Main Scene) Variable
     struct BeatscriptThread threads[2];
-    u32 localVariables[2]; // [D_030053c0 + 0x160] Local (Sub-Scene) Variables
+    uintptr_t localVariables[2]; // [D_030053c0 + 0x160] Local (Sub-Scene) Variables
     s16 unk168;
     u16 unk16A;
     u16 unk16C;
@@ -132,5 +134,5 @@ extern struct BeatscriptScene {
     intptr_t callbackArgument;
 } D_030053c0;
 
-extern u32 *D_03005588; // Current Scene Variable
+extern uintptr_t *D_03005588; // Current Scene Variable
 extern s16 *D_0300558c; // Current Scene Sprite Pool

@@ -42,6 +42,24 @@ typedef s32 s24_8;
 
 #define ARRAY_COUNT(a) (s32)(sizeof(a))/sizeof((a)[0])
 
+// Struct sizes baked into the game's own data tables — Scene.requiredMemory,
+// GameEngine.gameDataSize, CueDefinition.cueInfoSize — were computed for the
+// GBA, where a pointer is four bytes.  Every one of those structs is larger on
+// a 64-bit host, so allocating the recorded size overflows the block by however
+// many pointers it holds.  struct DataRoomSceneData is 0x20 on GBA and 0x28
+// here, and those eight bytes were landing on the next heap block's function
+// pointer.
+//
+// Each 4-byte slot can at most become 8, and alignment padding grows with it,
+// so twice the recorded size is an upper bound; the constant absorbs trailing
+// padding.  Regenerating the tables from the real sizes would be tidier, but
+// they are decompiled data and this is the layer that knows about the host.
+#ifdef PLATFORM_PC
+#define GBA_STRUCT_BYTES(n) ((u32)(n) * 2u + 64u)
+#else
+#define GBA_STRUCT_BYTES(n) (n)
+#endif
+
 #include "gba/gba.h"
 #include "types.h"
 #include "sequence_data.h"

@@ -50,17 +50,34 @@ else
   HOST_OS := $(shell uname -s | tr A-Z a-z | sed 's/darwin/macos/')
   BUILD   := build/$(HOST_OS)
   TARGET  := $(BUILD)/rhythmtengoku_pc
-  # Match the architecture of the SDL2 that is actually installed rather than
-  # hardcoding one.  A hardcoded -arch x86_64 breaks a runner whose Homebrew is
-  # arm64; dropping the flag entirely breaks a machine running Intel Homebrew
-  # under Rosetta.  Probing the library is right in both cases.
-  SDL2_PREFIX := $(shell sdl2-config --prefix 2>/dev/null)
+  # Pick the SDL2 whose architecture matches the host, then match the build to
+  # it.  A hardcoded -arch x86_64 breaks a runner whose Homebrew is arm64;
+  # dropping the flag entirely breaks a machine with only Intel Homebrew.  And
+  # a Mac with *both* Homebrews has two sdl2-configs: taking whichever comes
+  # first in PATH silently built an x86_64 binary on an M1, so the whole game
+  # ran under Rosetta — half speed, and AddressSanitizer refuses to start at
+  # all under translation, which is the tool this port most needs.
+  #
+  # Override with SDL2_CONFIG=/path/to/sdl2-config to force a particular one
+  # (e.g. to build x86_64 deliberately).
+  HOST_ARCH := $(shell uname -m)
+  SDL2_CONFIG ?= $(shell for c in /opt/homebrew/bin/sdl2-config /usr/local/bin/sdl2-config $$(command -v sdl2-config 2>/dev/null); do \
+                     [ -x "$$c" ] || continue; \
+                     p=$$("$$c" --prefix 2>/dev/null); \
+                     lipo -archs "$$p/lib/libSDL2.dylib" 2>/dev/null | tr ' ' '\n' \
+                       | grep -qx "$(HOST_ARCH)" && { echo "$$c"; break; }; \
+                   done)
+  # No arch match, or no lipo at all (Linux): whatever PATH offers.
+  ifeq ($(strip $(SDL2_CONFIG)),)
+    SDL2_CONFIG := sdl2-config
+  endif
+  SDL2_PREFIX := $(shell $(SDL2_CONFIG) --prefix 2>/dev/null)
   SDL2_ARCH := $(shell lipo -archs $(SDL2_PREFIX)/lib/libSDL2.dylib 2>/dev/null | awk '{print $$1}')
   ARCHFLAGS := $(if $(SDL2_ARCH),-arch $(SDL2_ARCH),)
   # Apple's assembler needs bin2s's Mach-O dialect; everything else takes GNU.
   BIN2SFLAGS := --apple-llvm
-  SDL2_CFLAGS := $(shell sdl2-config --cflags) $(if $(SDL2_PREFIX),-I$(SDL2_PREFIX)/include,)
-  SDL2_LIBS   := $(shell sdl2-config --libs)
+  SDL2_CFLAGS := $(shell $(SDL2_CONFIG) --cflags) $(if $(SDL2_PREFIX),-I$(SDL2_PREFIX)/include,)
+  SDL2_LIBS   := $(shell $(SDL2_CONFIG) --libs)
   COMPATFLAGS :=
 endif
 
@@ -70,22 +87,19 @@ endif
 BIN2S   := python3 tools/bin2s.py
 
 # ─── Compiler flags ─────────────────────────────────────────────────────────
-# Optimisation level.  Measured over 1300 frames of karate_man, -O2 halves the
-# per-frame work: 7.17 ms -> 3.49 ms (render 6.25 -> 3.09, audio 0.80 -> 0.27)
-# against a 16.74 ms budget.
+# Optimisation level.  This was pinned at -O0 — a debug build — and it was what
+# `make app` shipped.  -O2 roughly halves the per-frame work against a 16.74 ms
+# budget.  Use OPT=-O0 to step through decompiled code in a debugger.
 #
-#   make -f Makefile.pc OPT=-O2
-#
-# The default stays -O0 only because the text scenes still have a memory
-# corruption bug that -O2 does not cause but does not help either: over six
-# runs each, data_room crashed 3/6 at -O0 and 2/6 at -O2, reading 0-1/6 and
-# 2/6.  Flipping the default is the right move once that is found — shipping a
-# debug build is not a position worth defending on its own merits.
+# The default only moved once the heap corruption in the text scenes was fixed
+# (undersized allocations for structs whose sizes were recorded on the GBA).
+# -O2 did not cause that bug, but it did change the layout enough to turn an
+# intermittent crash into a frequent one, which is how it was found.
 #
 # -fno-strict-aliasing (below, in COMPATFLAGS) stays at every level:
 # decompiled code type-puns constantly, and strict aliasing would let the
 # optimiser act on assumptions the original code never held.
-OPT ?= -O0
+OPT ?= -O2
 
 CFLAGS  := -DPLATFORM_PC -DRTPC_FRAMEDUMP \
            $(ARCHFLAGS) $(COMPATFLAGS) \

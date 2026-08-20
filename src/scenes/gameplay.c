@@ -261,7 +261,7 @@ void gameplay_set_current_engine(const struct GameEngine *engine, u32 version) {
     }
 
     if (engine->gameDataSize > 0) {
-        gGameplay->gameEngineData = mem_heap_alloc(engine->gameDataSize);
+        gGameplay->gameEngineData = mem_heap_alloc(GBA_STRUCT_BYTES(engine->gameDataSize));
         dma3_fill(0, gGameplay->gameEngineData, engine->gameDataSize, 0x20, 0x200);
     } else {
         gGameplay->gameEngineData = NULL;
@@ -730,7 +730,7 @@ void gameplay_spawn_cue(s32 id) {
 
     newCue = mem_heap_alloc(sizeof(struct Cue));
     if (cueDef->cueInfoSize != 0) {
-        newCue->gameCueInfo = mem_heap_alloc(cueDef->cueInfoSize);
+        newCue->gameCueInfo = mem_heap_alloc(GBA_STRUCT_BYTES(cueDef->cueInfoSize));
     } else {
         newCue->gameCueInfo = NULL;
     }
