@@ -1229,7 +1229,7 @@ void text_printer_get_x_y(struct TextPrinter *textPrinter, s16 *vx, s16 *vy) {
 
 
 // Set On-Print Function and Parameter
-void text_printer_run_func_on_finish(struct TextPrinter *textPrinter, void *onPrint, s32 param) {
+void text_printer_run_func_on_finish(struct TextPrinter *textPrinter, void *onPrint, uintptr_t param) {
     if (textPrinter == NULL) return;
 
     textPrinter->onFinish = onPrint;
@@ -1238,7 +1238,7 @@ void text_printer_run_func_on_finish(struct TextPrinter *textPrinter, void *onPr
 
 
 // Set On-Clear Function and Parameter
-void text_printer_run_func_on_clear(struct TextPrinter *textPrinter, void *onClear, s32 param) {
+void text_printer_run_func_on_clear(struct TextPrinter *textPrinter, void *onClear, uintptr_t param) {
     if (textPrinter == NULL) return;
 
     textPrinter->onClear = onClear;
@@ -1400,7 +1400,7 @@ struct Listbox *create_new_listbox(
     text_printer_set_palette(listbox->printer, unselectedPalette);
     text_printer_set_colors(listbox->printer, colors);
     text_printer_set_line_spacing(listbox->printer, lineSpacing);
-    text_printer_run_func_on_finish(listbox->printer, func_0800ae88, (s32)listbox);
+    text_printer_run_func_on_finish(listbox->printer, func_0800ae88, (uintptr_t)listbox);
     listbox->maxLines = maxLines;
     listbox->unk12 = selectedPalette;
     listbox->palette = unselectedPalette;
@@ -1624,7 +1624,7 @@ void listbox_scroll_down(struct Listbox *listbox) {
 
 
 // Set On-Scroll Function and Parameter
-void listbox_run_func_on_scroll(struct Listbox *listbox, void onScroll(), s32 onScrollArg) {
+void listbox_run_func_on_scroll(struct Listbox *listbox, void onScroll(), uintptr_t onScrollArg) {
     if (listbox == NULL) {
         return;
     }
@@ -1635,7 +1635,7 @@ void listbox_run_func_on_scroll(struct Listbox *listbox, void onScroll(), s32 on
 
 
 // Set On-Finish Function and Parameter
-void listbox_run_func_on_finish(struct Listbox *listbox, void onFinish(), s32 onFinishArg) {
+void listbox_run_func_on_finish(struct Listbox *listbox, void onFinish(), uintptr_t onFinishArg) {
     if (listbox == NULL) {
         return;
     }

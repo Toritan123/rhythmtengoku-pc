@@ -287,7 +287,7 @@ struct struct_0800f0b4 {
 // FUNCTIONS
 extern u8 func_0800b634(s16 *arg0, s16 *arg1, s16 *arg2, s16 *arg3);
 extern void run_beatscript_scene_callback(void);
-extern void set_beatscript_scene_callback(void function(s32), s32 argument);
+extern void set_beatscript_scene_callback(void function(intptr_t), intptr_t argument);
 extern void func_0800b6dc(struct Struct_0800b71c *, u32, u32, struct Struct_0800b71c_sub *);
 extern void func_0800b71c(struct Struct_0800b71c *, u32, u32, u32);
 extern void func_0800b768_stub(void);
@@ -369,7 +369,7 @@ extern void func_0800c424_stub(void);
 extern void func_0800c428_stub(void);
 extern s32 scene_affine_group_alloc(void);
 extern void *scene_mem_heap_alloc(u32 size);
-extern s32 scene_start_new_task(struct TaskMethods *methods, void *inputs, TaskFinalFunc onFinish, u32 onFinishArg);
+extern s32 scene_start_new_task(struct TaskMethods *methods, void *inputs, TaskFinalFunc onFinish, uintptr_t onFinishArg);
 extern void scene_flush_save_buffer(void);
 extern u32 scene_get_default_text_id(void);
 extern void func_0800c494(u32 thread);

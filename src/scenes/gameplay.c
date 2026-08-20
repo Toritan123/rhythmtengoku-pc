@@ -339,8 +339,11 @@ void gameplay_set_engine_event_param(intptr_t param) {
 
 
 // [func_0801738c] Run Engine-Specific Event
-s32 gameplay_run_engine_event(const struct GameEngine *engine, s32 id) {
-    s32 returnVal = 0;
+// The return value is intptr_t, not s32: drum_lesson_script_end_pattern casts
+// it straight back to a struct SongHeader *, and an s32 would clip the top half
+// of that pointer off.
+intptr_t gameplay_run_engine_event(const struct GameEngine *engine, s32 id) {
+    intptr_t returnVal = 0;
 
     if (gGameplay->gameEngine != engine) {
         return returnVal;
@@ -349,7 +352,7 @@ s32 gameplay_run_engine_event(const struct GameEngine *engine, s32 id) {
     if ((gGameplay->gameEngine->engineFunctions != NULL) && (gGameplay->gameEngine->engineFunctions[id] != NULL)) {
         // Engine events usually return void, but this code gets the return value
         // even if it's garbage data.
-        s32 (*engineFunc)() = (void *)gGameplay->gameEngine->engineFunctions[id];
+        intptr_t (*engineFunc)() = (void *)gGameplay->gameEngine->engineFunctions[id];
         returnVal = engineFunc(gGameplay->engineFuncParam);
     }
 
@@ -537,7 +540,7 @@ void gameplay_register_perfect_input(void) {
 
 
 // [func_08017728] Run Game Engine Event (convenience method)
-s32 gameplay_run_engine_event_w_param(const struct GameEngine *engine, u32 function, intptr_t param) {
+intptr_t gameplay_run_engine_event_w_param(const struct GameEngine *engine, u32 function, intptr_t param) {
     gameplay_set_engine_event_param(param);
     return gameplay_run_engine_event(engine, function);
 }

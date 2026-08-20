@@ -140,7 +140,14 @@ struct DrumLessonsCue {
 };
 
 typedef void (*DrumPlayFunc)(void);
+#ifdef PLATFORM_PC
+// The |1 is the ARM/Thumb interworking bit: on GBA the table holds Thumb
+// entry points and the low bit selects Thumb mode.  Doing it here would
+// truncate a 64-bit pointer and then corrupt what is left of it.
+#define CALL_DRUM_PLAY_FUNC(func) ((DrumPlayFunc)(func))()
+#else
 #define CALL_DRUM_PLAY_FUNC(func) ((DrumPlayFunc)(((u32)func)|1))()
+#endif
 
 struct DrumStudioMonitorData {
     Palette *palette;

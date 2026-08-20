@@ -118,7 +118,7 @@ struct GameSelectSceneData {
         s16 x2, y2;
         s16 progress;
         void (*onFinish)();
-        s32 onFinishArg;
+        uintptr_t onFinishArg;
         u16 delay;
     } newIconSquares[10];
 
@@ -358,7 +358,7 @@ extern void game_select_print_icon_maps(u32 baseMap, u32 mapSize, u32 tileX, u32
 extern void game_select_print_icon_texture(const void *texture, u32 tileset, u32 tileNum);
 extern void game_select_init_squares(void);
 extern void game_select_update_bg_squares_motion(s32 dx, s32 dy);
-extern void game_select_spawn_icon_square(s16 x, s16 y, void *onFinish, s32 onFinishArg, u32 delay);
+extern void game_select_spawn_icon_square(s16 x, s16 y, void *onFinish, uintptr_t onFinishArg, u32 delay);
 extern void game_select_update_icon_square(struct NewIconSquare *shadow);
 extern void game_select_update_icon_squares(void);
 extern u32 game_select_check_for_icon_squares(void);

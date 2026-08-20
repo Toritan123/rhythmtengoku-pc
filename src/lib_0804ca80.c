@@ -839,7 +839,7 @@ void sprite_set_paused(struct SpriteHandler *handler, s16 id, u16 isPaused) {
 
 
 // Set Callback
-void sprite_set_callback(struct SpriteHandler *handler, s16 id, void *func, u32 arg) {
+void sprite_set_callback(struct SpriteHandler *handler, s16 id, void *func, uintptr_t arg) {
     D_03004428 = SPRITE_OPERATION_SET_CALLBACK;
     if (sprite_is_invalid(handler, id)) {
         return;

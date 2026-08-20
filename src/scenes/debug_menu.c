@@ -103,7 +103,7 @@ void debug_menu_scene_start(void *sVar, s32 dArg) {
     gDebugMenu->inputsEnabled = FALSE;
 
     set_scene_trans_var(&scene_epilogue, 0);
-    set_scene_trans_var(&scene_arrival, (u32)&scene_reading);
+    set_scene_trans_var(&scene_arrival, (uintptr_t)&scene_reading);
     set_scene_trans_var(&scene_reading, agb_random(20));
     gameplay_pause_menu_set_quit_destination(&scene_debug_menu);
     results_set_enable_save(FALSE);

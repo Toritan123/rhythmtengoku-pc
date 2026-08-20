@@ -408,7 +408,7 @@ void sneaky_spirits_cue_miss(struct Cue *cue, struct SneakySpiritsCue *info) {
 
     if (!info->disableTaunt) {
         sprite_create(gSpriteHandler, anim_sneaky_spirit_taunt, 0, 160, 105, 0x8792, 1, 0, 3);
-        schedule_function_call(get_current_mem_id(), play_sound, (u32)&s_ghost_warai_seqData, ticks_to_frames(0x0C));
+        schedule_function_call(get_current_mem_id(), play_sound, (uintptr_t)&s_ghost_warai_seqData, ticks_to_frames(0x0C));
     }
 
     play_sound(&s_ghost_dash_seqData);

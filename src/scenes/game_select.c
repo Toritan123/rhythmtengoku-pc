@@ -2584,7 +2584,7 @@ void game_select_update_bg_squares_motion(s32 dx, s32 dy) {
 
 
 // Spawn New Icon Square
-void game_select_spawn_icon_square(s16 x, s16 y, void *onFinish, s32 onFinishArg, u32 delay) {
+void game_select_spawn_icon_square(s16 x, s16 y, void *onFinish, uintptr_t onFinishArg, u32 delay) {
     struct NewIconSquare *shadow = gGameSelect->newIconSquares;
     s32 x1, y1, x2, y2;
     u32 i;

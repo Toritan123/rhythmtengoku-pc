@@ -70,10 +70,27 @@ endif
 BIN2S   := python3 tools/bin2s.py
 
 # ─── Compiler flags ─────────────────────────────────────────────────────────
+# Optimisation level.  Measured over 1300 frames of karate_man, -O2 halves the
+# per-frame work: 7.17 ms -> 3.49 ms (render 6.25 -> 3.09, audio 0.80 -> 0.27)
+# against a 16.74 ms budget.
+#
+#   make -f Makefile.pc OPT=-O2
+#
+# The default stays -O0 only because the text scenes still have a memory
+# corruption bug that -O2 does not cause but does not help either: over six
+# runs each, data_room crashed 3/6 at -O0 and 2/6 at -O2, reading 0-1/6 and
+# 2/6.  Flipping the default is the right move once that is found — shipping a
+# debug build is not a position worth defending on its own merits.
+#
+# -fno-strict-aliasing (below, in COMPATFLAGS) stays at every level:
+# decompiled code type-puns constantly, and strict aliasing would let the
+# optimiser act on assumptions the original code never held.
+OPT ?= -O0
+
 CFLAGS  := -DPLATFORM_PC -DRTPC_FRAMEDUMP \
            $(ARCHFLAGS) $(COMPATFLAGS) \
            -std=gnu11 \
-           -O0 -g \
+           $(OPT) -g \
            -I. \
            -Iinclude \
            $(SDL2_CFLAGS) \
@@ -99,7 +116,7 @@ CFLAGS  := -DPLATFORM_PC -DRTPC_FRAMEDUMP \
            -fno-strict-aliasing \
            $(EXTRA_CFLAGS)
 
-LDFLAGS := $(ARCHFLAGS) $(SDL2_LIBS) -lm
+LDFLAGS := $(ARCHFLAGS) $(SDL2_LIBS) -lm $(EXTRA_LDFLAGS)
 
 # ─── Source collection ───────────────────────────────────────────────────────
 find_c = $(shell find $(1) -name '*.c' ! -name '*.inc.c' 2>/dev/null)

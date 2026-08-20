@@ -147,7 +147,7 @@ void flush_save_buffer(u8 *cartRAM) {
 
 
 s32 get_offset_from_save_buffer(void *buffer) {
-	return (u32)buffer - (u32)D_030046a8;
+	return (uintptr_t)buffer - (uintptr_t)D_030046a8;
 }
 
 

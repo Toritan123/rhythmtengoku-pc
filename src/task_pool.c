@@ -15,7 +15,7 @@ struct Task {
     s32 poolID;
     void *info; // static data
     TaskFinalFunc onFinish;
-    s32 onFinishArg;
+    intptr_t onFinishArg;
     u16 startDelay;
 };
 
@@ -103,7 +103,7 @@ void task_pool_update_constant(void) {
 
 
 // Create New Task
-s32 start_new_task(u16 memID, const struct TaskMethods *methods, void *inputs, TaskFinalFunc onFinish, u32 onFinishArg) {
+s32 start_new_task(u16 memID, const struct TaskMethods *methods, void *inputs, TaskFinalFunc onFinish, uintptr_t onFinishArg) {
     struct Task *task;
     void *info;
     u32 i;
@@ -264,7 +264,7 @@ u32 get_task_state(s32 poolID) {
 
 
 // Set Task onFinish Function by Pool ID
-void run_func_after_task(s32 poolID, TaskFinalFunc onFinish, s32 onFinishArg) {
+void run_func_after_task(s32 poolID, TaskFinalFunc onFinish, intptr_t onFinishArg) {
     struct Task *task;
     u32 i;
 

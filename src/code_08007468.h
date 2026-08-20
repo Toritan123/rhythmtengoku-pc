@@ -81,7 +81,7 @@ extern u32 func_08008464(struct unk_struct_08008420 *task);
 /* SCHEDULED FUNCTION CALL */
 extern struct ScheduledFunctionTask *init_scheduled_function_task(struct ScheduledFunctionTask *inputs);
 extern u32 update_scheduled_function_task(struct ScheduledFunctionTask *task);
-extern s32 schedule_function_call(u16 memID, void *function, s32 param, u32 delay);
+extern s32 schedule_function_call(u16 memID, void *function, intptr_t param, u32 delay);
 
 /* BUFFERED TEXTURE */
 extern u32 decompress_gfx_init(struct CompressedGFX *gfx, uintptr_t dest, u32 limit, struct GFXDecompressProgress *progress);

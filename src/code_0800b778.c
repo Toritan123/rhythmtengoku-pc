@@ -57,7 +57,7 @@ void run_beatscript_scene_callback(void) {
 
 
 // Set BeatScript Engine Callback
-void set_beatscript_scene_callback(void function(s32), s32 argument) {
+void set_beatscript_scene_callback(void function(intptr_t), intptr_t argument) {
     D_030053c0.callbackFunction = function;
     D_030053c0.callbackArgument = argument;
 }
@@ -922,7 +922,7 @@ void *scene_mem_heap_alloc(u32 size) {
 
 
 // Start Task
-s32 scene_start_new_task(struct TaskMethods *methods, void *inputs, TaskFinalFunc onFinish, u32 onFinishArg) {
+s32 scene_start_new_task(struct TaskMethods *methods, void *inputs, TaskFinalFunc onFinish, uintptr_t onFinishArg) {
     return start_new_task(get_current_mem_id(), methods, inputs, onFinish, onFinishArg);
 }
 

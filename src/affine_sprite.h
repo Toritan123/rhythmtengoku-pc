@@ -66,7 +66,7 @@ extern u8   affine_sprite_get_anim_progress(struct AffineSprite *);
 extern void affine_sprite_set_attr(struct AffineSprite *, u32 attr);
 extern void affine_sprite_orr_attr(struct AffineSprite *, u32 attr);
 extern void affine_sprite_and_attr(struct AffineSprite *, u32 attr);
-extern void affine_sprite_set_callback(struct AffineSprite *, void *func, u32 arg);
+extern void affine_sprite_set_callback(struct AffineSprite *, void *func, uintptr_t arg);
 extern void affine_sprite_set_callback_cel(struct AffineSprite *, s8 cel);
 extern u32  affine_sprite_get_total_cels(struct AffineSprite *);
 extern void affine_sprite_set_origin_x_y(struct AffineSprite *, s16 *xOrigin, s16 *yOrigin);

@@ -128,8 +128,8 @@ extern struct BeatscriptScene {
     u16 musicTrkTargets; // [D_03005554] Beatscript: Music Channel Selection
     s8  musicKey; // [D_03005556] Beatscript: Music Key
     const char *strings[10]; // [D_030053c0 + 0x198]
-    void (*callbackFunction)(s32);
-    s32 callbackArgument;
+    void (*callbackFunction)(intptr_t);
+    intptr_t callbackArgument;
 } D_030053c0;
 
 extern u32 *D_03005588; // Current Scene Variable

@@ -36,9 +36,9 @@ struct TextPrinter {
     u8 finished;
     u8 canceled;
     void (*onFinish)();
-    u32 onFinishArg;
+    uintptr_t onFinishArg;
     void (*onClear)();
-    u32 onClearArg;
+    uintptr_t onClearArg;
     s16 *xSrc;
     s16 *ySrc;
     u8 unk54;
@@ -80,9 +80,9 @@ struct Listbox {
     s16 (*getSprite)();
     u8 unk3C;
     void (*onScroll)();
-    s32 onScrollArg;
+    uintptr_t onScrollArg;
     void (*onFinish)();
-    s32 onFinishArg;
+    uintptr_t onFinishArg;
 };
 
 enum TextPrinterModesEnum {
@@ -159,8 +159,8 @@ extern void text_printer_set_alignment(struct TextPrinter *textPrinter, u32 alig
 extern void text_printer_center_by_content(struct TextPrinter *textPrinter, u32 center); // Set Center Text
 extern s32 func_0800ace8(struct TextPrinter *textPrinter); // Get unk26
 extern void text_printer_get_x_y(struct TextPrinter *textPrinter, s16 *vx, s16 *vy); // Store Centred X & Y to Vector
-extern void text_printer_run_func_on_finish(struct TextPrinter *textPrinter, void *onPrint, s32 param); // Set On-Print Function and Parameter
-extern void text_printer_run_func_on_clear(struct TextPrinter *textPrinter, void *onClear, s32 param); // Set On-Clear Function and Parameter
+extern void text_printer_run_func_on_finish(struct TextPrinter *textPrinter, void *onPrint, uintptr_t param); // Set On-Print Function and Parameter
+extern void text_printer_run_func_on_clear(struct TextPrinter *textPrinter, void *onClear, uintptr_t param); // Set On-Clear Function and Parameter
 extern void text_printer_export_data(struct TextPrinter *textPrinter, struct TextPrinterData *data); // Export Text Printer Data
 extern void text_printer_import_data(struct TextPrinter *textPrinter, struct TextPrinterData *data); // Import Text Printer Data
 extern void text_printer_set_x_y_controller(struct TextPrinter *textPrinter, s16 *xSrc, s16 *ySrc); // Set X & Y Sources
@@ -185,8 +185,8 @@ extern s32 listbox_get_sel_item(struct Listbox *listbox);
 extern s32 listbox_get_sel_line(struct Listbox *listbox);
 extern void listbox_scroll_up(struct Listbox *listbox);
 extern void listbox_scroll_down(struct Listbox *listbox);
-extern void listbox_run_func_on_scroll(struct Listbox *listbox, void onScroll(), s32 onScrollArg);
-extern void listbox_run_func_on_finish(struct Listbox *listbox, void onFinish(), s32 onFinishArg);
+extern void listbox_run_func_on_scroll(struct Listbox *listbox, void onScroll(), uintptr_t onScrollArg);
+extern void listbox_run_func_on_finish(struct Listbox *listbox, void onFinish(), uintptr_t onFinishArg);
 extern s16 func_0800b32c(struct Listbox *listbox);
 extern s32 listbox_is_busy(struct Listbox *listbox);
 extern void listbox_offset_x_y(struct Listbox *listbox, s16 x, s16 y);

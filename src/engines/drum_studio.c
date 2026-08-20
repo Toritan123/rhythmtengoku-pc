@@ -524,7 +524,7 @@ void drum_studio_start_monitor1(void) {
     gDrumStudio->bg3VelX = drum_studio_bg_table[id].bg3VelX;
     gDrumStudio->bg3VelY = drum_studio_bg_table[id].bg3VelY;
     task = func_08002ee0(get_current_mem_id(), drum_studio_bg_table[id].gfxTable, 0x2000);
-    run_func_after_task(task, drum_studio_start_monitor2, (s32)drum_studio_bg_table[id].palette);
+    run_func_after_task(task, drum_studio_start_monitor2, (intptr_t)drum_studio_bg_table[id].palette);
 }
 
 

@@ -1025,7 +1025,7 @@ u32 update_scheduled_function_task(struct ScheduledFunctionTask *task) {
 }
 
 // Scheduled Function Call
-s32 schedule_function_call(u16 memID, void *function, s32 param, u32 delay) {
+s32 schedule_function_call(u16 memID, void *function, intptr_t param, u32 delay) {
     struct ScheduledFunctionTask inputs;
 
     inputs.function = function;

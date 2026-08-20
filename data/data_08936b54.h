@@ -242,8 +242,8 @@ struct unk_struct_08008420 {
 };
 
 struct ScheduledFunctionTask {
-    void (*function)(s32);
-    s32 param;
+    void (*function)(intptr_t);
+    intptr_t param;
     u32 delay;
 };
 

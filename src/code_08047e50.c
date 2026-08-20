@@ -325,10 +325,10 @@ void drum_band_tap_trial_2_play_count_in(u24_8 volume) {
 // Load Pattern
 void drum_lesson_script_import_pattern(struct DrumLessonPattern *pattern) {
     gameplay_run_engine_event_w_param(&drum_studio_engine, 0x0E, 0);
-    gameplay_run_engine_event_w_param(&drum_studio_engine, 0x0E, (s32)pattern->beat1);
-    gameplay_run_engine_event_w_param(&drum_studio_engine, 0x0E, (s32)pattern->beat2);
-    gameplay_run_engine_event_w_param(&drum_studio_engine, 0x0E, (s32)pattern->cheerSfx);
-    gameplay_run_engine_event_w_param(&drum_studio_engine, 0x0D, (s32)pattern->dialogue);
+    gameplay_run_engine_event_w_param(&drum_studio_engine, 0x0E, (intptr_t)pattern->beat1);
+    gameplay_run_engine_event_w_param(&drum_studio_engine, 0x0E, (intptr_t)pattern->beat2);
+    gameplay_run_engine_event_w_param(&drum_studio_engine, 0x0E, (intptr_t)pattern->cheerSfx);
+    gameplay_run_engine_event_w_param(&drum_studio_engine, 0x0D, (intptr_t)pattern->dialogue);
     gameplay_run_engine_event_w_param(&drum_studio_engine, 0x10, 1);
 }
 
@@ -340,5 +340,5 @@ void drum_lesson_script_end_pattern(void) {
 
     sound = (struct SongHeader *)gameplay_run_engine_event_w_param(&drum_studio_engine, 0x0F, 2);
     soundPlayer = play_sound_in_player_w_pitch_volume(MUSIC_PLAYER_1, sound, 0xA0, 0);
-    gameplay_run_engine_event_w_param(&drum_studio_engine, 0x19, (s32)soundPlayer);
+    gameplay_run_engine_event_w_param(&drum_studio_engine, 0x19, (intptr_t)soundPlayer);
 }

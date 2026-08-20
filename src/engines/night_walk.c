@@ -342,7 +342,7 @@ void night_walk_expand_star(void) {
 
     star = &gNightWalk->stars[gNightWalk->nextStar];
     sprite_set_anim(gSpriteHandler, star->sprite, night_walk_star_expand_anim[gNightWalk->currentStarSize], 0, 1, 0, 4);
-    sprite_set_callback(gSpriteHandler, star->sprite, night_walk_finish_star_expansion, (s32)night_walk_star_anim[gNightWalk->currentStarSize + 1]);
+    sprite_set_callback(gSpriteHandler, star->sprite, night_walk_finish_star_expansion, (uintptr_t)night_walk_star_anim[gNightWalk->currentStarSize + 1]);
     star->size = gNightWalk->currentStarSize + 1;
     gNightWalk->nextStar++;
     if (gNightWalk->nextStar >= NIGHT_WALK_STAR_AMOUNT) {

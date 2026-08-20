@@ -115,6 +115,87 @@ static int16_t s_carry_l = 0, s_carry_r = 0;
 static int     s_carry_valid = 0;
 static double  s_volume      = -1.0;  // master gain, RTPC_VOLUME/100
 
+// ── Band-limited resampler ───────────────────────────────────────────────────
+// Linear interpolation is cheap but it is a poor anti-imaging filter: its
+// response is sinc^2, which at 13379 Hz leaves the first image only ~10 dB
+// down where it lands just above 6.7 kHz.  Measured on real output with the
+// PSG muted (so everything above the mixer's 6.69 kHz Nyquist is necessarily
+// an artifact), the 6.7-9 kHz band sat 24 dB below the signal — audible as a
+// bright fizz on top of every sample-based instrument.
+//
+// This is a windowed-sinc interpolator instead: a Kaiser-windowed sinc,
+// tabulated at RS_PHASES steps per input sample and read with linear
+// interpolation between table entries.  The cost is RS_HALF input samples of
+// delay, because a symmetric kernel needs that many samples of look-ahead and
+// the newest block is all there is — 1.79 ms at 13379 Hz, less at higher
+// RTPC_MIX_MULT settings.
+//
+// RTPC_AUDIO_LINEAR=1 restores the old linear interpolator for comparison.
+#define RS_HALF    24          /* taps each side, in input samples */
+#define RS_PHASES  512         /* kernel table steps per input sample */
+#define RS_BETA    9.0         /* Kaiser beta */
+#define RS_HIST    4096        /* input-sample history ring (>> one frame) */
+
+static float    s_rs_tab[RS_HALF * RS_PHASES + 2];
+static int      s_rs_ready = 0;
+static int16_t  s_hist_l[RS_HIST], s_hist_r[RS_HIST];
+static uint64_t s_hist_w = 0;      /* total input samples ever appended */
+static double   s_rs_pos = 0.0;    /* absolute input position of next output */
+static int      s_linear = -1;
+
+static double rs_bessel_i0(double x)
+{
+    // Series expansion; converges quickly for the range Kaiser needs.
+    double sum = 1.0, term = 1.0;
+    int k;
+    for (k = 1; k < 40; k++) {
+        term *= (x / (2.0 * k)) * (x / (2.0 * k));
+        sum  += term;
+        if (term < sum * 1e-16) break;
+    }
+    return sum;
+}
+
+static void rs_build_table(void)
+{
+    double denom = rs_bessel_i0(RS_BETA);
+    int i;
+    for (i = 0; i <= RS_HALF * RS_PHASES; i++) {
+        double t = (double)i / RS_PHASES;          /* input samples from centre */
+        double r = t / RS_HALF;                    /* 0..1 across the half-width */
+        double sinc = (i == 0) ? 1.0 : sin(M_PI * t) / (M_PI * t);
+        double win  = rs_bessel_i0(RS_BETA * sqrt(1.0 - r * r)) / denom;
+        s_rs_tab[i] = (float)(sinc * win);
+    }
+    s_rs_tab[RS_HALF * RS_PHASES + 1] = 0.0f;      /* guard for the interpolation */
+    s_rs_ready = 1;
+}
+
+// Fill `w` with the 2*RS_HALF kernel weights for a read position whose
+// fractional part is `frac`, ordered from the leftmost tap to the rightmost.
+//
+// The taps are exactly one input sample apart, so their table indices are
+// exactly RS_PHASES apart: the phase is computed once and then strided,
+// instead of a divide and a fabs per tap.
+static inline void rs_weights(double frac, float *w)
+{
+    double xp = frac * RS_PHASES;
+    int    fi = (int)xp;
+    float  ff = (float)(xp - (double)fi);
+    int    k;
+
+    // Taps left of centre: distance = m + frac, m = RS_HALF-1 .. 0
+    for (k = 0; k < RS_HALF; k++) {
+        int i = (RS_HALF - 1 - k) * RS_PHASES + fi;
+        w[k] = s_rs_tab[i] + (s_rs_tab[i + 1] - s_rs_tab[i]) * ff;
+    }
+    // Taps right of centre: distance = j - frac, j = 1 .. RS_HALF
+    for (k = 0; k < RS_HALF; k++) {
+        int i = (k + 1) * RS_PHASES - fi - 1;
+        w[RS_HALF + k] = s_rs_tab[i] + (s_rs_tab[i + 1] - s_rs_tab[i]) * (1.0f - ff);
+    }
+}
+
 // Fetch sample `idx` (counted from `base` in words) from whichever source is
 // active, as a pair of s16.
 static inline void fetch_sample(uint32_t base, uint32_t buf_size, uint32_t idx,
@@ -375,40 +456,78 @@ void audio_pc_push_frame(void)
     // buzz.  Interpolating between neighbouring samples removes most of that
     // image energy for two extra multiplies per output sample.
     //
-    // Interpolate *backwards*, between sample[idx-1] and sample[idx], carrying
-    // the previous frame's last sample across the call.  Reading sample[idx+1]
-    // instead would step one past the block the mixer just wrote, landing on
-    // whatever the ring held from its previous lap — roughly seven frames of
-    // stale audio — which put a discontinuity at every single frame boundary,
-    // i.e. an audible 60 Hz crackle.  Reading backwards keeps every access
-    // inside valid data; the cost is a constant 1-sample (75 us) delay.
-    while (s_resample_pos < (double)gba_samples && out_count < max_out) {
-        uint32_t idx  = (uint32_t)s_resample_pos;
-        double   frac = s_resample_pos - (double)idx;
-        int16_t  l0, r0, l1, r1;
-
-        if (idx == 0) {
-            if (s_carry_valid) { l0 = s_carry_l; r0 = s_carry_r; }
-            else               { fetch_sample(base, buf_size, 0, &l0, &r0); }
-        } else {
-            fetch_sample(base, buf_size, idx - 1, &l0, &r0);
-        }
-        fetch_sample(base, buf_size, idx, &l1, &r1);
-
-        if (s_zoh) { l0 = l1; r0 = r1; frac = 0.0; }
-        out[out_count * 2 + 0] = (int16_t)(l0 + (int)((l1 - l0) * frac));
-        out[out_count * 2 + 1] = (int16_t)(r0 + (int)((r1 - r0) * frac));
-        out_count++;
-
-        s_resample_pos += step;
+    if (s_linear < 0) {
+        const char *e = getenv("RTPC_AUDIO_LINEAR");
+        s_linear = (e && atoi(e)) ? 1 : 0;
+        if (!s_rs_ready) rs_build_table();
     }
 
-    // Carry the last sample of this block so the next call can interpolate
-    // across the seam instead of jumping.
-    fetch_sample(base, buf_size, gba_samples - 1, &s_carry_l, &s_carry_r);
-    s_carry_valid = 1;
-    s_resample_pos -= (double)gba_samples;
-    if (s_resample_pos < 0.0) s_resample_pos = 0.0;
+    // Append this frame's samples to the history ring.  Every read below is
+    // from history, so no access can step past the block the mixer just wrote
+    // — the failure that used to put a discontinuity at every frame boundary
+    // and made the whole thing crackle at 60 Hz.
+    {
+        uint32_t i;
+        for (i = 0; i < gba_samples; i++) {
+            uint32_t slot = (uint32_t)((s_hist_w + i) % RS_HIST);
+            fetch_sample(base, buf_size, i, &s_hist_l[slot], &s_hist_r[slot]);
+        }
+        if (s_hist_w == 0) {
+            // Start the read cursor RS_HALF samples in, so the first output
+            // already has a full left-hand window.
+            s_rs_pos = (double)RS_HALF;
+        }
+        s_hist_w += gba_samples;
+    }
+
+    // Emit while a full kernel window is available on both sides.
+    while ((double)s_hist_w - s_rs_pos >= (double)RS_HALF && out_count < max_out) {
+        int64_t centre = (int64_t)s_rs_pos;
+        double  accl = 0.0, accr = 0.0;
+
+        if (s_zoh) {
+            uint32_t slot = (uint32_t)(centre % RS_HIST);
+            accl = s_hist_l[slot];
+            accr = s_hist_r[slot];
+        } else if (s_linear) {
+            uint32_t s0 = (uint32_t)(centre % RS_HIST);
+            uint32_t s1 = (uint32_t)((centre + 1) % RS_HIST);
+            double   f  = s_rs_pos - (double)centre;
+            accl = s_hist_l[s0] + (s_hist_l[s1] - s_hist_l[s0]) * f;
+            accr = s_hist_r[s0] + (s_hist_r[s1] - s_hist_r[s0]) * f;
+        } else {
+            float   w[RS_HALF * 2];
+            float   sl = 0.0f, sr = 0.0f;
+            int64_t n0 = centre - RS_HALF + 1;
+            int     k;
+
+            rs_weights(s_rs_pos - (double)centre, w);
+            for (k = 0; k < RS_HALF * 2; k++) {
+                int64_t n = n0 + k;
+                uint32_t slot;
+                if (n < 0) continue;              /* only at start-up */
+                slot = (uint32_t)(n % RS_HIST);
+                sl += s_hist_l[slot] * w[k];
+                sr += s_hist_r[slot] * w[k];
+            }
+            accl = sl;
+            accr = sr;
+        }
+
+        out[out_count * 2 + 0] = (int16_t)(accl >  32767.0 ?  32767.0 :
+                                           accl < -32768.0 ? -32768.0 : accl);
+        out[out_count * 2 + 1] = (int16_t)(accr >  32767.0 ?  32767.0 :
+                                           accr < -32768.0 ? -32768.0 : accr);
+        out_count++;
+        s_rs_pos += step;
+    }
+
+    // If max_out capped the loop, or a stall left the cursor far behind, the
+    // history would wrap out from under it.  Snap forward rather than read
+    // samples that have already been overwritten.
+    if ((double)s_hist_w - s_rs_pos > (double)(RS_HIST - RS_HALF * 2)) {
+        s_rs_pos = (double)s_hist_w - RS_HALF;
+    }
 
     // ── Master volume ─────────────────────────────────────────────────────
     // Measured over 30 s of gameplay, the game's own mix sits at -16.2 dBFS

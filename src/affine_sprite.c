@@ -592,7 +592,7 @@ void affine_sprite_and_attr(struct AffineSprite *affineData, u32 arg) {
 
 
 // Set Sprite Animation Callback
-void affine_sprite_set_callback(struct AffineSprite *affineData, void *func, u32 arg) {
+void affine_sprite_set_callback(struct AffineSprite *affineData, void *func, uintptr_t arg) {
     if (affineData == NULL) {
         return;
     }

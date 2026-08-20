@@ -417,7 +417,7 @@ void sick_beats_set_yellow_microbe_state(u32 state) {
         sprite_set_callback(gSpriteHandler, yellowMicrobe->sprite, 0, 0);
     } else {
         sprite_set_anim(gSpriteHandler, yellowMicrobe->sprite, sick_beats_microbe_event_anim[state], 0, 1, 0, 4);
-        sprite_set_callback(gSpriteHandler, yellowMicrobe->sprite, sick_beats_yellow_microbe_callback, (u32)&yellowMicrobe->isHurt);
+        sprite_set_callback(gSpriteHandler, yellowMicrobe->sprite, sick_beats_yellow_microbe_callback, (uintptr_t)&yellowMicrobe->isHurt);
     }
 
     yellowMicrobe->state = state;
@@ -749,7 +749,7 @@ struct AffineSprite *sick_beats_process_cue(struct SickBeatsCue *info, struct An
         sprite_set_base_palette(gSpriteHandler, virusEffectSprite, info->virusPalette);
     }
     if (nextVirusAfSprite) {
-        affine_sprite_set_callback(nextVirusAfSprite, sick_beats_fork_callback, (u32)nextVirusAfSprite);
+        affine_sprite_set_callback(nextVirusAfSprite, sick_beats_fork_callback, (uintptr_t)nextVirusAfSprite);
         affine_sprite_set_base_palette(nextVirusAfSprite, palette);
         affine_sprite_set_anim_speed(nextVirusAfSprite, (u32)INT_TO_FIXED(get_beatscript_tempo()) / 125);
         affine_sprite_set_visible(baseVirusAfSprite, 0);
@@ -839,7 +839,7 @@ void sick_beats_input_event(u32 pressed, u32 released) {
     }
     forkSprite = create_affine_sprite(anim_fork_hit_none1, 0, posX, posY, 0x8800, INT_TO_FIXED(1), rotation, 1, 0x7f, 4, 1);
     if (forkSprite) {
-        affine_sprite_set_callback(forkSprite, sick_beats_fork_callback, (u32)forkSprite);
+        affine_sprite_set_callback(forkSprite, sick_beats_fork_callback, (uintptr_t)forkSprite);
     }
     gameplay_add_cue_result(0, 3, 0);
     play_sound(&s_virus_fork_seqData);

@@ -146,7 +146,7 @@ struct Sprite {
     s16 zLinkNext;      // ID of Sprite with Next-Highest Z Value
     s8_8 currentCelTime; // Time Left for Current Animation Cel
     void (*callbackFunc)(struct SpriteHandler *, s16, u32, ...); // Callback Function
-    u32 callbackArg;    // Callback Argument
+    uintptr_t callbackArg;    // Callback Argument
     u16 totalDuration;  // Total Duration
     u16 memID;          // Memory ID
     s16 *xOrigin;       // World Origin X Offset
@@ -244,7 +244,7 @@ extern void sprite_set_anim(struct SpriteHandler *, s16 id, struct Animation *an
 extern void sprite_set_anim_data(struct SpriteHandler *, s16 id, struct SpritePlaybackData *data);
 extern void sprite_set_enable_updates(struct SpriteHandler *, s16 id, u16 canUpdate);
 extern void sprite_set_paused(struct SpriteHandler *, s16 id, u16 isPaused);
-extern void sprite_set_callback(struct SpriteHandler *, s16 id, void *func, u32 arg);
+extern void sprite_set_callback(struct SpriteHandler *, s16 id, void *func, uintptr_t arg);
 extern void sprite_set_playback(struct SpriteHandler *, s16 id, s8 direction, s8 loopCel, u16 playbackType);
 extern void sprite_set_origin_x_y(struct SpriteHandler *, s16 id, s16 *xOrigin, s16 *yOrigin);
 extern void sprite_set_origin_x(struct SpriteHandler *, s16 id, s16 *xOrigin);

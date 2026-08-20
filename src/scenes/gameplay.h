@@ -112,7 +112,7 @@ extern void *gameplay_get_engine_data(void); // [func_0801732c] Get Current Game
 extern void gameplay_set_input_buttons(u16 press, u16 release); // [func_08017338] Set Input Button Filters
 extern s32  gameplay_run_common_event(intptr_t param, s32 id); // [func_08017348] Run Engine-Common Event
 extern void gameplay_set_engine_event_param(intptr_t param); // [func_08017380] Set Parameter for Engine-Specific Event
-extern s32  gameplay_run_engine_event(const struct GameEngine *engine, s32 id); // [func_0801738c] Run Engine-Specific Event
+extern intptr_t gameplay_run_engine_event(const struct GameEngine *engine, s32 id); // [func_0801738c] Run Engine-Specific Event
 extern void gameplay_inputs_enabled(u32 enable); // [func_080173c4] Enable Play Inputs
 extern void gameplay_assess_irrelevant_inputs(u32 assess); // [func_080173d0] Assess Non-Cue Inputs
 extern void gameplay_set_next_cue_spawn_sfx(struct SongHeader *sfx); // [func_080173dc] Set Next Cue Spawn SFX
@@ -137,7 +137,7 @@ extern void gameplay_start_perfect_campaign(void); // [func_08017604] Start Perf
 extern void gameplay_check_for_perfect(u32 assessInputs); // [func_08017648] Start/Stop Assessing Inputs for Perfect Campaign
 extern void gameplay_register_imperfect_input(void); // [func_0801765c] Register Imperfect Input
 extern void gameplay_register_perfect_input(void); // [func_080176cc] Register Perfect Input
-extern s32  gameplay_run_engine_event_w_param(const struct GameEngine *engine, u32 function, intptr_t param); // [func_08017728] Run Game Engine Event (convenience method)
+extern intptr_t gameplay_run_engine_event_w_param(const struct GameEngine *engine, u32 function, intptr_t param); // [func_08017728] Run Game Engine Event (convenience method)
 extern void gameplay_set_miss_punishment_duration(u32 duration); // [func_08017744] Set Miss Punishment Interval
 extern void gameplay_set_inter_engine_variable(u32 i, intptr_t val); // [func_08017758] Set Inter-Engine Variable
 extern intptr_t gameplay_get_inter_engine_variable(u32 i); // [func_0801777c] Get Inter-Engine Variable
