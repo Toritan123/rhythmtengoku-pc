@@ -252,16 +252,22 @@ app: $(TARGET)
 	      "$(APPDIR)/Contents/MacOS/rhythmtengoku"; \
 	  install_name_tool -id "@executable_path/../Frameworks/$$base" \
 	      "$(APPDIR)/Contents/Frameworks/$$base"; \
+	  want=$$(lipo -archs "$(APPDIR)/Contents/MacOS/rhythmtengoku" | awk '{print $$1}'); \
 	  for dep in $$(strings "$$real" | grep -E '^@loader_path/lib.*\.dylib$$' | sed 's|@loader_path/||' | sort -u); do \
 	    src=""; \
 	    for cand in "$$(dirname "$$real")/$$dep" \
-	                "$$(brew --prefix 2>/dev/null)/lib/$$dep" \
-	                "/opt/homebrew/lib/$$dep" "/usr/local/lib/$$dep"; do \
-	      if [ -f "$$cand" ]; then src="$$cand"; break; fi; \
+	                "$(SDL2_PREFIX)/lib/$$dep" \
+	                "/opt/homebrew/lib/$$dep" "/usr/local/lib/$$dep" \
+	                "$$(brew --prefix 2>/dev/null)/lib/$$dep"; do \
+	      [ -f "$$cand" ] || continue; \
+	      lipo -archs "$$cand" 2>/dev/null | tr ' ' '\n' | grep -qx "$$want" || continue; \
+	      src="$$cand"; break; \
 	    done; \
 	    if [ -z "$$src" ]; then \
-	      echo "ERROR: $$base needs $$dep at run time and it was not found."; \
-	      echo "       Bundling without it produces an app that hangs at launch."; \
+	      echo "ERROR: $$base needs $$dep ($$want) at run time and no $$want build was found."; \
+	      echo "       A wrong-architecture copy is worse than none: sdl2-compat dlopens"; \
+	      echo "       SDL3 by name, so the app launches and then dies on an alert saying"; \
+	      echo "       'Failed loading SDL3 library'."; \
 	      exit 1; \
 	    fi; \
 	    if [ -f "$$src" ]; then \
@@ -271,6 +277,11 @@ app: $(TARGET)
 	      chmod u+w "$(APPDIR)/Contents/Frameworks/$$dep"; \
 	      install_name_tool -id "@loader_path/$$dep" "$(APPDIR)/Contents/Frameworks/$$dep"; \
 	    fi; \
+	  done
+	@want=$$(lipo -archs "$(APPDIR)/Contents/MacOS/rhythmtengoku" | awk '{print $$1}'); \
+	  for f in "$(APPDIR)"/Contents/Frameworks/*.dylib; do \
+	    lipo -archs "$$f" 2>/dev/null | tr ' ' '\n' | grep -qx "$$want" || { \
+	      echo "ERROR: $$(basename $$f) is $$(lipo -archs $$f), executable is $$want"; exit 1; }; \
 	  done
 	@printf '%s\n' \
 	  '<?xml version="1.0" encoding="UTF-8"?>' \
@@ -285,6 +296,12 @@ app: $(TARGET)
 	  '  <key>CFBundleVersion</key><string>0.1</string>' \
 	  '  <key>CFBundleIconFile</key><string>AppIcon</string>' \
 	  '  <key>NSHighResolutionCapable</key><true/>' \
+	  '  <key>NSPrincipalClass</key><string>NSApplication</string>' \
+	  '  <!-- A game has no restorable window state.  Without this, a launch after' \
+	  '       an unclean exit stops on the system "reopen windows?" modal, which' \
+	  '       from outside looks exactly like a hang: no window, no output, main' \
+	  '       thread spinning in AEProcessAppleEvent. -->' \
+	  '  <key>NSQuitAlwaysKeepsWindows</key><false/>' \
 	  '  <key>LSMinimumSystemVersion</key><string>10.13</string>' \
 	  '</dict></plist>' > "$(APPDIR)/Contents/Info.plist"
 	@if [ -f dist/AppIcon.icns ]; then cp dist/AppIcon.icns "$(APPDIR)/Contents/Resources/"; fi
