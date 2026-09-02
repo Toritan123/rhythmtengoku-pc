@@ -79,8 +79,9 @@ void func_0800cb28(u32 threadID) {
             dladdr((void *)p2, &info) && info.dli_sname)
             sym = info.dli_sname;
 #endif
-        fprintf(stderr, "[BS] th=%u cmd=%p op=0x%02x p1=%u p2=%p p3=%llu %s\n",
-                threadID, (const void *)cmd, op, (unsigned)p1,
+        extern int gPcFrameNo;
+        fprintf(stderr, "[BS] f=%d th=%u cmd=%p op=0x%02x p1=%u p2=%p p3=%llu %s\n",
+                gPcFrameNo, threadID, (const void *)cmd, op, (unsigned)p1,
                 (const void *)p2, (unsigned long long)p3, sym);
         fflush(stderr);
     }

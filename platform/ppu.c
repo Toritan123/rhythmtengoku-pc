@@ -519,6 +519,15 @@ upload:
 #ifdef RTPC_FRAMEDUMP
     {
         static int s_frame = 0;
+        // RTPC_SHOT_DIR redirects both kinds of dump.  Without it a scene sweep
+        // has to run one scene at a time, because every process writes the same
+        // /tmp/shot_NNNNN.bmp; with it each run gets its own directory and the
+        // sweep parallelises.
+        static const char *dir = NULL;
+        if (dir == NULL) {
+            const char *e = getenv("RTPC_SHOT_DIR");
+            dir = (e && *e) ? e : "/tmp";
+        }
         s_frame++;
         gPcFrameNo = s_frame;
         // RTPC_SHOTS=N : also save a frame every N frames.
@@ -526,8 +535,8 @@ upload:
             static int every = -1;
             if (every < 0) { const char *e = getenv("RTPC_SHOTS"); every = e ? atoi(e) : 0; }
             if (every > 0 && (s_frame % every) == 0) {
-                char p[64];
-                snprintf(p, sizeof(p), "/tmp/shot_%05d.bmp", s_frame);
+                char p[512];
+                snprintf(p, sizeof(p), "%s/shot_%05d.bmp", dir, s_frame);
                 SDL_Surface *sf = SDL_CreateRGBSurfaceFrom(s_fb, GBA_W, GBA_H, 32, GBA_W*4,
                     0x000000FF, 0x0000FF00, 0x00FF0000, 0xFF000000);
                 if (sf) { SDL_SaveBMP(sf, p); SDL_FreeSurface(sf); }
@@ -537,8 +546,8 @@ upload:
         static const int save_at[] = {120, 900, 1800, 2700, 3600, 4200, 4500, 5400, 6000, -1};
         for (int i = 0; save_at[i] >= 0; i++) {
             if (s_frame == save_at[i]) {
-                char path[64];
-                snprintf(path, sizeof(path), "/tmp/rtpc_f%04d.bmp", s_frame);
+                char path[512];
+                snprintf(path, sizeof(path), "%s/rtpc_f%04d.bmp", dir, s_frame);
                 // s_fb pixels: byte0=R, byte1=G, byte2=B, byte3=A
                 // BMP mask must match: R=low byte, B=high byte
                 SDL_Surface *surf = SDL_CreateRGBSurfaceFrom(
