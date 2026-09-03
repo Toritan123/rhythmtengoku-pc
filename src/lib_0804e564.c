@@ -4,6 +4,12 @@
 asm(".include \"include/gba.inc\"");//Temporary
 #endif
 
+volatile u16 D_03004438;
+volatile u16 D_0300443a;
+struct struct_0300443c *D_0300443c;
+u8 D_03004440;
+u32 D_03004448[6];
+
 // Initialise GPIO
 void func_0804e564(void) {
     D_03004438 = 2 | 1;

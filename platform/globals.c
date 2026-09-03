@@ -23,23 +23,23 @@ struct struct_03004ad0 D_03004ad0;
 // Save-data pointer (set by init_ewram / init_save_buffer)
 // Declared in memory.h as a pointer to an anonymous struct — start NULL.
 // The game sets this during save buffer init.
-void *D_030046a8 = NULL;
+// moved to src/global.c upstream: void *D_030046a8 = NULL;
 
 // RLE decompressor function pointer (set by func_08003e64 on both GBA and PC)
-s32 (*D_03004af0)(const u16 *src, u16 *dest, const u8 *rleData, u32 sizeData) = NULL;
+// moved to src/global.c upstream: s32 (*D_03004af0)(const u16 *src, u16 *dest, const u8 *rleData, u32 sizeData) = NULL;
 
 // Gyro/tilt read function pointer (optional peripheral — NULL on PC)
-s32 (*D_030064d4)(void) = NULL;
+// moved to src/global.c upstream: s32 (*D_030064d4)(void) = NULL;
 
 // SRAM fast-path function pointers (installed by lib_sram init)
 // On PC we fall back to plain memcpy-based helpers in asm_stubs.c.
 // These are only called after an explicit install step that we skip on PC.
-void (*read_sram_fast)(const u8 *src, u8 *dest, u32 size)     = NULL;
-void (*write_int_sram_fast)(const u8 *src, u8 *dest, u32 size) = NULL;
-void (*verify_sram_fast)(const u8 *src, u8 *dest, u32 size)   = NULL;
+// moved to src/global.c upstream: void (*read_sram_fast)(const u8 *src, u8 *dest, u32 size)     = NULL;
+// moved to src/global.c upstream: void (*write_int_sram_fast)(const u8 *src, u8 *dest, u32 size) = NULL;
+// moved to src/global.c upstream: void (*verify_sram_fast)(const u8 *src, u8 *dest, u32 size)   = NULL;
 
 // Sprite handler global (set by sprite_handler_create in func_080073b8)
-struct SpriteHandler *gSpriteHandler = NULL;
+// moved to src/global.c upstream: struct SpriteHandler *gSpriteHandler = NULL;
 
 // Sprite allocator function pointers (set by sprite_lib_set_mem_alloc)
 void *(*sSpriteMemAlloc)(u32)        = NULL;
@@ -47,15 +47,15 @@ void  (*sSpriteMemDealloc)(void *)   = NULL;
 void *(*sSpriteMemAllocId)(u32, u32) = NULL;
 
 // Scene/engine data pointers — dynamically allocated per scene
-void *gCurrentSceneData  = NULL;
-void *gCurrentEngineData = NULL;
+// moved to src/global.c upstream: void *gCurrentSceneData  = NULL;
+// moved to src/global.c upstream: void *gCurrentEngineData = NULL;
 
 // Beatscript engine state (declared as extern struct in types.h)
 struct BeatscriptScene D_030053c0;
 
 // Beatscript thread-local state pointers (set in set_beatscript_subscenes)
-uintptr_t *D_03005588 = NULL;
-s16 *D_0300558c = NULL;
+// moved to src/global.c upstream: uintptr_t *D_03005588 = NULL;
+// moved to src/global.c upstream: s16 *D_0300558c = NULL;
 
 #endif // PLATFORM_PC
 

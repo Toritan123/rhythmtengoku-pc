@@ -366,6 +366,9 @@ void init_fast_udivsi3(void) {
 #ifndef PLATFORM_PC
     DmaCopy32(3, fast_udivsi3_rom, fast_udivsi3_code, FAST_UDIVSI3_SIZE);
     fast_udivsi3 = (void *)fast_udivsi3_code;
+#else
+    extern u32 pc_fast_udivsi3_impl(u32 a, u32 b);
+    fast_udivsi3 = pc_fast_udivsi3_impl;
 #endif
 }
 
@@ -1136,76 +1139,70 @@ u32 decompress_gfx_resume(struct GFXDecompressProgress *progress) {
 // the expansion already done (doubleCompressed cleared, so only the RLE stage
 // is left).  On GBA the two are literally overlaid at entry+4; keeping a real
 // struct here says the same thing without depending on field offsets.
-struct BufferedTexture {
-    struct CompressedData *src;
-    struct CompressedData  view;
-    struct BufferedTexture *next;
-};
-
-static struct BufferedTexture *sBufferedTextures;   // [D_0300536c]
+struct BufferedTextureEntry *D_0300536c;
 
 // [func_080086c4] Find `src` in the cache, or add an entry with a buffer big
 // enough for it.  Returns NULL when the texture needs no buffering, or is
 // already present — i.e. non-NULL means "now go and fill this one in".
-static struct BufferedTexture *texture_cache_add(struct CompressedData *src) {
-    struct BufferedTexture *e;
+struct BufferedTextureEntry *func_080086c4(const struct CompressedData *src) {
+    struct BufferedTextureEntry *e;
 
     if (src->doubleCompressed == 0) {
         return NULL;
     }
-    for (e = sBufferedTextures; e != NULL; e = e->next) {
+    for (e = D_0300536c; e != NULL; e = e->next) {
         if (e->src == src) {
             return NULL;                 // already buffered
         }
     }
 
-    e = mem_heap_alloc(sizeof(struct BufferedTexture));
+    e = mem_heap_alloc(sizeof(struct BufferedTextureEntry));
     e->src  = src;
-    e->next = sBufferedTextures;
-    sBufferedTextures = e;
+    e->next = D_0300536c;
+    D_0300536c = e;
 
     // `size` is the expanded length in halfwords.  (`count` is the number of
     // compression units, which is smaller — using it undersizes the buffer.)
-    e->view.data = mem_heap_alloc(((struct CompressedGFX *)src->data)->size * 2);
-    e->view.rleData          = src->rleData;
-    e->view.rleSize          = src->rleSize;
-    e->view.rleOffset        = src->rleOffset;
-    e->view.doubleCompressed = 0;
+    e->data.data = mem_heap_alloc(((struct CompressedGFX *)src->data)->size * 2);
+    e->data.rleData          = src->rleData;
+    e->data.rleSize          = src->rleSize;
+    e->data.rleOffset        = src->rleOffset;
+    e->data.doubleCompressed = 0;
     return e;
 }
 
 // [func_0800861c] Drop the whole cache without freeing — for when the heap it
 // lives in is being reset wholesale.
 void func_0800861c(void) {
-    sBufferedTextures = NULL;
+    D_0300536c = NULL;
 }
 
 // [func_08008628] Free every buffered texture and its buffer.
 void func_08008628(void) {
-    struct BufferedTexture *e = sBufferedTextures;
+    struct BufferedTextureEntry *e = D_0300536c;
 
     while (e != NULL) {
-        struct BufferedTexture *next = e->next;
-        mem_heap_dealloc((void *)e->view.data);
+        struct BufferedTextureEntry *next = e->next;
+        mem_heap_dealloc((void *)e->data.data);
         mem_heap_dealloc(e);
         e = next;
     }
-    sBufferedTextures = NULL;
+    D_0300536c = NULL;
 }
 
 // [func_08008658] Drop one texture from the cache.
-void func_08008658(struct CompressedData *src) {
-    struct BufferedTexture *e = sBufferedTextures;
-    struct BufferedTexture *prev = NULL;
+void func_08008658(const struct CompressedData *src) {
+    struct BufferedTextureEntry *e = D_0300536c;
+    struct BufferedTextureEntry *prev = NULL;
 
     while (e != NULL) {
         if (e->src == src) {
             if (prev == NULL) {
-                sBufferedTextures = e->next;
+                D_0300536c = e->next;
             } else {
                 prev->next = e->next;
             }
-            mem_heap_dealloc((void *)e->view.data);
+            mem_heap_dealloc((void *)e->data.data);
             mem_heap_dealloc(e);
             return;
         }
@@ -1215,15 +1212,15 @@ void func_08008658(struct CompressedData *src) {
 }
 
 // [func_0800869c] Substitute the buffered form of `src` if there is one.
-void *func_0800869c(const void *src) {
-    struct BufferedTexture *e;
+struct CompressedData *func_0800869c(const struct CompressedData *src) {
+    struct BufferedTextureEntry *e;
 
-    for (e = sBufferedTextures; e != NULL; e = e->next) {
+    for (e = D_0300536c; e != NULL; e = e->next) {
         if (e->src == src) {
-            return &e->view;
+            return &e->data;
         }
     }
-    return (void *)src;
+    return (struct CompressedData *)src;
 }
 
 // [func_08008608] Expand one texture in a single call (no frame budget, and no
@@ -1233,10 +1230,10 @@ u32 func_08008608(struct CompressedGFX *gfx, void *dest) {
 }
 
 // [func_08008720] Buffer one texture immediately, if it isn't already.
-void func_08008720(struct CompressedData *src) {
-    struct BufferedTexture *e = texture_cache_add(src);
+void func_08008720(const struct CompressedData *src) {
+    struct BufferedTextureEntry *e = func_080086c4(src);
     if (e != NULL) {
-        func_08008608((struct CompressedGFX *)src->data, (void *)e->view.data);
+        func_08008608((struct CompressedGFX *)src->data, (void *)e->data.data);
     }
 }
 
@@ -1268,17 +1265,17 @@ u32 update_texture_loader_task(struct TextureLoader *st) {
     } else {
         for (;;) {
             struct CompressedData *src = *st->list++;
-            struct BufferedTexture *e;
+            struct BufferedTextureEntry *e;
 
             if (src == NULL) {
                 return 1;                // end of list
             }
-            e = texture_cache_add(src);
+            e = func_080086c4(src);
             if (e == NULL) {
                 continue;                // already buffered, or not compressed
             }
             finished = decompress_gfx_init((struct CompressedGFX *)src->data,
-                                           (uintptr_t)e->view.data,
+                                           (uintptr_t)e->data.data,
                                            0x1000, &st->progress);
             st->busy = 1;
             break;

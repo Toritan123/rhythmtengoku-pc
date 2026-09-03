@@ -59,6 +59,15 @@ typedef s32 s24_8;
 #else
 #define GBA_STRUCT_BYTES(n) (n)
 #endif
+#ifdef PLATFORM_PC
+// The GBA build gathers these into a section its linker script places by hand.
+// There is no such section on a host target — Mach-O rejects the name outright
+// — and nothing on PC depends on where they land.
+#define COMMON_DATA
+#else
+#define COMMON_DATA __attribute__((section(".common_data"), aligned(4)))
+#endif
+
 
 #include "gba/gba.h"
 #include "types.h"

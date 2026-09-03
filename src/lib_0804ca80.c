@@ -4,6 +4,10 @@
 asm(".include \"include/gba.inc\"");//Temporary
 #endif
 
+u8 D_03004428;
+void *(*sSpriteMemAlloc)(u32);
+void  (*sSpriteMemDealloc)(void *);
+void *(*sSpriteMemAllocId)(u32, u32);
 
 // Set Functions for Memory Allocation & Deallocation
 void sprite_lib_set_mem_alloc(void *memAllocFunc, void *memDeallocFunc) {

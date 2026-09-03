@@ -23,6 +23,11 @@ void init_math_sqrt(void) {
 #ifndef PLATFORM_PC
     DmaCopy32(3, math_sqrt_rom, math_sqrt_code, FUNC_SQRT_SIZE);
     math_sqrt = (void *)math_sqrt_code;
+#else
+    // The pointer is defined in src/global.c, so the PC implementation has to
+    // be installed here rather than as its initialiser.
+    extern s32 pc_math_sqrt(s32 value);
+    math_sqrt = pc_math_sqrt;
 #endif
 }
 

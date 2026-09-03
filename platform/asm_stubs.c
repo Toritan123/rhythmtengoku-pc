@@ -20,6 +20,7 @@
 #include "src/task_pool.h"
 #include "src/code_08007468.h"
 #include "src/graphics_table.h"
+#include "src/midi/midi.h"
 
 // ─── GBA BIOS replacements ───────────────────────────────────────────────────
 
@@ -51,14 +52,14 @@ void CpuFastSet(const void *src, void *dest, u32 mode)
 
 
 // math_sqrt: game calls this via a function pointer set by init_math_sqrt().
-static s32 pc_math_sqrt(s32 value)
+s32 pc_math_sqrt(s32 value)
 {
     if (value <= 0) return 0;
     return (s32)sqrtf((float)value);
 }
 
 // math_sqrt: the game installs a pointer to this function at runtime.
-s32 (*math_sqrt)(s32 value) = pc_math_sqrt;
+// moved to src/global.c upstream: s32 (*math_sqrt)(s32 value) = pc_math_sqrt;
 
 // ROM function blob end markers (the game copies these from ROM to IWRAM)
 const u8 math_sqrt_rom_end[1]             = {0};
@@ -96,7 +97,7 @@ u8 interrupt_handler_jtbl[0x38];
 // 1568 samples = 7 frames at the GBA's 13379 Hz.  Sized for the maximum
 // RTPC_MIX_MULT (4x) so the ring still spans the same number of frames when
 // the mixer runs above hardware rate.
-u8 sPCMBufferArea[2][1568 * 4];
+u8 sPCMBufferArea[2][PC_DMA_SAMPLE_BUFFER_SIZE];
 s32 sPCMScratchArea[0x80 * 2];
 
 // ─── GFX decompression ───────────────────────────────────────────────────────

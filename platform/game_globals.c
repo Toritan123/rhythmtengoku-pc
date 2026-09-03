@@ -30,10 +30,10 @@
 extern struct GameEngine karate_man_engine;
 
 // [0x030055A0] Play Session info – written by cafe_scene_init_memory
-struct PlaySessionInfo gSessionInfo = {{0}};
+// moved to src/global.c upstream: struct PlaySessionInfo gSessionInfo = {{0}};
 
 // Pause menu state – written by the pause handler
-struct PauseMenu gPauseMenu = {0};
+// moved to src/global.c upstream: struct PauseMenu gPauseMenu = {0};
 
 // Scene descriptors – used as targets for set_next_scene().
 

@@ -26,8 +26,8 @@ typedef int8_t   s8; typedef int16_t  s16; typedef int32_t  s32;
 u32 __umodsi3(u32 a, u32 b) { return b ? a % b : 0; }
 // fast_udivsi3 is a function POINTER (u32 (*fast_udivsi3)(u32, u32))
 // The GBA copies ARM code to IWRAM and sets this pointer. On PC, point to a real C function.
-static u32 pc_fast_udivsi3_impl(u32 a, u32 b) { return b ? a / b : 0; }
-u32 (*fast_udivsi3)(u32 a, u32 b) = pc_fast_udivsi3_impl;
+u32 pc_fast_udivsi3_impl(u32 a, u32 b) { return b ? a / b : 0; }
+// moved to src/global.c upstream: u32 (*fast_udivsi3)(u32 a, u32 b) = pc_fast_udivsi3_impl;
 const u8 fast_udivsi3_rom[4] = {0};
 const u8 fast_udivsi3_rom_end[1] = {0};
 void func_08000a00(void) {}
@@ -972,10 +972,10 @@ RTPC_WEAK int rhythm_tweezers_obj(void) { return 0; }
 RTPC_WEAK int rhythm_tweezers_prologue_bg_map(void) { return 0; }
 RTPC_WEAK int rhythm_tweezers_prologue_bg_tiles(void) { return 0; }
 RTPC_WEAK int rhythm_tweezers_prologue_obj(void) { return 0; }
-s8 sMainMenuButton = 0;
-u32 sRecCurrentKey = 0;
-u32 sRecMaxKeys = 0;
-u8 sSceneTextCurrentStringId = 0;
+// moved to src/global.c upstream: s8 sMainMenuButton = 0;
+// moved to src/global.c upstream: u32 sRecCurrentKey = 0;
+// moved to src/global.c upstream: u32 sRecMaxKeys = 0;
+// moved to src/global.c upstream: u8 sSceneTextCurrentStringId = 0;
 RTPC_WEAK int samurai_slice_bg_map(void) { return 0; }
 RTPC_WEAK int samurai_slice_bg_map_fog_bottom(void) { return 0; }
 RTPC_WEAK int samurai_slice_bg_map_fog_top(void) { return 0; }
