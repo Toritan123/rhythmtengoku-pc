@@ -9,6 +9,8 @@
 #include "src/code_080068f8.h"
 #include "src/scenes/debug_flash_mem.h"
 #include "src/scenes/riq_main_scene.h"
+#include <stddef.h>   // offsetof, for the scene-variable offsets below
+#include "src/scenes/debug_flash_mem.h"
 
 extern char w[];   /* undeclared in any header */
 extern char x00[];   /* undeclared in any header */
@@ -26,9 +28,9 @@ const struct Beatscript script_scene_flash_mem_test[] = {
     { 0x03, 0, (const void *)(set_beatscript_tempo), (uintptr_t)(120) },
     { 0x03, 0, (const void *)(set_pause_beatscript_scene), (uintptr_t)(TRUE) },
     { 0x03, 0, (const void *)(func_08007324), (uintptr_t)(TRUE) },
-    { 0x09, INT8, (const void *)(8), (uintptr_t)(TRUE) },
+    { 0x09, INT8, (const void *)(offsetof(struct FlashMemoryTestSceneData, inputsEnabled)), (uintptr_t)(TRUE) },
     { 0x03, 0, (const void *)(set_pause_beatscript_scene), (uintptr_t)(TRUE) },
-    { 0x09, INT8, (const void *)(8), (uintptr_t)(FALSE) },
+    { 0x09, INT8, (const void *)(offsetof(struct FlashMemoryTestSceneData, inputsEnabled)), (uintptr_t)(FALSE) },
     { 0x36, TRUE, NULL, (uintptr_t)(12) },
     { 0x4A, 1, (const void *)(12), (uintptr_t)(BLACK) },
     { 0x00, 0, NULL, (uintptr_t)(12) },

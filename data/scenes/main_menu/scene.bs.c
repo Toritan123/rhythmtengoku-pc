@@ -10,6 +10,8 @@
 #include "src/code_080068f8.h"
 #include "src/scenes/main_menu.h"
 #include "src/scenes/riq_main_scene.h"
+#include <stddef.h>   // offsetof, for the scene-variable offsets below
+#include "src/scenes/main_menu.h"
 
 extern char w[];   /* undeclared in any header */
 extern char x00[];   /* undeclared in any header */
@@ -47,9 +49,9 @@ const struct Beatscript script_scene_main_menu[] = {
     { 0x28, 0, (const void *)(DEFAULT_SOUND_PLAYER), (uintptr_t)(&s_manza_bgm_seqData) },
     { 0x03, 0, (const void *)(scene_set_music_volume), (uintptr_t)(0x100) },
     { 0x15, 0, NULL, (uintptr_t)(0) },
-    { 0x09, INT8, (const void *)(8), (uintptr_t)(TRUE) },
+    { 0x09, INT8, (const void *)(offsetof(struct MainMenuSceneData, inputsEnabled)), (uintptr_t)(TRUE) },
     { 0x03, 0, (const void *)(set_pause_beatscript_scene), (uintptr_t)(TRUE) },
-    { 0x09, INT8, (const void *)(8), (uintptr_t)(FALSE) },
+    { 0x09, INT8, (const void *)(offsetof(struct MainMenuSceneData, inputsEnabled)), (uintptr_t)(FALSE) },
     { 0x21, INT32, (const void *)(0x1B), (uintptr_t)(TRUE) },
     { 0x50, 0, (const void *)(70), (uintptr_t)(34) },
     { 0x14, 0, NULL, (uintptr_t)(0) },

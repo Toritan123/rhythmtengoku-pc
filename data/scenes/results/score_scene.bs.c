@@ -9,6 +9,8 @@
 #include "include/sequence_data.h"
 #include "src/code_080068f8.h"
 #include "src/scenes/riq_main_scene.h"
+#include <stddef.h>   // offsetof, for the scene-variable offsets below
+#include "src/scenes/results.h"
 
 extern char w[];   /* undeclared in any header */
 extern char x00[];   /* undeclared in any header */
@@ -35,9 +37,9 @@ const struct Beatscript script_scene_results_ver_score[] = {
     { 0x03, 0, (const void *)(scene_set_music_volume), (uintptr_t)(40) },
     { 0x50, 0, (const void *)(160), (uintptr_t)(192) },
     { 0x28, 0, (const void *)(DEFAULT_SOUND_PLAYER), (uintptr_t)(&s_check_result_bgm_seqData) },
-    { 0x09, INT8, (const void *)(8), (uintptr_t)(TRUE) },
+    { 0x09, INT8, (const void *)(offsetof(struct ResultsSceneData, inputsEnabled)), (uintptr_t)(TRUE) },
     { 0x03, 0, (const void *)(set_pause_beatscript_scene), (uintptr_t)(TRUE) },
-    { 0x09, INT8, (const void *)(8), (uintptr_t)(FALSE) },
+    { 0x09, INT8, (const void *)(offsetof(struct ResultsSceneData, inputsEnabled)), (uintptr_t)(FALSE) },
     { 0x36, TRUE, NULL, (uintptr_t)(48) },
     { 0x4A, 1, (const void *)(12), (uintptr_t)(BLACK) },
     { 0x00, 0, NULL, (uintptr_t)(24) },
