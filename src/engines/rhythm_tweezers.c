@@ -5,6 +5,7 @@
 #include "src/text_printer.h"
 #include "src/affine_sprite.h"
 #include "src/lib_0804ca80.h"
+#include "src/scenes/gameplay.h"
 #ifndef PLATFORM_PC
 asm(".include \"include/gba.inc\""); // Temporary
 #endif
@@ -403,6 +404,81 @@ u32 rhythm_tweezers_cue_update_short(struct Cue *cue, struct RhythmTweezersCue *
 // [func_0802ef68] Cue - Update (Long Hair)
 #ifndef PLATFORM_PC
 #include "asm/engines/rhythm_tweezers/asm_0802ef68.s"
+#else
+// Translated from asm_0802ef68.s and verified against it instruction by
+// instruction; it has not been proven to rebuild byte-exactly.
+u32 rhythm_tweezers_cue_update_long(struct Cue *cue, struct RhythmTweezersCue *info, u32 runningTime, u32 duration) {
+    struct RhythmTweezersEngineData *rhythmTweezers = gRhythmTweezers;
+    struct RhythmTweezersTweezers *tweezers = &rhythmTweezers->tweezers;
+    struct RhythmTweezersVegetable *vegetable = &rhythmTweezers->vegetable;
+    u32 markingCriteria;
+    u32 pullFinished;
+    u32 buttonsReleased;
+    u32 totalCels;
+
+    if (runningTime > (duration * 2)) return TRUE;
+
+    // Long hairs do nothing until the player grabs one; cue_hit_long sets
+    // finished and starts the pull timer.
+    if (!info->finished) return FALSE;
+
+    affine_sprite_set_rotation(info->sprite, ((tweezers->rotation - info->rotation) * 2) - 0x200);
+
+    // Walk the pull animation in step with pullTime / pullTarget.
+    totalCels = sprite_get_data(gSpriteHandler, affine_sprite_get_base_sprite(info->sprite), 2);
+    affine_sprite_set_anim_cel(info->sprite, (totalCels - 1) * info->pullTime / info->pullTarget);
+
+    markingCriteria = gameplay_get_cue_marking_criteria(cue);
+
+    pullFinished = FALSE;
+    buttonsReleased = FALSE;
+    if (++info->pullTime > info->pullTarget) pullFinished = TRUE;
+    if ((D_03004ac0 & 0xf1) == 0) buttonsReleased = TRUE;
+
+    // Held too long: the hair tears out on its own and the cue is a miss.
+    if (pullFinished) {
+        buttonsReleased = FALSE;
+        gameplay_add_cue_result(markingCriteria, 0, 0);
+        sprite_set_anim_cel(gSpriteHandler, vegetable->spriteCurrent, 1);
+        D_03004b10.BG_OFS[BG_LAYER_1].y = 2;
+        affine_sprite_set_anim(info->sprite, anim_rhythm_tweezers_hair_stubble, 0, 0, 0, 0);
+        affine_sprite_set_rotation(info->sprite, -0x200);
+        affine_sprite_set_anim(tweezers->sprite, anim_tweezers_pluck_hit, 0, 1, 0x7f, 0);
+        affine_sprite_set_visible(tweezers->sprite, TRUE);
+        tweezers->heldHair = TWEEZERS_HELD_HAIR_FULL;
+        info->finished = FALSE;
+        tweezers->isPulling = FALSE;
+        gameplay_set_input_buttons(0xf1, 0);
+        stop_sound(&s_f_hair_tuneru_seqData);
+        play_sound(&s_f_hair_nuki_long_seqData);
+
+        rhythmTweezers->existingHairs.full--;
+        // The original reads both counters with one 32-bit load at
+        // existingHairs, so the vegetable only resets once full and half are
+        // BOTH zero. Testing full alone would change behaviour.
+        if ((rhythmTweezers->existingHairs.full == 0) && (rhythmTweezers->existingHairs.half == 0)) {
+            sprite_set_playback(gSpriteHandler, vegetable->spriteCurrent, 0, 0, 0);
+            sprite_set_anim_cel(gSpriteHandler, vegetable->spriteCurrent, 2);
+        }
+    }
+
+    // Released in time: the hair springs back and the cue is a hit.
+    if (buttonsReleased) {
+        gameplay_add_cue_result(markingCriteria, 1, 0);
+        affine_sprite_set_anim(info->sprite, anim_rhythm_tweezers_long_hair, 0, 1, 0x7f, 0);
+        affine_sprite_set_rotation(info->sprite, -0x200);
+        affine_sprite_set_visible(tweezers->sprite, TRUE);
+        info->finished = FALSE;
+        tweezers->isPulling = FALSE;
+        gameplay_set_input_buttons(0xf1, 0);
+        stop_sound(&s_f_hair_tuneru_seqData);
+        play_sound(&s_witch_donats_seqData);
+        beatscript_enable_loops();
+        rhythmTweezers->existingHairs.half++;
+    }
+
+    return FALSE;
+}
 #endif
 
 
