@@ -113,13 +113,20 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
 
 ## State (measured 2026-09-05)
 
-- **387 functions exist only as a no-op stub**: 152 named engine/system
-  functions, 210 unnamed `func_08XXXXXX`, 23 scene/script data, 2 assets.
+- **365 functions exist only as a no-op stub** (387 before rhythm_test was
+  done): named engine/system functions, unnamed `func_08XXXXXX`, and 23
+  scene/script data entries.
 - Engines needing 2 or fewer: `clappy_trio`, `mechanical_horse`, `metronome`,
   `tap_trial`, `tram_pauline` (2 each); `quiz_show`, `drum_studio` (1 each).
   `rhythm_tweezers` is done as of this session.
 - Largest remaining: `drum_intro` 19, `rat_race` 18, `toss_boys` /
-  `rhythm_test` / `mannequin` / `bunny_hop` 14 each.
+  `mannequin` / `bunny_hop` 14 each. `rhythm_test` is done.
+- **A cold boot still stops at `scene_rhythm_test_opening`.** Porting that
+  engine did not fix it; the script re-enters a subroutine via call/return
+  and nothing calls `beatscript_exit_loop_*`. Note `beatscript_enable_loops`
+  *keeps* a loop running (`bypassLoops = FALSE`) — it does not leave one.
+  Fixing this unblocks every scene after the first rhythm test, so it is
+  worth more than any number of further engine translations.
 - The `*_rom` stubs (`math_sqrt_rom`, `read_sram_fast_rom`, …) are IWRAM blobs
   the GBA copied at run time; they are stubbed **on purpose**, not a backlog.
 - `perfect` crashes intermittently (~1 run in 6), undiagnosed and pre-existing.
