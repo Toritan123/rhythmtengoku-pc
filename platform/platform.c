@@ -1,5 +1,6 @@
 #ifdef PLATFORM_PC
 #include "platform.h"
+#include "save_pc.h"
 #include "ppu.h"
 #include "input.h"
 #include "audio_pc.h"
@@ -100,6 +101,7 @@ int platform_init(void)
 
 void platform_destroy(void)
 {
+    rtpc_sram_flush();
     if (s_headless) { SDL_Quit(); return; }
     audio_pc_destroy();
     ppu_destroy();
@@ -136,6 +138,10 @@ void platform_frame_sync(void)
     if (prof < 0) { const char *e = getenv("RTPC_PROF"); prof = e ? atoi(e) : 0; }
 
     t0 = SDL_GetPerformanceCounter();
+
+    // At most one 64 KB write per frame, and only when the game actually
+    // touched SRAM, so this costs nothing on the frames that did not save.
+    rtpc_sram_flush();
 
     if (!s_headless) {
     // Render GBA frame to texture and present.  This shows the frame the game

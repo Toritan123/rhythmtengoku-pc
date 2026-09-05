@@ -1,6 +1,7 @@
 #ifdef PLATFORM_PC
 #include "platform.h"
 #include "gba_mem.h"
+#include "save_pc.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -48,6 +49,7 @@ int main(int argc, char *argv[])
     memset(gba_vram,    0, sizeof(gba_vram));
     memset(gba_oam,     0, sizeof(gba_oam));
     memset(gba_sram,    0, sizeof(gba_sram));
+    rtpc_sram_load();   // restore the save, if there is one
 
     midi_globals_init();
     gfx_data_init_sizes();  // set rleSize on all CompressedData objects

@@ -54,6 +54,19 @@ lives at `/opt/homebrew`). Runtime env vars are all `RTPC_*` — see
 `RTPC_FRAMEDUMP`, `RTPC_SCENE`, `RTPC_SHOT_DIR`, `RTPC_HEADLESS`,
 `RTPC_AUDIO_LINEAR`, `RTPC_BS`.
 
+## Saves
+
+`gba_sram` is a plain 64 KB array. `platform/save_pc.c` loads it at startup and
+writes it back (atomically, via a .tmp + rename) at most once a frame, and only
+when the game actually touched SRAM. The file lives where SDL_GetPrefPath puts
+it — on macOS `~/Library/Application Support/Rhythm Tengoku/rhythmtengoku.sav`.
+Delete that file to test a fresh boot.
+
+The SRAM read/write path itself has worked all along, in
+`platform/asm_stubs.c` (`set_sram_fast_func`, `write_sram_fast`, `read_sram`) —
+`src/lib_sram.c` is still assembly-only, but do **not** translate it into
+`src/lib_sram.c` without first removing that shim, or the symbols collide.
+
 ## The dominant bug class
 
 **A GBA-era size or width applied to a 64-bit pointer.** Four shapes seen:

@@ -21,6 +21,7 @@
 #include "src/code_08007468.h"
 #include "src/graphics_table.h"
 #include "src/midi/midi.h"
+#include "save_pc.h"
 
 // ─── GBA BIOS replacements ───────────────────────────────────────────────────
 
@@ -120,6 +121,7 @@ static void pc_read_sram_fast(const u8 *src, u8 *dest, u32 size)
 static void pc_write_int_sram_fast(const u8 *src, u8 *dest, u32 size)
 {
     memcpy(dest, src, size);
+    rtpc_sram_mark_dirty();
 }
 static void pc_verify_sram_fast(const u8 *src, u8 *dest, u32 size)
 {
@@ -137,6 +139,7 @@ void set_sram_fast_func(void)
 void write_sram_fast(const u8 *src, u8 *dest, u32 size)
 {
     memcpy(dest, src, size);
+    rtpc_sram_mark_dirty();
 }
 
 void read_sram(const u8 *src, u8 *dest, u32 size)
