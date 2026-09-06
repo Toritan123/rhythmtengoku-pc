@@ -40,7 +40,7 @@ const struct Beatscript script_scene_options_menu[] = {
     { 0x09, INT8, (const void *)(offsetof(struct OptionsSceneData, inputsEnabled)), (uintptr_t)(TRUE) },
     { 0x03, 0, (const void *)(set_pause_beatscript_scene), (uintptr_t)(TRUE) },
     { 0x09, INT8, (const void *)(offsetof(struct OptionsSceneData, inputsEnabled)), (uintptr_t)(FALSE) },
-    { 0x21, INT32, (const void *)(0x28), (uintptr_t)(FALSE) },
+    { 0x21, INT32, (const void *)(offsetof(struct OptionsSceneData, canceledDataClear)), (uintptr_t)(FALSE) },
     { 0x36, TRUE, NULL, (uintptr_t)(36) },
     { 0x15, 0, NULL, (uintptr_t)(0) },
     { 0x4A, 1, (const void *)(12), (uintptr_t)(BLACK) },

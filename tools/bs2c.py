@@ -282,7 +282,13 @@ class Emitter:
     def render_script(self, name, cmds):
         out = [f"const struct Beatscript {name}[] = {{"]
         for op, p1, p2, p3 in cmds:
-            sym = scene_var_offset(self.path, p2) if op.strip() == "0x09" else None
+            opcode = op.strip()
+            if opcode == "0x09":
+                sym = scene_var_offset(self.path, p2)
+            elif opcode in ("0x21", "0x22"):
+                sym = scene_var_offset(self.path, p2, SCENE_COND_FIELDS)
+            else:
+                sym = None
             if sym is not None:
                 expr, header = sym
                 self.scene_var_headers.add(header)
@@ -493,8 +499,9 @@ def translate(path, macros, root, index=None, consts=None):
 
 # ─── Scene-variable offsets ──────────────────────────────────────────────────
 #
-# op 0x09 (scene_set_var) writes into the current scene's data struct at a raw
-# byte offset baked into the .bs source. Those offsets were computed for the
+# The scene-relative opcodes -- 0x09 scene_set_var, 0x21 scene_if_eq and
+# 0x22 scene_if_neq -- address the current scene's data struct by a raw byte
+# offset baked into the .bs source. Those offsets were computed for the
 # GBA, where a pointer is 4 bytes. On a 64-bit host every pointer ahead of the
 # target field shifts it, so e.g. ResultsSceneData::inputsEnabled moves from 8
 # to 16 and the write lands in the middle of a pointer instead — the results
@@ -522,14 +529,31 @@ SCENE_VAR_FIELDS = {
     # warning, read_error, data_room, medal_corner, cafe, arrival.
 }
 
+# Same story for the scene_if_eq / scene_if_neq comparisons (0x21 / 0x22).
+# main_menu reads these to decide whether to start its BGM: with the raw GBA
+# offsets the host read a byte of objFont instead of the flag, the comparison
+# went the wrong way, and the whole music block was skipped -- the main menu
+# played silently.
+SCENE_COND_FIELDS = {
+    "scenes/main_menu/scene.bs": {
+        0x1A: ("MainMenuSceneData", "enteredFromOptionsMenu", "src/scenes/main_menu.h"),
+        0x1B: ("MainMenuSceneData", "exitingToOptionsMenu",   "src/scenes/main_menu.h"),
+    },
+    "scenes/options/scene.bs": {
+        0x28: ("OptionsSceneData",  "canceledDataClear",      "src/scenes/options.h"),
+    },
+}
 
-def scene_var_offset(src_path, raw):
-    """Symbolic replacement for a raw scene_set_var offset, or None."""
+
+def scene_var_offset(src_path, raw, table=None):
+    """Symbolic replacement for a raw scene-relative offset, or None."""
+    if table is None:
+        table = SCENE_VAR_FIELDS
     try:
         n = int(raw.strip(), 0)
     except ValueError:
         return None
-    for suffix, offsets in SCENE_VAR_FIELDS.items():
+    for suffix, offsets in table.items():
         if src_path.replace(os.sep, "/").endswith(suffix) and n in offsets:
             struct, field, header = offsets[n]
             return "offsetof(struct %s, %s)" % (struct, field), header
