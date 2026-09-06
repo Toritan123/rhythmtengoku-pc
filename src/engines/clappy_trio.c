@@ -1,4 +1,5 @@
 #include "engines/clappy_trio.h"
+#include "src/scenes/gameplay.h"
 #include "src/text_printer.h"
 
 #ifndef PLATFORM_PC
@@ -28,6 +29,46 @@ struct Animation *clappy_trio_get_anim(enum ClappyTrioAnimationsEnum anim) {
 // Init. Lion Sprites (https://decomp.me/scratch/kp2vu)
 #ifndef PLATFORM_PC
 #include "asm/engines/clappy_trio/asm_080303a4.s"
+#else
+// Translated from the assembly above and checked against it instruction by
+// instruction; not proven byte-exact.
+void func_080303a4(struct Trio *trio) {
+    s32 xBase;
+    u32 signCel;
+
+    // sprites[0] is the fourth lion. It is always created, then hidden and
+    // left where it is unless this is the quartet version, which also shifts
+    // the whole row right to make room for it.
+    trio->sprites[0] = sprite_create(gSpriteHandler, clappy_trio_get_anim(CLAPPY_TRIO_ANIM_BEAT),
+                                     0, 0x40, 0x40, 0x4800, 1, 0x7f, 0);
+
+    if (gClappyTrio->isQuartet == 1) {
+        xBase = 0x18;
+        signCel = 1;
+    } else {
+        xBase = 0;
+        sprite_set_visible(gSpriteHandler, trio->sprites[0], FALSE);
+        signCel = 0;
+    }
+
+    sprite_set_x_y(gSpriteHandler, trio->sprites[0], xBase + 0x18, 0x88);
+    trio->sprites[1] = sprite_create(gSpriteHandler, clappy_trio_get_anim(CLAPPY_TRIO_ANIM_BEAT),
+                                     0, xBase + 0x48, 0x88, 0x4800, 1, 0x7f, 0);
+    trio->sprites[2] = sprite_create(gSpriteHandler, clappy_trio_get_anim(CLAPPY_TRIO_ANIM_BEAT),
+                                     0, xBase + 0x78, 0x88, 0x4800, 1, 0x7f, 0);
+    trio->sprites[3] = sprite_create(gSpriteHandler, clappy_trio_get_anim(CLAPPY_TRIO_ANIM_BEAT),
+                                     0, xBase + 0xa8, 0x88, 0x4800, 1, 0x7f, 0);
+
+    trio->beatAnimation = 0;
+    trio->resetBeatAnimation = TRUE;
+
+    // Neither of these two is kept: the "you" arrow over the last lion and the
+    // sign, whose cel selects the trio or quartet wording.
+    sprite_create(gSpriteHandler, clappy_trio_get_anim(CLAPPY_TRIO_ANIM_YOU),
+                  0, xBase + 0xa8, 0x98, 0x4800, 0, 0, 0);
+    sprite_create(gSpriteHandler, clappy_trio_get_anim(CLAPPY_TRIO_ANIM_SIGN),
+                  signCel, 0x78, 0x38, 0x4800, 0, 0, 0);
+}
 #endif
 
 // Graphics Init. 3

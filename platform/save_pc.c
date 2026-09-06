@@ -1,6 +1,7 @@
 #ifdef PLATFORM_PC
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <SDL.h>
 
@@ -22,10 +23,27 @@ static int  s_path_failed;
 
 static const char *save_path(void)
 {
+    const char *override;
     char *pref;
 
     if (s_path[0] != '\0') return s_path;
     if (s_path_failed) return NULL;
+
+    /* RTPC_SAVE=<path> puts the save somewhere else. Testing drives the game
+       with synthetic input (RTPC_AUTO), which can wander into menus and change
+       real settings, so automated runs must not be pointed at the player's own
+       save file. RTPC_SAVE=/dev/null disables saving entirely. */
+    override = getenv("RTPC_SAVE");
+    if (override != NULL && override[0] != '\0') {
+        if (SDL_snprintf(s_path, sizeof(s_path), "%s", override) >= (int)sizeof(s_path)) {
+            fprintf(stderr, "[SAVE] RTPC_SAVE path too long; saves will not persist\n");
+            s_path[0] = '\0';
+            s_path_failed = 1;
+            return NULL;
+        }
+        fprintf(stderr, "[SAVE] using %s (RTPC_SAVE)\n", s_path);
+        return s_path;
+    }
 
     pref = SDL_GetPrefPath(NULL, "Rhythm Tengoku");
     if (pref == NULL) {

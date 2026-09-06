@@ -37,9 +37,12 @@ NSAlert stays alive forever, so `pgrep` proves nothing. Liveness is
 
 ```sh
 pkill -9 -f rhythmtengoku; rm -f /tmp/rtpc_f*.bmp
-open "dist/Rhythm Tengoku.app"
-sleep 25; ls /tmp/rtpc_f*.bmp     # frames 120 and 900 => it really ran
+open --env RTPC_SAVE=/tmp/rtpc_test.sav "dist/Rhythm Tengoku.app"
+sleep 40; ls /tmp/rtpc_f*.bmp     # frames 120, 900, 1800 => it really ran
 ```
+
+`open --env` works here and keeps the check off the player's save. 25 s is
+not always enough to reach frame 900 — give it 40.
 
 If nothing appears, `sample <pid>`: `runModal` in the stack = a dialog is up
 (only the user can dismiss it); `agb_main` / `platform_frame_sync` = running.
@@ -52,7 +55,7 @@ picks the `sdl2-config` whose `libSDL2.dylib` matches `uname -m`; arm64 SDL2
 lives at `/opt/homebrew`). Runtime env vars are all `RTPC_*` — see
 `grep -rhoE 'RTPC_[A-Z_]+' platform/ src/`; the load-bearing ones are
 `RTPC_FRAMEDUMP`, `RTPC_SCENE`, `RTPC_SHOT_DIR`, `RTPC_HEADLESS`,
-`RTPC_AUDIO_LINEAR`, `RTPC_BS`.
+`RTPC_AUDIO_LINEAR`, `RTPC_BS`, `RTPC_SAVE`.
 
 ## Saves
 
@@ -61,6 +64,11 @@ writes it back (atomically, via a .tmp + rename) at most once a frame, and only
 when the game actually touched SRAM. The file lives where SDL_GetPrefPath puts
 it — on macOS `~/Library/Application Support/Rhythm Tengoku/rhythmtengoku.sav`.
 Delete that file to test a fresh boot.
+
+**Always set `RTPC_SAVE=<path>` when running the game yourself.** Automated
+runs drive the game with synthetic input, which can wander into menus and
+change real settings; that is the player's save, not a scratch file.
+`RTPC_SAVE=/dev/null` disables saving entirely.
 
 The SRAM read/write path itself has worked all along, in
 `platform/asm_stubs.c` (`set_sram_fast_func`, `write_sram_fast`, `read_sram`) —

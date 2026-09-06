@@ -56,7 +56,7 @@ extern struct GraphicsTable *clappy_trio_gfx_tables[];
 
 // Functions:
 extern struct Animation *clappy_trio_get_anim(u32 anim); // Get Animation
-// extern ? func_080303a4(?); Init. Lion Sprites
+extern void func_080303a4(struct Trio *trio); // Init. Lion Sprites
 extern void clappy_trio_init_gfx3(void);
 extern void clappy_trio_init_gfx2(void);
 extern void clappy_trio_init_gfx1(void);
