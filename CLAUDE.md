@@ -134,15 +134,43 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
   `rhythm_tweezers` is done as of this session.
 - Largest remaining: `drum_intro` 19, `rat_race` 18, `toss_boys` /
   `mannequin` / `bunny_hop` 14 each. `rhythm_test` is done.
-- **A cold boot still stops at `scene_rhythm_test_opening`.** Porting that
-  engine did not fix it; the script re-enters a subroutine via call/return
-  and nothing calls `beatscript_exit_loop_*`. Note `beatscript_enable_loops`
-  *keeps* a loop running (`bypassLoops = FALSE`) — it does not leave one.
-  Fixing this unblocks every scene after the first rhythm test, so it is
-  worth more than any number of further engine translations.
+- A cold boot under `RTPC_AUTO=1` sits in `scene_rhythm_test_opening`, and
+  **that is correct behaviour, not a bug.** The click test loops for as long
+  as the player keeps responding: each iteration begins with
+  `beatscript_disable_loops` (assume this is the last one) and
+  `rhythm_test_input_event` calls `beatscript_enable_loops` on every tap to
+  keep it going. Autopilot never stops tapping, so it never ends. Note the
+  names read backwards: `beatscript_enable_loops` sets `bypassLoops = FALSE`,
+  which *keeps* a loop running; leaving one is `exitLoopNextUpdate`.
+- **Scene-variable offsets**: beatscript op 0x09 writes into the scene data
+  struct at an offset baked into the `.bs` source, computed for 4-byte GBA
+  pointers. `tools/bs2c.py` now emits `offsetof()` instead (see
+  `SCENE_VAR_FIELDS` there); add an entry when a new script writes a scene
+  variable past a pointer. This is what froze the results screen: every
+  `inputsEnabled` in `src/scenes` is assigned FALSE and never TRUE, because
+  the script write was the only thing that set it.
 - The `*_rom` stubs (`math_sqrt_rom`, `read_sram_fast_rom`, …) are IWRAM blobs
   the GBA copied at run time; they are stubbed **on purpose**, not a backlog.
 - `perfect` crashes intermittently (~1 run in 6), undiagnosed and pre-existing.
+
+## Scene overrides in platform/game_globals.c
+
+Only `scene_studio`, `scene_title` and `scene_game_select` are still PC
+rewrites. Everything else runs its real script out of `data/scenes/*.bs.c`.
+Five further shims (warning, main_menu, options, data_room, cafe) and five
+stub loop functions used to live here but were never wired to anything —
+they were removed once the offset fix made them pointless. Before adding a
+shim, check with `nm` which object actually defines the scene:
+
+```sh
+find build/macos -name '*.o' ! -name auto_stubs.o -print0 | xargs -0 nm -g -A \
+  | grep ' [TDSB] _scene_<name>$'
+```
+
+`title` and `game_select` do **not** suffer the offset bug (`inputsEnabled`
+sits at 0 and 4 with no pointer ahead of it); their shims exist for GFX
+timing — `func_08007324(TRUE)` — so converting them to the real scripts is
+its own job, not a consequence of the offset fix.
 
 ## Exercising one engine
 
