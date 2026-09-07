@@ -13,8 +13,60 @@ enum SamuraiSliceVersionsEnum {
 
 
 // Engine Types:
+// One of the two large demons that walk in with a shadow. 0x34 bytes.
+struct SamuraiSliceDemon {
+    s16 sprite;             // 0x00
+    s16 shadowSprite;       // 0x02
+    u8  state;              // 0x04
+    u8  unk05[3];
+    s32 x;                  // 0x08  16.8 fixed point
+    s32 y;                  // 0x0C  16.8 fixed point
+    u8  unk10[0x24];        // 0x10
+};
+
+// One of the ten small demons, each with its own affine group. 0x20 bytes.
+struct SamuraiSliceMedDemon {
+    s16 sprite;             // 0x00
+    s8  affineGroup;        // 0x02
+    u8  unk03[0x19];        // 0x03
+    u8  unk1C;              // 0x1C
+    u8  unk1D[3];
+};
+
+// Field offsets recovered from the engine's own assembly
+// (asm/engines/samurai_slice/). sizeof() is 0x1e4 on the GBA, as the
+// placeholder this replaces asserted; on a 64-bit host it grows by the one
+// pointer at the front, which shifts every offset below it by four -- so do
+// not reuse the raw numbers in scripts or tables.
 struct SamuraiSliceEngineData {
-    u8 pad[0x1e4];
+    struct BitmapFontOBJ *objFont;              // 0x000
+    u8  version;                                // 0x004
+    u8  unk005[7];
+    s16 samuraiSprite;                          // 0x00C
+    u8  unk00E;                                 // 0x00E
+    u8  unk00F;
+    struct SamuraiSliceDemon demons[2];         // 0x010
+    u8  unk078;                                 // 0x078
+    u8  unk079[3];
+    s32 bg1ScrollX;                             // 0x07C  16.8 fixed point
+    s32 bg2ScrollX;                             // 0x080  16.8 fixed point
+    s32 unk084;                                 // 0x084
+    u8  unk088;
+    u8  unk089;                                 // 0x089
+    s16 textSprite;                             // 0x08A
+    s16 sliceEffectSprite;                      // 0x08C
+    u8  unk08E[2];
+    struct SamuraiSliceMedDemon medDemons[10];  // 0x090
+    u8  unk1D0;                                 // 0x1D0
+    u8  unk1D1;
+    s16 unk1D2;                                 // 0x1D2
+    u8  unk1D4[4];
+    s16 unk1D8;                                 // 0x1D8
+    s16 flamesSprite;                           // 0x1DA
+    u32 unk1DC;                                 // 0x1DC
+    u8  unk1E0;                                 // 0x1E0
+    u8  unk1E1;
+    s16 unk1E2;                                 // 0x1E2
 };
 
 struct SamuraiSliceCue {
@@ -67,7 +119,7 @@ extern void samurai_slice_input_event(u32 pressed, u32 released); // Input Event
 // extern ? func_080317f4(?);
 extern void samurai_slice_common_beat_animation(); // Common Event 0 (Beat Animation)
 extern void samurai_slice_common_display_text(); // Common Event 1 (Display Text, Unimplemented)
-// extern ? func_080319b4(?);
+extern void func_080319b4(struct SamuraiSliceDemon *demon); // Init. Large Demon
 // extern ? func_08031a6c(?);
 extern void func_08031bc0(); // Engine Event 02 (?)
 extern void func_08031c54(); // Engine Event 04 (?)
@@ -76,13 +128,13 @@ extern void func_08031c54(); // Engine Event 04 (?)
 // extern ? func_08032070(?);
 // extern ? func_080320c8(?);
 // extern ? func_080321c8(?);
-// extern ? func_08032228(?);
+extern void func_08032228(void); // Reset Background Scroll
 // extern ? func_08032298(?);
 // extern ? func_08032330(?);
 extern void func_08032430(); // Engine Event 03 (?)
 // extern ? func_08032478(?);
 extern void func_080324a4(); // Engine Event 07 (?)
-// extern ? func_080324b8(?);
+extern void func_080324b8(struct SamuraiSliceMedDemon *demon); // Init. Small Demon
 // extern ? func_08032510(?);
 // extern ? func_08032708(?);
 // extern ? func_080327a4(?);

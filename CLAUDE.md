@@ -132,16 +132,24 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
 `script_studio_*` are data, and comparing against text symbols only reports
 ~200 of them as missing when they are not.
 
-## State (measured 2026-09-05)
+## State (measured 2026-09-07)
 
-- **365 functions exist only as a no-op stub** (387 before rhythm_test was
-  done): named engine/system functions, unnamed `func_08XXXXXX`, and 23
-  scene/script data entries.
-- Engines needing 2 or fewer: `clappy_trio`, `mechanical_horse`, `metronome`,
-  `tap_trial`, `tram_pauline` (2 each); `quiz_show`, `drum_studio` (1 each).
-  `rhythm_tweezers` is done as of this session.
+- **361 functions exist only as a no-op stub**: named engine/system
+  functions, unnamed `func_08XXXXXX`, and 23 scene/script data entries.
+- Done: `rhythm_tweezers`, `rhythm_test`, `clappy_trio`.
+- Engines needing 2 or fewer: `mechanical_horse`, `metronome`, `tap_trial`,
+  `tram_pauline` (2 each); `quiz_show`, `drum_studio` (1 each).
 - Largest remaining: `drum_intro` 19, `rat_race` 18, `toss_boys` /
-  `mannequin` / `bunny_hop` 14 each. `rhythm_test` is done.
+  `mannequin` / `bunny_hop` 14 each, `samurai_slice` 10.
+- **`samurai_slice` and `rat_race` are whole-engine jobs, not touch-ups**:
+  3,567 and 4,217 lines of assembly across 43 and 65 functions, and both
+  headers had `u8 pad[N]` placeholders instead of a real struct, so the
+  field layout has to be recovered from the code first. samurai_slice's
+  struct is recovered and its startup path is translated (the scene renders);
+  its engine_update, cue handlers and their internals are still stubs.
+  A useful check when recovering a layout: build a throwaway `main()` that
+  prints `sizeof` and `offsetof`, and confirm host sizeof == the placeholder
+  size plus 4 per pointer ahead of the end.
 - A cold boot under `RTPC_AUTO=1` sits in `scene_rhythm_test_opening`, and
   **that is correct behaviour, not a bug.** The click test loops for as long
   as the player keeps responding: each iteration begins with
