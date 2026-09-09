@@ -136,7 +136,8 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
 
 - **361 functions exist only as a no-op stub**: named engine/system
   functions, unnamed `func_08XXXXXX`, and 23 scene/script data entries.
-- Done: `rhythm_tweezers`, `rhythm_test`, `clappy_trio`.
+- Done: `rhythm_tweezers`, `rhythm_test`, `clappy_trio`. `samurai_slice`
+  is down to two cue handlers and the demon-spawn event.
 - Engines needing 2 or fewer: `mechanical_horse`, `metronome`, `tap_trial`,
   `tram_pauline` (2 each); `quiz_show`, `drum_studio` (1 each).
 - Largest remaining: `drum_intro` 19, `rat_race` 18, `toss_boys` /
@@ -150,6 +151,13 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
   A useful check when recovering a layout: build a throwaway `main()` that
   prints `sizeof` and `offsetof`, and confirm host sizeof == the placeholder
   size plus 4 per pointer ahead of the end.
+- **To turn a raw `D_030053c0 + 0xNNN` into a field name, anchor on a field's
+  own absolute address, not on another field's offset comment.** Working back
+  from `localVariables // [D_030053c0 + 0x160]` put `musicVolume` at 0x198 and
+  the answer 8 bytes out; `musicVolume // [D_03005550]` settles it directly,
+  since 0x03005550 - 0x030053c0 == 0x190. The `unk168`-style names agree with
+  the absolute address, so that `+ 0x160` comment in `include/types.h` looks
+  wrong by 8 — do not trust it.
 - A cold boot under `RTPC_AUTO=1` sits in `scene_rhythm_test_opening`, and
   **that is correct behaviour, not a bug.** The click test loops for as long
   as the player keeps responding: each iteration begins with
