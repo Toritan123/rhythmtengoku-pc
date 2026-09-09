@@ -136,18 +136,16 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
 
 - **361 functions exist only as a no-op stub**: named engine/system
   functions, unnamed `func_08XXXXXX`, and 23 scene/script data entries.
-- Done: `rhythm_tweezers`, `rhythm_test`, `clappy_trio`. `samurai_slice`
-  is down to two cue handlers and the demon-spawn event.
+- Done: `rhythm_tweezers`, `rhythm_test`, `clappy_trio`, `samurai_slice`
+  (all 43 functions, struct recovered).
 - Engines needing 2 or fewer: `mechanical_horse`, `metronome`, `tap_trial`,
   `tram_pauline` (2 each); `quiz_show`, `drum_studio` (1 each).
 - Largest remaining: `drum_intro` 19, `rat_race` 18, `toss_boys` /
   `mannequin` / `bunny_hop` 14 each, `samurai_slice` 10.
-- **`samurai_slice` and `rat_race` are whole-engine jobs, not touch-ups**:
-  3,567 and 4,217 lines of assembly across 43 and 65 functions, and both
-  headers had `u8 pad[N]` placeholders instead of a real struct, so the
-  field layout has to be recovered from the code first. samurai_slice's
-  struct is recovered and its startup path is translated (the scene renders);
-  its engine_update, cue handlers and their internals are still stubs.
+- **`rat_race` is a whole-engine job, not a touch-up**: 4,217 lines of
+  assembly across 65 functions, and its header has a `u8 pad[N]` placeholder
+  instead of a real struct, so the field layout has to be recovered from the
+  code first. `samurai_slice` was the same shape and took two sessions.
   A useful check when recovering a layout: build a throwaway `main()` that
   prints `sizeof` and `offsetof`, and confirm host sizeof == the placeholder
   size plus 4 per pointer ahead of the end.

@@ -97,7 +97,7 @@ void samurai_slice_engine_start(u32 version) {
         func_080324b8(&gSamuraiSlice->medDemons[i]);
     }
 
-    gSamuraiSlice->unk1D0 = 0;
+    gSamuraiSlice->variant = 0;
     gSamuraiSlice->introTimer = 0;
     gSamuraiSlice->slicesInARow = 0;
     gSamuraiSlice->samuraiState = 0;
@@ -316,10 +316,138 @@ void samurai_slice_cue_despawn(struct Cue *cue, struct SamuraiSliceCue *info) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/samurai_slice/asm_080312b8.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_080312b8] Cue - Hit
+void samurai_slice_cue_hit(struct Cue *cue, struct SamuraiSliceCue *info, u32 pressed, u32 released) {
+    struct SamuraiSliceDemon *demon = &gSamuraiSlice->demons[info->demonIndex];
+    struct SongHeader *shout;
+    intptr_t anim;
+    s32 pitch;
+
+    gSamuraiSlice->slicesInARow++;
+
+    // Which pieces to throw is worked out from the animation on screen, not
+    // from the pattern the demon was spawned with.
+    anim = sprite_get_data(gSpriteHandler, demon->sprite, 7);
+    if      (anim == (intptr_t)anim_small_demon_hop)         demon->pattern = 0;
+    else if (anim == (intptr_t)anim_med_demon_hop)           demon->pattern = 1;
+    else if (anim == (intptr_t)anim_propeller_demon_hover)   demon->pattern = 2;
+    else if (anim == (intptr_t)anim_winged_demon_fly)        demon->pattern = 3;
+
+    switch (demon->pattern) {
+        case 0:
+            func_08032510(1, demon->x, demon->y);
+            func_08032510(0, demon->x, demon->y);
+            break;
+        case 1:
+            func_08032510(2, demon->x, demon->y);
+            func_08032510(0, demon->x, demon->y);
+            break;
+        case 2:
+            func_08032510(4, demon->x, demon->y);
+            func_08032510(3, demon->x, demon->y);
+            func_08032510(0, demon->x, demon->y);
+            break;
+        case 3:
+            func_08032510(0, demon->x, demon->y);
+            func_08032510(5, demon->x, demon->y);
+            break;
+        case 4:
+        case 5:
+            // The big ones break into two halves plus three scattered bits.
+            func_08032510(7, demon->x, demon->y);
+            func_08032510(6, demon->x, demon->y);
+            func_08032510(0, demon->x - 0x800, demon->y - 0x800);
+            func_08032510(0, demon->x, demon->y + 0x800);
+            func_08032510(0, demon->x + 0x800, demon->y);
+            break;
+        default:
+            break;
+    }
+
+    sprite_set_visible(gSpriteHandler, demon->sprite, FALSE);
+    sprite_set_visible(gSpriteHandler, demon->shadowSprite, FALSE);
+    demon->state = 2;
+
+    shout = (gSamuraiSlice->slicesInARow <= 2) ? &s_sword_ho_seqData
+          : (gSamuraiSlice->slicesInARow <= 4) ? &s_sword_hi_seqData
+          :                                      &s_sword_orya_seqData;
+
+    // Cutting the last demon of the set drops everything into slow motion.
+    if (((gSamuraiSlice->variant == 0) && (demon->pattern == 4)) ||
+        ((gSamuraiSlice->variant == 1) && (demon->pattern == 5))) {
+        set_beatscript_speed(0x40);
+        scene_set_music_pitch_env(-0xc00);
+        gSamuraiSlice->introTimer = 0x5a;
+
+        gSamuraiSlice->swordSound = play_sound_in_player(4, shout);
+        set_soundplayer_speed(gSamuraiSlice->swordSound, 0x40);
+        set_soundplayer_pitch(gSamuraiSlice->swordSound, -0xc00);
+
+        scene_hide_bg_layer(BG_LAYER_1);
+        scene_hide_bg_layer(BG_LAYER_2);
+        scene_hide_bg_layer(BG_LAYER_3);
+    } else {
+        gSamuraiSlice->swordSound = play_sound_in_player(4, shout);
+        set_soundplayer_speed(gSamuraiSlice->swordSound, 0x100);
+
+        pitch = gSamuraiSlice->slicesInARow << 7;
+        if (pitch > 0x300) pitch = 0x300;
+        set_soundplayer_pitch(gSamuraiSlice->swordSound, (s16)pitch);
+    }
+
+    func_080317f4();
+
+    if (gSamuraiSlice->sliceState == 1) {
+        gSamuraiSlice->sliceState = 2;
+        sprite_set_anim_cel(gSpriteHandler, gSamuraiSlice->sliceEffectSprite, 0);
+        sprite_set_visible(gSpriteHandler, gSamuraiSlice->sliceEffectSprite, TRUE);
+    }
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/samurai_slice/asm_08031588.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08031588] Cue - Barely
+void samurai_slice_cue_barely(struct Cue *cue, struct SamuraiSliceCue *info, u32 pressed, u32 released) {
+    struct SamuraiSliceDemon *demon = &gSamuraiSlice->demons[info->demonIndex];
+    intptr_t anim;
+
+    // A graze breaks the streak, so the flame trail goes out.
+    gSamuraiSlice->slicesInARow = 0;
+    sprite_set_visible(gSpriteHandler, gSamuraiSlice->flamesSprite, FALSE);
+
+    anim = sprite_get_data(gSpriteHandler, demon->sprite, 7);
+    if      (anim == (intptr_t)anim_small_demon_hop)        demon->pattern = 0;
+    else if (anim == (intptr_t)anim_med_demon_hop)          demon->pattern = 1;
+    else if (anim == (intptr_t)anim_propeller_demon_hover)  demon->pattern = 2;
+    else if (anim == (intptr_t)anim_winged_demon_fly)       demon->pattern = 3;
+
+    func_080317f4();
+
+    // One piece only, from the "barely" half of the table (entries 8..12).
+    switch (demon->pattern) {
+        case 0: func_08032510(8,  demon->x, demon->y); break;
+        case 1: func_08032510(9,  demon->x, demon->y); break;
+        case 2: func_08032510(10, demon->x, demon->y); break;
+        case 3: func_08032510(11, demon->x, demon->y); break;
+        case 4:
+        case 5: func_08032510(12, demon->x, demon->y); break;
+        default: break;
+    }
+
+    demon->state = 3;
+    sprite_set_visible(gSpriteHandler, demon->sprite, FALSE);
+    sprite_set_visible(gSpriteHandler, demon->shadowSprite, FALSE);
+
+    gSamuraiSlice->sliceState = 0;
+    gSamuraiSlice->windowWipe = 0;
+    D_03004b10.WINOUT = 0x1000;
+    scene_set_music_track_volume(gSamuraiSlice->unk1E2, 0);
+}
 #endif
 
 #ifndef PLATFORM_PC
@@ -477,10 +605,87 @@ void func_080319b4(struct SamuraiSliceDemon *demon) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/samurai_slice/asm_08031a6c.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08031a6c] Send a large demon in
+void func_08031a6c(struct SamuraiSliceDemon *demon, u32 pattern) {
+    demon->state = 1;
+    demon->pattern = pattern;
+    demon->x = 0xf000;
+    demon->y = 0x2800;
+    demon->travelX = 0;
+    demon->travelY = 0;
+    demon->hopHeight = 0;
+    demon->timer = 0;
+    demon->duration = ticks_to_frames(0xc0);
+
+    // Two sets of demon animations; which one is in use is set by engine
+    // event 04.
+    if (gSamuraiSlice->variant == 0) {
+        sprite_set_anim(gSpriteHandler, demon->sprite, D_089e4928[demon->pattern], 0, 0, 0, 0);
+    } else {
+        sprite_set_anim(gSpriteHandler, demon->sprite, D_089e4940[demon->pattern], 0, 0, 0, 0);
+    }
+
+    // Patterns 2..5 animate themselves; 0 and 1 are stepped by the cel
+    // ladder in func_08031c94 instead.
+    if ((u8)(demon->pattern - 2) <= 3) {
+        sprite_set_playback(gSpriteHandler, demon->sprite, 1, 0, 0);
+    }
+
+    // Patterns 4 and 5 are the big ones, and get the bigger shadow.
+    if ((u8)(demon->pattern - 4) <= 1) {
+        sprite_set_anim(gSpriteHandler, demon->shadowSprite, anim_large_demon_shadow, 0, 0, 0, 0);
+    } else {
+        sprite_set_anim(gSpriteHandler, demon->shadowSprite, anim_demon_shadow, 0, 0, 0, 0);
+    }
+
+    sprite_set_x_y_z(gSpriteHandler, demon->sprite,
+                     (s16)(demon->x >> 8), (s16)(demon->y >> 8), 0x800a);
+    sprite_set_x_y(gSpriteHandler, demon->shadowSprite,
+                   (s16)(demon->x >> 8), (s16)(demon->y >> 8));
+    sprite_set_visible(gSpriteHandler, demon->sprite, TRUE);
+    sprite_set_visible(gSpriteHandler, demon->shadowSprite, TRUE);
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/samurai_slice/asm_08031bc0.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08031bc0] Engine Event 02 (Spawn Demon)
+void func_08031bc0(u32 pattern) {
+    struct SamuraiSliceDemon *demon = gSamuraiSlice->demons;
+    struct SoundPlayer *soundPlayer;
+    struct SongHeader *phrase;
+    u32 isSecond = pattern & 1;
+
+    // Odd patterns use the second demon slot, so a pair can be in flight.
+    if (isSecond == 1) demon = &gSamuraiSlice->demons[1];
+    func_08031a6c(demon, pattern);
+
+    // The calling phrase only plays for the leading demon, and not at all in
+    // version 1.
+    if (gSamuraiSlice->version == 1) return;
+    if (isSecond != 0) return;
+
+    if (gSamuraiSlice->variant == 0) {
+        phrase = &s_iai_frase1a_seqData;
+        if (pattern > 1) {
+            phrase = &s_iai_frase3a_seqData;
+            if (pattern <= 3) phrase = &s_iai_frase2a_seqData;
+        }
+    } else {
+        phrase = &s_iai_frase1b_seqData;
+        if (pattern > 1) {
+            phrase = &s_iai_frase3b_seqData;
+            if (pattern <= 3) phrase = &s_iai_frase2b_seqData;
+        }
+    }
+
+    soundPlayer = play_sound(phrase);
+    set_soundplayer_speed(soundPlayer, (get_beatscript_tempo() << 8) / 0x8c);
+}
 #endif
 
 #ifndef PLATFORM_PC
@@ -489,7 +694,7 @@ void func_080319b4(struct SamuraiSliceDemon *demon) {
 // Translated from the assembly above and checked against it; not proven byte-exact.
 // [func_08031c54] Engine Event 04 (Set Phrase Variant)
 void func_08031c54(u32 value) {
-    gSamuraiSlice->unk1D0 = value;
+    gSamuraiSlice->variant = value;
 }
 #endif
 
@@ -837,6 +1042,60 @@ void func_080324b8(struct SamuraiSliceMedDemon *demon) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/samurai_slice/asm_08032510.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08032510] Throw one demon piece
+//
+// `type` indexes D_0805a5d4 for the animation and the base velocities; both
+// are scaled by the tempo, jittered, and biased by the current streak so a
+// longer streak throws the pieces further.
+void func_08032510(u32 type, s32 x, s32 y) {
+    struct SamuraiSliceMedDemon *demon = gSamuraiSlice->medDemons;
+    s32 streak, kick, tempo, jitter, speed;
+    u32 i;
+
+    type = (u8)type;
+
+    for (i = 0; demon->alive != 0; i++, demon++) {
+        if (i >= 9) return;
+    }
+    if (i > 9) return;
+
+    demon->alive = TRUE;
+    // Nothing passes a type above 7, so in practice the pieces never spin.
+    demon->spinning = (type > 7);
+    demon->rotation = 0;
+    demon->x = x;
+    demon->y = y;
+
+    streak = gSamuraiSlice->slicesInARow;
+
+    jitter = (u16)agb_random(0x80);
+    speed = (u16)agb_random((u16)((streak * 3) << 5));
+    tempo = get_beatscript_tempo();
+    demon->xVel = (tempo * (D_0805a5d4[type].xVelBase + jitter
+                            + (speed - ((streak * 3) << 4) - 0x40))) / 0x8c;
+
+    switch (type) {
+        case 0:                             kick = streak * 0x66;     break;
+        case 1: case 2: case 3: case 5:     kick = (-streak) << 6;    break;
+        case 4:                             kick = ((-streak) * 5) << 4; break;
+        default:                            kick = 0;                 break;
+    }
+
+    jitter = (u16)agb_random(0x100);
+    tempo = get_beatscript_tempo();
+    demon->yVel = (tempo * (D_0805a5d4[type].yVelBase + jitter + (kick - 0x80))) / 0x8c;
+
+    demon->spinSpeed = (get_beatscript_tempo() * 8) / 0x8c;
+    demon->gravity = ((get_beatscript_tempo() * 3) << 4) / 0x8c;
+
+    sprite_set_anim(gSpriteHandler, demon->sprite, D_0805a5d4[type].anim, 0, 0, 0, 0);
+    sprite_set_x_y(gSpriteHandler, demon->sprite,
+                   (s16)(demon->x >> 8), (s16)(demon->y >> 8));
+    set_affine_scale_rotation(demon->affineGroup, 0x100, (s8)demon->rotation);
+    sprite_set_visible(gSpriteHandler, demon->sprite, TRUE);
+}
 #endif
 
 #ifndef PLATFORM_PC

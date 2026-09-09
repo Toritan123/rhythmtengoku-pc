@@ -74,10 +74,10 @@ struct SamuraiSliceEngineData {
     s16 sliceEffectSprite;                      // 0x08C
     u8  unk08E[2];
     struct SamuraiSliceMedDemon medDemons[10];  // 0x090
-    u8  unk1D0;                                 // 0x1D0
+    u8  variant;                                // 0x1D0  selects the a/b sets
     u8  unk1D1;
     s16 introTimer;                             // 0x1D2  counts down over the intro
-    u8  unk1D4[4];
+    struct SoundPlayer *swordSound;              // 0x1D4
     s16 slicesInARow;                           // 0x1D8  drives the flame trail
     s16 flamesSprite;                           // 0x1DA
     u32 flamesY;                                // 0x1DC  16.8 fixed point
@@ -94,8 +94,8 @@ struct SamuraiSliceCue {
 
 struct SamuraiSlice_0805a5d4 {
     struct Animation *anim;
-    u32 unk4;
-    u32 unk8;
+    s32 xVelBase;   // both are scaled by the tempo and jittered before use
+    s32 yVelBase;
 };
 
 
@@ -139,8 +139,8 @@ extern void func_080317f4(void); // Player swing
 extern void samurai_slice_common_beat_animation(); // Common Event 0 (Beat Animation)
 extern void samurai_slice_common_display_text(); // Common Event 1 (Display Text, Unimplemented)
 extern void func_080319b4(struct SamuraiSliceDemon *demon); // Init. Large Demon
-// extern ? func_08031a6c(?);
-extern void func_08031bc0(); // Engine Event 02 (?)
+extern void func_08031a6c(struct SamuraiSliceDemon *demon, u32 pattern); // Send a large demon in
+extern void func_08031bc0(u32 pattern); // Engine Event 02 (Spawn Demon)
 extern void func_08031c54(u32 value); // Engine Event 04 (Set Phrase Variant)
 extern s32 func_08031c68(s32 ticks, s32 t); // Parabolic hop height
 extern void func_08031c94(struct SamuraiSliceDemon *demon); // Large demon: approach
@@ -154,6 +154,6 @@ extern void func_08032430(u32 wipeTarget); // Engine Event 03 (Start Slice Wipe)
 extern void func_08032478(void); // Update the slice sequence
 extern void func_080324a4(u16 tracks); // Engine Event 07 (Select Music Tracks)
 extern void func_080324b8(struct SamuraiSliceMedDemon *demon); // Init. Small Demon
-// extern ? func_08032510(?);
+extern void func_08032510(u32 type, s32 x, s32 y); // Throw one demon piece
 extern void func_08032708(struct SamuraiSliceMedDemon *demon); // Small demon update
 extern void func_080327a4(void); // Update the ten small demons
