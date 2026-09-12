@@ -15,8 +15,84 @@ struct Rat {
     u32 unkC;
 };
 
+// One of the nine dash-dust puffs. 8 bytes.
+struct RatRaceDashParticle {
+    s16 sprite;             // 0x00
+    u8  active;             // 0x02
+    u8  unk03;
+    s32 x;                  // 0x04  16.8 fixed point
+};
+
+// One of the six plates on the conveyor. 8 bytes.
+struct RatRacePlate {
+    s16 sprite;             // 0x00
+    u8  active;             // 0x02
+    u8  unk03;
+    s32 x;                  // 0x04  16.8 fixed point
+};
+
+// Field offsets recovered from the engine's own assembly
+// (asm/engines/rat_race/). sizeof() is 0x120 on the GBA, as the placeholder
+// this replaces asserted; on a 64-bit host it grows by the one pointer at
+// 0x004, which shifts every offset below it by four -- so do not reuse the
+// raw numbers in scripts or tables.
 struct RatRaceEngineData {
-    u8 pad[0x120];
+    u8  version;                                // 0x000
+    u8  unk001[3];
+    struct BitmapFontOBJ *objFont;              // 0x004
+    s16 textSprite;                             // 0x008
+    u8  unk00A[2];
+    s32 textX;                                  // 0x00C
+    u8  unk010;                                 // 0x010
+    u8  unk011;
+    s16 bubbleSprite;                           // 0x012
+    u8  unk014;                                 // 0x014
+    u8  unk015[3];
+    s32 unk018;                                 // 0x018
+    u8  unk01C;                                 // 0x01C
+    u8  unk01D[3];
+    s32 unk020;                                 // 0x020
+    s32 unk024;                                 // 0x024
+    s32 unk028;                                 // 0x028
+    u8  unk02C;                                 // 0x02C
+    u8  unk02D[3];
+    s32 unk030;                                 // 0x030
+    s32 unk034;                                 // 0x034
+    u8  unk038;                                 // 0x038
+    u8  unk039[3];
+    struct Rat rats[3];                         // 0x03C
+    s16 playerLabelSprite;                      // 0x06C
+    u8  unk06E[2];
+    s32 unk070;                                 // 0x070
+    s16 catPupilsSprite;                        // 0x074
+    s16 catEyelidsSprite;                       // 0x076
+    s16 catPawSprite;                           // 0x078
+    s16 catPawMirrorSprite;                     // 0x07A
+    u8  unk07C;                                 // 0x07C
+    u8  unk07D[3];
+    s32 unk080;                                 // 0x080
+    s32 catX;                                   // 0x084  16.8 fixed point
+    struct RatRaceDashParticle particles[9];    // 0x088
+    s16 unk0D0;                                 // 0x0D0
+    u8  unk0D2;                                 // 0x0D2
+    u8  unk0D3;                                 // 0x0D3
+    s32 unk0D4;                                 // 0x0D4
+    s16 blankSprite;                            // 0x0D8
+    u8  unk0DA;                                 // 0x0DA
+    u8  unk0DB;
+    s16 trafficLightSprite;                     // 0x0DC
+    u8  unk0DE;                                 // 0x0DE
+    s8  affineGroup;                            // 0x0DF
+    u8  unk0E0[2];
+    s16 unk0E2;                                 // 0x0E2
+    s16 unk0E4;                                 // 0x0E4
+    u8  unk0E6[2];
+    s32 unk0E8;                                 // 0x0E8
+    struct RatRacePlate plates[6];              // 0x0EC
+    u8  unk11C;                                 // 0x11C
+    u8  unk11D;                                 // 0x11D
+    u8  unk11E;                                 // 0x11E
+    u8  unk11F;
 };
 
 struct RatRaceCue {
@@ -77,12 +153,12 @@ extern void rat_race_input_event(u32 pressed, u32 released); // Input Event
 extern void rat_race_common_beat_animation(void); // Common Event 0 (Beat Animation, Unimplemented)
 extern void rat_race_common_display_text(void); // Common Event 1 (Display Text, Unimplemented)
 extern void rat_race_common_init_tutorial(struct Scene *); // Common Event 2 (Init. Tutorial)
-// extern ? func_0803a678(?);
+extern void func_0803a678(void); // Init. the Cat
 extern void func_0803a798(); // Engine Event 05 (?)
 // extern ? func_0803a8e4(?);
 extern void func_0803aa58(); // Engine Event 0B (?)
 // extern ? func_0803aa9c(?);
-// extern ? func_0803aba4(?);
+extern void func_0803aba4(struct Rat *rat, u32 index); // Init. one Rat
 extern void func_0803ac98(); // Engine Event 0D (?)
 extern void func_0803ad50(); // Engine Event 10 (?)
 // extern ? func_0803ad60(?);
@@ -95,12 +171,12 @@ extern void func_0803b034(); // Engine Event 01 (?)
 // extern ? func_0803b37c(?);
 // extern ? func_0803b924(?);
 // extern ? func_0803b9fc(?);
-// extern ? func_0803baa0(?);
+extern void func_0803baa0(struct RatRaceDashParticle *particle); // Init. one dust puff
 // extern ? func_0803baf8(?);
 // extern ? func_0803bb2c(?);
 // extern ? func_0803bbd8(?);
 // extern ? func_0803bc08(?);
-// extern ? func_0803bc40(?);
+extern void func_0803bc40(struct RatRacePlate *plate); // Init. one plate
 extern void func_0803bc98(); // Engine Event 0E (?)
 // extern ? func_0803bd0c(?);
 // extern ? func_0803bd58(?);

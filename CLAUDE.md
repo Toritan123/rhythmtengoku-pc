@@ -142,13 +142,18 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
   `tram_pauline` (2 each); `quiz_show`, `drum_studio` (1 each).
 - Largest remaining: `drum_intro` 19, `rat_race` 18, `toss_boys` /
   `mannequin` / `bunny_hop` 14 each, `samurai_slice` 10.
-- **`rat_race` is a whole-engine job, not a touch-up**: 4,217 lines of
-  assembly across 65 functions, and its header has a `u8 pad[N]` placeholder
-  instead of a real struct, so the field layout has to be recovered from the
-  code first. `samurai_slice` was the same shape and took two sessions.
+- **`rat_race` is a whole-engine job**: 4,217 lines across 65 functions.
+  Its struct is recovered and its startup path is translated (the scene
+  renders: cat, three rats, plates); engine_update, the cue handlers and
+  the engine events are still stubs. `samurai_slice` was the same shape and
+  took two sessions.
   A useful check when recovering a layout: build a throwaway `main()` that
-  prints `sizeof` and `offsetof`, and confirm host sizeof == the placeholder
-  size plus 4 per pointer ahead of the end.
+  prints `sizeof` and `offsetof` for every recovered field and compares each
+  against the offset the assembly used. **The host-to-GBA shift is not simply
+  4 per pointer** — a pointer also forces 8-byte alignment, so padding can be
+  inserted ahead of it. RatRaceEngineData has one pointer at 0x004 preceded by
+  four bytes of scalars, and the shift is 8, not 4. Derive the shift from one
+  known field, then check the rest against it.
 - **To turn a raw `D_030053c0 + 0xNNN` into a field name, anchor on a field's
   own absolute address, not on another field's offset comment.** Working back
   from `localVariables // [D_030053c0 + 0x160]` put `musicVolume` at 0x198 and
