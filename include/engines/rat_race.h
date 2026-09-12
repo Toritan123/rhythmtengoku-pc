@@ -96,7 +96,10 @@ struct RatRaceEngineData {
 };
 
 struct RatRaceCue {
-    /* add fields here */
+    s16 sprite;     // 0x00
+    u8  kind;       // 0x02  indexes D_089e66bc for the spawn offset
+    u8  unk03;
+    s32 x;          // 0x04  16.8 fixed point
 };
 
 
@@ -121,8 +124,8 @@ extern void rat_race_init_gfx1(void); // Graphics Init. 1
 extern void rat_race_engine_start(u32 version); // Game Engine Start
 extern void rat_race_engine_event_stub(); // Engine Event 00 (STUB)
 extern void func_0803a158(); // Engine Event 02 (?)
-// extern ? func_0803a164(?);
-// extern ? func_0803a198(?);
+extern void func_0803a164(void); // Decay the run speed
+extern void func_0803a198(void); // Advance the track
 extern void func_0803a1d4(); // Engine Event 09 (?)
 extern void func_0803a1e4(); // Engine Event 0A (?)
 extern void func_0803a1f8(); // Engine Event 03 (?)
@@ -131,14 +134,14 @@ extern void func_0803a204(); // Engine Event 04 (?)
 extern void func_0803a2a8(); // Engine Event 06 (?)
 extern void func_0803a350(); // Engine Event 07 (?)
 extern void func_0803a3b8(); // Engine Event 08 (?)
-// extern ? func_0803a3c4(?);
+extern void func_0803a3c4(void); // Keep the speech bubble over its rat
 extern void func_0803a41c(); // Engine Event 0C (?)
 extern void func_0803a434(); // Engine Event 0F (?)
 extern void rat_race_engine_update(void); // Game Engine Update
 extern void func_0803a47c(); // Engine Event 11 (?)
 extern void func_0803a490(); // Engine Event 12 (?)
 extern void rat_race_engine_stop(void); // Game Engine Stop
-// extern ? func_0803a4a8(?);
+extern s32 func_0803a4a8(u32 kind); // Where a crockery cue starts
 extern void rat_race_cue_spawn_stop(struct Cue *, struct RatRaceCue *, u32 param); // Cue - Spawn (Stop)
 extern u32  rat_race_cue_update_stop(struct Cue *, struct RatRaceCue *, u32 runningTime, u32 duration); // Cue - Update (Stop)
 extern void rat_race_cue_despawn_stop(struct Cue *, struct RatRaceCue *); // Cue - Despawn (Stop)
@@ -174,9 +177,9 @@ extern void func_0803b034(); // Engine Event 01 (?)
 extern void func_0803baa0(struct RatRaceDashParticle *particle); // Init. one dust puff
 // extern ? func_0803baf8(?);
 // extern ? func_0803bb2c(?);
-// extern ? func_0803bbd8(?);
-// extern ? func_0803bc08(?);
+extern void func_0803bbd8(struct RatRaceDashParticle *particle); // Scroll one dust puff
+extern void func_0803bc08(void); // Scroll the dust puffs
 extern void func_0803bc40(struct RatRacePlate *plate); // Init. one plate
 extern void func_0803bc98(); // Engine Event 0E (?)
-// extern ? func_0803bd0c(?);
-// extern ? func_0803bd58(?);
+extern void func_0803bd0c(struct RatRacePlate *plate); // Scroll one plate
+extern void func_0803bd58(void); // Scroll the plates

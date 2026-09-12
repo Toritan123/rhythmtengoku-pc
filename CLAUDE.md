@@ -134,7 +134,7 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
 
 ## State (measured 2026-09-07)
 
-- **361 functions exist only as a no-op stub**: named engine/system
+- **327 functions exist only as a no-op stub**: named engine/system
   functions, unnamed `func_08XXXXXX`, and 23 scene/script data entries.
 - Done: `rhythm_tweezers`, `rhythm_test`, `clappy_trio`, `samurai_slice`
   (all 43 functions, struct recovered).
@@ -142,11 +142,14 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
   `tram_pauline` (2 each); `quiz_show`, `drum_studio` (1 each).
 - Largest remaining: `drum_intro` 19, `rat_race` 18, `toss_boys` /
   `mannequin` / `bunny_hop` 14 each, `samurai_slice` 10.
-- **`rat_race` is a whole-engine job**: 4,217 lines across 65 functions.
-  Its struct is recovered and its startup path is translated (the scene
-  renders: cat, three rats, plates); engine_update, the cue handlers and
-  the engine events are still stubs. `samurai_slice` was the same shape and
-  took two sessions.
+- **`rat_race`**: struct recovered, startup path and the scrolling/cue
+  helpers translated. Three named stubs remain -- `engine_update`,
+  `cue_hit_stop`, `cue_hit_dash` -- plus the engine events. engine_update
+  needs func_0803b37c (677 lines), func_0803aa9c and func_0803a8e4; the two
+  hit handlers need func_0803b034, func_0803b924 and func_0803b9fc. None of
+  those six has a weak stub yet, because nothing references them, so
+  translating a caller makes them undefined at link time until they are done
+  too -- do them in the same pass.
   A useful check when recovering a layout: build a throwaway `main()` that
   prints `sizeof` and `offsetof` for every recovered field and compares each
   against the offset the assembly used. **The host-to-GBA shift is not simply

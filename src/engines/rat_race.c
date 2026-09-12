@@ -150,6 +150,11 @@ void rat_race_engine_start(u32 version) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a154.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a154] Engine Event 00 (STUB)
+void rat_race_engine_event_stub(void) {
+}
 #endif
 
 #ifndef PLATFORM_PC
@@ -158,10 +163,37 @@ void rat_race_engine_start(u32 version) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a164.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a164] Decay the run speed
+void func_0803a164(void) {
+    struct RatRaceEngineData *ratRace;
+
+    ratRace = gRatRace;
+    ratRace->unk020 -= func_0800c398();
+    if (ratRace->unk020 <= 0) {
+        ratRace->unk020 = 0;
+        ratRace->unk028 = 0;
+    } else {
+        ratRace->unk028 = ((ratRace->unk020 * 3) << 9) / ratRace->unk024;
+    }
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a198.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a198] Advance the track
+void func_0803a198(void) {
+    struct RatRaceEngineData *ratRace = gRatRace;
+
+    if ((ratRace->unk01C != 1) && (ratRace->unk01C != 2)) return;
+
+    func_0803a164();
+    ratRace = gRatRace;
+    ratRace->unk018 += ((func_0800c398() << 6) / 0x18) + ratRace->unk028;
+}
 #endif
 
 #ifndef PLATFORM_PC
@@ -198,6 +230,20 @@ void rat_race_engine_start(u32 version) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a3c4.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a3c4] Keep the speech bubble over its rat
+void func_0803a3c4(void) {
+    struct RatRaceEngineData *ratRace = gRatRace;
+    u32 which = (ratRace->unk014 != 0) ? 1 : 2;
+    s32 x;
+
+    x = ratRace->rats[which].unk8 - ratRace->unk030 + 0x7800;
+    ratRace->textX = x >> 8;
+
+    sprite_set_x(gSpriteHandler, ratRace->textSprite, (s16)(x >> 8));
+    sprite_set_x(gSpriteHandler, gRatRace->bubbleSprite, gRatRace->textX);
+}
 #endif
 
 #ifndef PLATFORM_PC
@@ -222,34 +268,108 @@ void rat_race_engine_start(u32 version) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a4a4.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a4a4] Game Engine Stop
+void rat_race_engine_stop(void) {
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a4a8.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a4a8] Where a crockery cue starts
+//
+// The track keeps moving while the cue is in flight, so the spawn point is
+// integrated forward over however long the current speed will last.
+s32 func_0803a4a8(u32 kind) {
+    struct RatRaceEngineData *ratRace = gRatRace;
+    s32 remaining = ratRace->unk020;
+    s32 divisor = ratRace->unk024;
+    s32 x = ratRace->unk018 - ratRace->rats[0].unk8 + 0x7800;
+    s32 step = D_089e66bc[(u8)kind] << 8;
+
+    for (;;) {
+        x += step;
+        if (remaining <= 0) break;
+        remaining -= func_0800c398();
+        if (remaining <= 0) break;
+        step = ((remaining * 3) << 9) / divisor;
+    }
+    return x;
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a4f8.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a4f8] Cue - Spawn (Stop)
+void rat_race_cue_spawn_stop(struct Cue *cue, struct RatRaceCue *info, u32 kind) {
+    info->kind = kind;
+    info->sprite = sprite_create(gSpriteHandler, anim_rat_race_crockery,
+                                 0, 0x64, 0x7e, 0xa, 0, 0, 0);
+    info->x = func_0803a4a8(info->kind);
+    sprite_set_x(gSpriteHandler, info->sprite, (s16)(info->x >> 8));
+
+    if (gRatRace->unk010 != 0) {
+        sprite_set_anim_cel(gSpriteHandler, info->sprite, 1);
+    }
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a564.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a564] Cue - Update (Stop)
+u32 rat_race_cue_update_stop(struct Cue *cue, struct RatRaceCue *info, u32 runningTime, u32 duration) {
+    info->x -= gRatRace->unk034;
+    if ((info->x >> 8) <= -0x50) return TRUE;
+
+    sprite_set_x(gSpriteHandler, info->sprite, (s16)(info->x >> 8));
+    return FALSE;
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a5a4.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a5a4] Cue - Despawn (Stop)
+void rat_race_cue_despawn_stop(struct Cue *cue, struct RatRaceCue *info) {
+    sprite_delete(gSpriteHandler, info->sprite);
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a5bc.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a5bc] Cue - Spawn (Dash)
+void rat_race_cue_spawn_dash(struct Cue *cue, struct RatRaceCue *info, u32 unused) {
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a5c0.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a5c0] Cue - Update (Dash)
+u32 rat_race_cue_update_dash(struct Cue *cue, struct RatRaceCue *info, u32 runningTime, u32 duration) {
+    if (runningTime > (u32)ticks_to_frames(0x78)) return TRUE;
+    return FALSE;
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a5dc.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a5dc] Cue - Despawn (Dash)
+void rat_race_cue_despawn_dash(struct Cue *cue, struct RatRaceCue *info) {
+}
 #endif
 
 #ifndef PLATFORM_PC
@@ -262,26 +382,62 @@ void rat_race_engine_start(u32 version) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a640.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a640] Cue - Barely
+void rat_race_cue_barely(struct Cue *cue, struct RatRaceCue *info, u32 pressed, u32 released) {
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a644.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a644] Cue - Miss
+void rat_race_cue_miss(struct Cue *cue, struct RatRaceCue *info) {
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a648.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a648] Input Event (STUB)
+void rat_race_input_event(u32 pressed, u32 released) {
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a64c.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a64c] Common Event 0 (Beat Animation, Unimplemented)
+void rat_race_common_beat_animation(void) {
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a650.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a650] Common Event 1 (Display Text, Unimplemented)
+void rat_race_common_display_text(void) {
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a654.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a654] Common Event 2 (Init. Tutorial)
+void rat_race_common_init_tutorial(struct Scene *skipDestination) {
+    if (skipDestination != NULL) {
+        gameplay_enable_tutorial(TRUE);
+        gameplay_set_skip_destination(skipDestination);
+    } else {
+        gameplay_enable_tutorial(FALSE);
+    }
+}
 #endif
 
 #ifndef PLATFORM_PC
@@ -434,10 +590,29 @@ void func_0803baa0(struct RatRaceDashParticle *particle) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803bbd8.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803bbd8] Scroll one dust puff
+void func_0803bbd8(struct RatRaceDashParticle *particle) {
+    particle->x -= gRatRace->unk034;
+    sprite_set_x(gSpriteHandler, particle->sprite, (s16)(particle->x >> 8));
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803bc08.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803bc08] Scroll the dust puffs
+void func_0803bc08(void) {
+    struct RatRaceDashParticle *particle = gRatRace->particles;
+    u32 i;
+
+    gRatRace->unk0D0++;
+    for (i = 0; i < 9; i++, particle++) {
+        if (particle->active) func_0803bbd8(particle);
+    }
+}
 #endif
 
 #ifndef PLATFORM_PC
@@ -461,8 +636,30 @@ void func_0803bc40(struct RatRacePlate *plate) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803bd0c.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803bd0c] Scroll one plate
+void func_0803bd0c(struct RatRacePlate *plate) {
+    plate->x -= gRatRace->unk034;
+    if ((plate->x >> 8) <= -0x30) {
+        plate->active = FALSE;
+        sprite_set_visible(gSpriteHandler, plate->sprite, FALSE);
+    }
+    sprite_set_x(gSpriteHandler, plate->sprite, (s16)(plate->x >> 8));
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803bd58.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803bd58] Scroll the plates
+void func_0803bd58(void) {
+    struct RatRacePlate *plate = gRatRace->plates;
+    u32 i;
+
+    for (i = 0; i < 6; i++, plate++) {
+        if (plate->active) func_0803bd0c(plate);
+    }
+}
 #endif
