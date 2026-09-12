@@ -158,9 +158,9 @@ extern void rat_race_common_display_text(void); // Common Event 1 (Display Text,
 extern void rat_race_common_init_tutorial(struct Scene *); // Common Event 2 (Init. Tutorial)
 extern void func_0803a678(void); // Init. the Cat
 extern void func_0803a798(); // Engine Event 05 (?)
-// extern ? func_0803a8e4(?);
+extern void func_0803a8e4(void); // Update the cat
 extern void func_0803aa58(); // Engine Event 0B (?)
-// extern ? func_0803aa9c(?);
+extern void func_0803aa9c(void); // Scroll the backgrounds, and spot the goal
 extern void func_0803aba4(struct Rat *rat, u32 index); // Init. one Rat
 extern void func_0803ac98(); // Engine Event 0D (?)
 extern void func_0803ad50(); // Engine Event 10 (?)

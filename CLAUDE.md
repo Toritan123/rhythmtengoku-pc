@@ -142,21 +142,13 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
   `tram_pauline` (2 each); `quiz_show`, `drum_studio` (1 each).
 - Largest remaining: `drum_intro` 19, `rat_race` 18, `toss_boys` /
   `mannequin` / `bunny_hop` 14 each, `samurai_slice` 10.
-- **`rat_race`**: struct recovered, startup path and the scrolling/cue
-  helpers translated. Three named stubs remain -- `engine_update`,
-  `cue_hit_stop`, `cue_hit_dash` -- plus the engine events. engine_update
-  needs func_0803b37c (677 lines), func_0803aa9c and func_0803a8e4; the two
-  hit handlers need func_0803b034, func_0803b924 and func_0803b9fc. None of
-  those six has a weak stub yet, because nothing references them, so
-  translating a caller makes them undefined at link time until they are done
-  too -- do them in the same pass.
-  A useful check when recovering a layout: build a throwaway `main()` that
-  prints `sizeof` and `offsetof` for every recovered field and compares each
-  against the offset the assembly used. **The host-to-GBA shift is not simply
-  4 per pointer** — a pointer also forces 8-byte alignment, so padding can be
-  inserted ahead of it. RatRaceEngineData has one pointer at 0x004 preceded by
-  four bytes of scalars, and the shift is 8, not 4. Derive the shift from one
-  known field, then check the rest against it.
+- **`rat_race`**: struct recovered; everything is translated except
+  `engine_update` and the one function that blocks it, `func_0803b37c` --
+  557 instructions, two jump tables, the per-frame rat state machine. It has
+  no weak stub, so `engine_update` cannot be translated until it is.
+  `func_0803a8e4` (the cat) and `func_0803aa9c` (parallax and the goal) are
+  translated but **not yet reached at run time**, because only engine_update
+  calls them.
 - **To turn a raw `D_030053c0 + 0xNNN` into a field name, anchor on a field's
   own absolute address, not on another field's offset comment.** Working back
   from `localVariables // [D_030053c0 + 0x160]` put `musicVolume` at 0x198 and

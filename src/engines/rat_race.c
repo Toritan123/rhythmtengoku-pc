@@ -495,6 +495,60 @@ void func_0803a678(void) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a8e4.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a8e4] Update the cat
+void func_0803a8e4(void) {
+    struct RatRaceEngineData *ratRace = gRatRace;
+    const u8 *table;
+    u32 t, v;
+
+    ratRace->unk080 += func_0800c398();
+
+    switch (ratRace->unk07C) {
+        case 3:
+            // Lowering into view, and rising back out again in case 6.
+            t = func_0800c398();
+            gRatRace->catX -= ((t * 5) << 4) / 6;
+            break;
+
+        case 4:
+            // The pupils follow a short intro pattern, then loop a longer one.
+            v = (u32)gRatRace->unk080 >> 8;
+            if (v <= 0x17) {
+                table = D_089e6834;
+            } else {
+                v = v % 0x30;
+                table = D_089e684c;
+            }
+            sprite_set_anim_cel(gSpriteHandler, gRatRace->catPupilsSprite, (s8)table[v]);
+            break;
+
+        case 5:
+            v = (u32)gRatRace->unk080 >> 8;
+            if (v > 6) v = 6;
+            sprite_set_anim_cel(gSpriteHandler, gRatRace->catEyelidsSprite, (s8)(v >> 1));
+            break;
+
+        case 6:
+            t = func_0800c398();
+            gRatRace->catX += ((t * 5) << 4) / 6;
+            break;
+
+        default:
+            break;
+    }
+
+    sprite_set_y(gSpriteHandler, gRatRace->catPupilsSprite,
+                 (s16)((gRatRace->catX >> 8) + 0x44));
+    sprite_set_y(gSpriteHandler, gRatRace->catEyelidsSprite,
+                 (s16)((gRatRace->catX >> 8) + 0x44));
+
+    // Once the goal banner owns layer 0 the cat stops driving it.
+    if (!gRatRace->unk0D3) {
+        scene_set_bg_layer_pos(BG_LAYER_0, (s16)((-gRatRace->catX) >> 8), 0);
+    }
+}
 #endif
 
 #ifndef PLATFORM_PC
@@ -503,6 +557,42 @@ void func_0803a678(void) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803aa9c.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803aa9c] Scroll the backgrounds, and spot the goal
+void func_0803aa9c(void) {
+    struct RatRaceEngineData *ratRace = gRatRace;
+    s32 v;
+    u32 i;
+
+    scene_set_bg_layer_pos(BG_LAYER_1, (s16)((ratRace->unk030 - 0x7800) >> 8), 0);
+
+    // Layer 2 is the far parallax: the same distance at a 512th of the rate,
+    // divided toward zero rather than floored.
+    v = gRatRace->unk030 - 0x7800;
+    scene_set_bg_layer_pos(BG_LAYER_2, (s16)((v + ((u32)v >> 31)) >> 9), 0);
+
+    ratRace = gRatRace;
+    if (!ratRace->unk0D3) return;
+    if (ratRace->rats[0].unk4 == 7) return;
+
+    if (((ratRace->unk030 - ratRace->unk0D4) >> 8) > 0x10f) {
+        // The goal has come up: park the banner and set all three rats cheering.
+        ratRace->unk0D4 = ratRace->unk030 - 0x11000;
+        for (i = 0; i < 3; i++) {
+            gRatRace->rats[i].unk4 = 7;
+            sprite_set_anim(gSpriteHandler, gRatRace->rats[i].ratSprite,
+                            anim_rat_cheer_full, 0, 1, 0, 0);
+        }
+        gRatRace->unk01C = 0;
+        play_sound(&s_f_rat_goal_seqData);
+    }
+
+    ratRace = gRatRace;
+    scene_set_bg_layer_pos(BG_LAYER_0, (s16)((ratRace->unk030 - ratRace->unk0D4) >> 8), 0);
+    sprite_set_x(gSpriteHandler, gRatRace->blankSprite,
+                 (s16)((gRatRace->unk0D4 - gRatRace->unk030 + 0x12000) >> 8));
+}
 #endif
 
 #ifndef PLATFORM_PC
