@@ -165,15 +165,15 @@ extern void func_0803aba4(struct Rat *rat, u32 index); // Init. one Rat
 extern void func_0803ac98(); // Engine Event 0D (?)
 extern void func_0803ad50(); // Engine Event 10 (?)
 // extern ? func_0803ad60(?);
-// extern ? func_0803aef4(?);
-extern void func_0803b034(); // Engine Event 01 (?)
+extern void func_0803aef4(void *unused, s16 spriteId, struct Rat *rat); // Rat animation finished
+extern void func_0803b034(u32 gait); // Engine Event 01 (Set the Pack Gait)
 // extern ? func_0803b1ac(?);
 // extern ? func_0803b1e8(?);
 // extern ? func_0803b230(?);
-// extern ? func_0803b258(?);
+extern void func_0803b258(struct Rat *rat); // Player runs into the rat ahead
 // extern ? func_0803b37c(?);
-// extern ? func_0803b924(?);
-// extern ? func_0803b9fc(?);
+extern void func_0803b924(void); // The player stops
+extern void func_0803b9fc(void); // The player dashes
 extern void func_0803baa0(struct RatRaceDashParticle *particle); // Init. one dust puff
 // extern ? func_0803baf8(?);
 // extern ? func_0803bb2c(?);

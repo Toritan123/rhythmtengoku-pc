@@ -374,10 +374,30 @@ void rat_race_cue_despawn_dash(struct Cue *cue, struct RatRaceCue *info) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a5e0.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a5e0] Cue - Hit (Stop)
+void rat_race_cue_hit_stop(struct Cue *cue, struct RatRaceCue *info, u32 pressed, u32 released) {
+    func_0803b034(0);
+    // unk11D marks this stop as commanded, so func_0803b924 does not treat it
+    // as a slip.
+    gRatRace->unk11D = TRUE;
+    func_0803b924();
+    gRatRace->unk11D = FALSE;
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a610.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a610] Cue - Hit (Dash)
+void rat_race_cue_hit_dash(struct Cue *cue, struct RatRaceCue *info, u32 pressed, u32 released) {
+    func_0803b034(1);
+    gRatRace->unk11D = TRUE;
+    func_0803b9fc();
+    gRatRace->unk11D = FALSE;
+}
 #endif
 
 #ifndef PLATFORM_PC
@@ -531,10 +551,129 @@ void func_0803aba4(struct Rat *rat, u32 index) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803aef4.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803aef4] Rat animation finished
+//
+// Installed as the sprite callback whenever a one-shot animation is started;
+// rat->unkC says which follow-up to run, and each arm leaves the rat in a new
+// unk4 state.
+void func_0803aef4(void *unused, s16 spriteId, struct Rat *rat) {
+    struct Animation *anim;
+
+    func_0800c604(0);
+
+    switch (rat->unkC) {
+        case 0:
+            sprite_set_anim(gSpriteHandler, spriteId, anim_rat_run, 0, 1, 0, 0);
+            rat->unk4 = 1;
+            break;
+
+        case 1:
+            sprite_set_anim(gSpriteHandler, spriteId, anim_rat_stop, 0, 1, 0x7f, 0);
+            rat->unk4 = 2;
+            break;
+
+        case 2:
+            sprite_set_anim(gSpriteHandler, spriteId, anim_rat_angry_stop_r, 0, 1, 0x7f, 4);
+            sprite_set_callback(gSpriteHandler, spriteId, (void *)func_0803aef4, (uintptr_t)rat);
+            rat->unkC = 1;
+            rat->unk4 = 2;
+            break;
+
+        case 3:
+            // The two other rats run angry in opposite directions.
+            anim = (rat->unk5 == 1) ? anim_rat_angry_run_r : anim_rat_angry_run_l;
+            sprite_set_anim(gSpriteHandler, spriteId, anim, 0, 1, 0x7f, 4);
+            sprite_set_callback(gSpriteHandler, spriteId, (void *)func_0803aef4, (uintptr_t)rat);
+            rat->unkC = 0;
+            rat->unk4 = 1;
+            break;
+
+        case 4:
+            sprite_set_anim(gSpriteHandler, spriteId, anim_rat_prepare_dash, 0, 1, 0x7f, 0);
+            rat->unk4 = 6;
+            break;
+
+        default:
+            break;
+    }
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803b034.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803b034] Engine Event 01 (Set the Pack Gait)
+//
+// gait 0 = stop, 1 = run, 2 = crouch ready to dash. Nothing happens if the
+// pack is already in that gait.
+void func_0803b034(u32 gait) {
+    struct RatRaceEngineData *ratRace = gRatRace;
+    struct Rat *rat = ratRace->rats;
+    s32 budget;
+    u32 i;
+
+    if (ratRace->unk038 == gait) return;
+    ratRace->unk038 = gait;
+
+    if (gait == 1) {
+        // Starting to run tops the speed budget back up, by an amount that
+        // depends on how the last stretch ended.
+        ratRace = gRatRace;
+        switch (ratRace->unk02C) {
+            case 0:  budget = 0; break;
+            case 1:  budget = ratRace->unk020 + 0x6000; break;
+            case 2:  budget = ratRace->unk020 + 0x3000; break;
+            default: budget = 0; goto no_budget;
+        }
+        ratRace->unk024 = budget;
+        ratRace->unk020 = budget;
+    no_budget:
+        gRatRace->unk028 = 0;
+    }
+
+    for (i = 0; i < 3; i++, rat++) {
+        if (rat->unk5 == 0) {
+            // The player's rat only reacts to the dash crouch, and only from
+            // a standstill.
+            if (gait != 2) continue;
+            if (rat->unk4 != 2) continue;
+            rat->unk4 = 6;
+            sprite_set_anim(gSpriteHandler, rat->ratSprite, anim_rat_prepare_dash,
+                            0, 1, 0x7f, rat->unk5);
+            continue;
+        }
+
+        if (gait == 1) {
+            if (rat->unk4 == 5) {
+                rat->unk4 = 1;
+                sprite_set_anim(gSpriteHandler, rat->ratSprite, anim_rat_angry_run_r,
+                                0, 1, 0x7f, 4);
+                sprite_set_callback(gSpriteHandler, rat->ratSprite,
+                                    (void *)func_0803aef4, (uintptr_t)rat);
+                rat->unkC = 0;
+            } else {
+                rat->unk4 = 1;
+                rat->unkC = 0;
+                sprite_set_anim(gSpriteHandler, rat->ratSprite, anim_rat_run, 0, 1, 0, 0);
+            }
+        } else if (gait < 1) {
+            rat->unk4 = 2;
+            rat->unkC = 1;
+            sprite_set_anim(gSpriteHandler, rat->ratSprite, anim_rat_stop, 0, 1, 0x7f, 0);
+        } else if (gait == 2) {
+            if (rat->unk4 == 5) {
+                rat->unkC = 4;
+            } else {
+                rat->unk4 = 6;
+                sprite_set_anim(gSpriteHandler, rat->ratSprite, anim_rat_prepare_dash,
+                                0, 1, 0x7f, 0);
+            }
+        }
+    }
+}
 #endif
 
 #ifndef PLATFORM_PC
@@ -551,6 +690,47 @@ void func_0803aba4(struct Rat *rat, u32 index) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803b258.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803b258] Player runs into the rat ahead
+void func_0803b258(struct Rat *rat) {
+    struct RatRaceEngineData *ratRace = gRatRace;
+    s32 aheadX = ratRace->rats[1].unk8;
+
+    // Only if the player has actually caught up.
+    if (((aheadX >> 8) - ((rat->unk8 >> 8) - 0x28)) > 0x18) return;
+
+    // Snap the player to just behind the rat ahead, and make that jump the
+    // frame's scroll delta so everything else moves with it.
+    ratRace->unk034 = aheadX - (rat->unk8 - 0x800);
+    rat->unk8 += ratRace->unk034;
+    ratRace->unk030 = rat->unk8;
+
+    sprite_set_anim(gSpriteHandler, rat->ratSprite, anim_rat_collide_run, 0, 1, 0x7f, 4);
+    sprite_set_callback(gSpriteHandler, rat->ratSprite, (void *)func_0803aef4, (uintptr_t)rat);
+    rat->unkC = 0;
+    rat->unk4 = 3;
+
+    sprite_set_anim(gSpriteHandler, gRatRace->rats[1].ratSprite,
+                    anim_rat_collide_stop, 0, 1, 0x7f, 4);
+    sprite_set_callback(gSpriteHandler, gRatRace->rats[1].ratSprite,
+                        (void *)func_0803aef4, (uintptr_t)&gRatRace->rats[1]);
+
+    if ((u8)(gRatRace->rats[1].unkC - 1) <= 1) {
+        gRatRace->rats[1].unkC = 2;
+        gRatRace->rats[1].unk4 = 5;
+    } else {
+        gRatRace->rats[1].unkC = 3;
+        gRatRace->rats[1].unk4 = 1;
+    }
+
+    gRatRace->unk0E4 = 0x1000;
+    play_sound(&s_rat_crush_R_seqData);
+
+    if ((s8)gRatRace->unk11E >= 0) {
+        gameplay_add_cue_result(gRatRace->unk11E, 2, 0);
+    }
+}
 #endif
 
 #ifndef PLATFORM_PC
@@ -559,10 +739,73 @@ void func_0803aba4(struct Rat *rat, u32 index) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803b924.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803b924] The player stops
+void func_0803b924(void) {
+    struct Rat *rat = gRatRace->rats;
+
+    // The player's rat is the one with unk5 == 0.
+    while (rat->unk5 != 0) rat++;
+
+    switch (rat->unk4) {
+        case 1:
+            if (!gRatRace->unk0D2) break;
+            rat->unk4 = 2;
+            if (gRatRace->unk11D != 0) {
+                sprite_set_anim(gSpriteHandler, rat->ratSprite, anim_rat_stop, 0, 1, 0x7f, 0);
+            } else {
+                // Stopping without being told to is a slip.
+                sprite_set_anim(gSpriteHandler, rat->ratSprite, anim_rat_stop_barely,
+                                0, 1, 0x7f, 0);
+                play_sound(&s_f_rat_slip_seqData);
+            }
+            break;
+
+        case 3:
+            if (!gRatRace->unk0D2) break;
+            sprite_set_playback(gSpriteHandler, rat->ratSprite, 1, 0x7f, 4);
+            sprite_set_callback(gSpriteHandler, rat->ratSprite,
+                                (void *)func_0803aef4, (uintptr_t)rat);
+            rat->unkC = 1;
+            break;
+
+        default:
+            break;
+    }
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803b9fc.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803b9fc] The player dashes
+void func_0803b9fc(void) {
+    struct Rat *rat = gRatRace->rats;
+
+    while (rat->unk5 != 0) rat++;
+
+    switch (rat->unk4) {
+        case 2:
+        case 6:
+            if (!gRatRace->unk11C) break;
+            rat->unk4 = 1;
+            sprite_set_anim(gSpriteHandler, rat->ratSprite, anim_rat_run, 0, 1, 0, 0);
+            break;
+
+        case 4:
+            sprite_set_playback(gSpriteHandler, rat->ratSprite, 1, 0x7f, 4);
+            sprite_set_callback(gSpriteHandler, rat->ratSprite,
+                                (void *)func_0803aef4, (uintptr_t)rat);
+            rat->unkC = 0;
+            func_0803b258(rat);
+            break;
+
+        default:
+            break;
+    }
+}
 #endif
 
 #ifndef PLATFORM_PC
