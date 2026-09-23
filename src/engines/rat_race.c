@@ -126,9 +126,10 @@ void rat_race_engine_start(u32 version) {
                                           0, 0x40, 0x88, 1, 0, 0, 0);
     sprite_set_x(gSpriteHandler, gRatRace->blankSprite, 0x12c);
     gRatRace->unk0DA = 0;
-    gRatRace->unk0DE = 0x40;
+    gRatRace->unk0DE = 0;
     gRatRace->unk0E2 = 0;
     gRatRace->unk0E4 = 0;
+    gRatRace->unk0E0 = 0x40;
 
     gRatRace->affineGroup = scene_affine_group_alloc();
     gRatRace->trafficLightSprite = sprite_create(gSpriteHandler, anim_rat_traffic_light,
@@ -256,6 +257,18 @@ void func_0803a3c4(void) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a458.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a458] Game Engine Update
+void rat_race_engine_update(void) {
+    func_0803a198();
+    func_0803b37c();
+    func_0803aa9c();
+    func_0803bc08();
+    func_0803a8e4();
+    func_0803bd58();
+    func_0803a3c4();
+}
 #endif
 
 #ifndef PLATFORM_PC
@@ -637,6 +650,62 @@ void func_0803aba4(struct Rat *rat, u32 index) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803ad60.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803ad60] Animate the sign and its shake
+void func_0803ad60(void) {
+    struct RatRaceEngineData *ratRace = gRatRace;
+    s8 wobble = 0;
+    s16 shake;
+
+    if (!ratRace->unk010) return;
+
+    switch (ratRace->unk0DE) {
+        case 1:
+            // Swing in.
+            gRatRace->unk0E0 -= 0x10;
+            if (gRatRace->unk0E0 <= 0) {
+                gRatRace->unk0E0 = 0;
+                gRatRace->unk0DE = 2;
+            }
+            set_affine_scale_rotation(gRatRace->affineGroup, 0x100, gRatRace->unk0E0);
+            break;
+
+        case 3:
+            // Hold for 0x24 beats' worth of ticks.
+            gRatRace->unk0E2 += func_0800c398();
+            if ((u16)gRatRace->unk0E2 >> 8 > 0x23) {
+                gRatRace->unk0E2 = 0;
+                gRatRace->unk0DE = 4;
+            }
+            break;
+
+        case 4:
+            // Swing back out, and hide.
+            gRatRace->unk0E0 += 0x10;
+            if (gRatRace->unk0E0 > 0x3f) {
+                gRatRace->unk0E0 = 0x40;
+                gRatRace->unk0DE = 0;
+                sprite_set_visible(gSpriteHandler, gRatRace->trafficLightSprite, FALSE);
+            }
+            set_affine_scale_rotation(gRatRace->affineGroup, 0x100, gRatRace->unk0E0);
+            break;
+
+        default:
+            break;
+    }
+
+    // A collision sets unk0E4, which decays by 0x80 a frame and wobbles the
+    // sign along a sine while it lasts.
+    shake = gRatRace->unk0E4;
+    if (shake != 0) {
+        wobble = (s8)(gSineTable[(shake % 0x800) & 0x7ff] / 10 + 0x14);
+        gRatRace->unk0E4 = (u16)gRatRace->unk0E4 - 0x80;
+        if (gRatRace->unk0E4 < 0) gRatRace->unk0E4 = 0;
+    }
+
+    set_affine_scale_rotation(gRatRace->affineGroup, 0x100, gRatRace->unk0E0 + wobble);
+}
 #endif
 
 #ifndef PLATFORM_PC
@@ -768,14 +837,47 @@ void func_0803b034(u32 gait) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803b1ac.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803b1ac] One frame of running, pulled toward the pace line
+s32 func_0803b1ac(s32 x) {
+    s32 step = ((func_0800c398() << 6) / 0x18) + gRatRace->unk028;
+    s32 next = x + step;
+
+    // The rats rubber-band toward the pace line at a twentieth of the gap.
+    if (next != gRatRace->unk018) {
+        step += (gRatRace->unk018 - next) / 0x14;
+    }
+    return step;
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803b1e8.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803b1e8] Update whether the player is clear of the pace line
+void func_0803b1e8(void) {
+    struct RatRaceEngineData *ratRace = gRatRace;
+
+    if (ratRace->unk0D2) {
+        if ((ratRace->rats[0].unk8 + 0x8000) < ratRace->unk018) ratRace->unk0D2 = FALSE;
+    } else {
+        if (((ratRace->rats[0].unk8 + 0x1000) > ratRace->unk018) && (ratRace->unk0DA == 0)) {
+            ratRace->unk0D2 = TRUE;
+        }
+    }
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803b230.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803b230] A rat screen x, 16.8
+s32 func_0803b230(struct Rat *rat) {
+    return (rat->unk8 - gRatRace->unk030) + (D_089e68ac[rat->unk5] + 0x7800);
+}
 #endif
 
 #ifndef PLATFORM_PC
@@ -825,6 +927,181 @@ void func_0803b258(struct Rat *rat) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803b37c.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803b37c] Update the rats
+void func_0803b37c(void) {
+    struct Rat *rat = gRatRace->rats;
+    struct Rat *behind;
+    intptr_t anim;
+    s32 delta, gap;
+    u32 i;
+
+    gRatRace->unk034 = 0;
+    func_0803b1e8();
+
+    // Holding A keeps the player stopped and letting go runs him again; the
+    // frame the button changes is left to the cue handlers.
+    if (D_03004ac0 & A_BUTTON) {
+        if (!(D_03004afc & A_BUTTON)) func_0803b924();
+    } else {
+        if (!(D_03004b00 & A_BUTTON)) func_0803b9fc();
+    }
+
+    for (i = 0; i < 3; i++, rat++) {
+        // The player's rat has a few extra rules before the common update.
+        if (rat->unk5 == 0) {
+            switch (rat->unk4) {
+                case 1:
+                    func_0803b258(rat);
+                    break;
+
+                case 2:
+                case 6:
+                    if (!gRatRace->unk0D2 && gRatRace->unk11C) {
+                        rat->unk4 = 1;
+                        sprite_set_anim(gSpriteHandler, rat->ratSprite, anim_rat_run, 0, 1, 0, 0);
+                        break;
+                    }
+
+                    // Standing still, the player can be run into from behind.
+                    behind = &gRatRace->rats[2];
+                    gap = ((rat->unk8 >> 8) + 0x28) - (behind->unk8 >> 8);
+                    if (gap < 0) gap = -gap;
+                    if (gap > 0x18) break;
+
+                    sprite_set_anim(gSpriteHandler, rat->ratSprite, anim_rat_collide_stop, 0, 1, 0x7f, 4);
+                    sprite_set_callback(gSpriteHandler, rat->ratSprite,
+                                        (void *)func_0803aef4, (uintptr_t)rat);
+                    rat->unkC = 1;
+                    rat->unk4 = 4;
+
+                    behind = &gRatRace->rats[2];
+                    sprite_set_anim(gSpriteHandler, behind->ratSprite, anim_rat_collide_run, 0, 1, 0x7f, 4);
+                    sprite_set_callback(gSpriteHandler, behind->ratSprite,
+                                        (void *)func_0803aef4, (uintptr_t)behind);
+                    if (gRatRace->rats[2].unkC != 1) gRatRace->rats[2].unkC = 3;
+                    gRatRace->rats[2].unk4 = 3;
+
+                    play_sound(&s_rat_crush_L_seqData);
+                    if ((s8)gRatRace->unk11E >= 0) {
+                        gameplay_add_cue_result(gRatRace->unk11E, 2, 0);
+                    }
+                    break;
+
+                case 4:
+                    if (!gRatRace->unk0D2) {
+                        sprite_set_playback(gSpriteHandler, rat->ratSprite, 1, 0x7f, 4);
+                        sprite_set_callback(gSpriteHandler, rat->ratSprite,
+                                            (void *)func_0803aef4, (uintptr_t)rat);
+                        rat->unkC = 0;
+                    }
+                    func_0803b258(rat);
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
+        switch (rat->unk4) {
+            case 0:
+                // Running in from the left until it reaches its place.
+                rat->unk8 += (func_0800c398() << 6) / 0x18;
+                if ((rat->unk8 >> 8) > 0x77) {
+                    rat->unk8 = 0x7800;
+                    rat->unk4 = 1;
+                }
+                sprite_set_x(gSpriteHandler, rat->ratSprite,
+                             (s16)((rat->unk8 + D_089e68ac[rat->unk5]) >> 8));
+                break;
+
+            case 1:
+                delta = func_0803b1ac(rat->unk8);
+                rat->unk8 += delta;
+                // The player's rat is what the camera follows.
+                if (rat->unk5 == 0) {
+                    gRatRace->unk030 = rat->unk8;
+                    gRatRace->unk034 += delta;
+                }
+                sprite_set_x(gSpriteHandler, rat->ratSprite, (s16)(func_0803b230(rat) >> 8));
+
+                // At speed, a dust puff every third frame.
+                if ((gRatRace->unk028 != 0) && (((u16)gRatRace->unk0D0 % 3) == 0)) {
+                    func_0803bb2c(func_0803b230(rat));
+                }
+                break;
+
+            case 3:
+                // As in the original: the step is an unsigned quantity divided
+                // by -3, i.e. by 0xfffffffd, so it is zero for anything this
+                // function can produce and a collided rat does not actually
+                // move backwards.
+                delta = (u32)(((func_0800c398() << 6) / 0x18) << 2) / (u32)-3;
+                rat->unk8 += delta;
+                if (rat->unk5 == 0) {
+                    gRatRace->unk030 = rat->unk8;
+                    gRatRace->unk034 += delta;
+                }
+                sprite_set_x(gSpriteHandler, rat->ratSprite, (s16)(func_0803b230(rat) >> 8));
+                break;
+
+            case 4:
+                delta = (func_0800c398() << 6) / 0x30;
+                rat->unk8 += delta;
+                if (rat->unk5 == 0) {
+                    gRatRace->unk030 = rat->unk8;
+                    gRatRace->unk034 += delta;
+                }
+                sprite_set_x(gSpriteHandler, rat->ratSprite, (s16)(func_0803b230(rat) >> 8));
+                break;
+
+            case 2:
+            case 5:
+            case 6:
+                sprite_set_x(gSpriteHandler, rat->ratSprite, (s16)(func_0803b230(rat) >> 8));
+                break;
+
+            default:
+                break;
+        }
+
+        // Sweat: a running rat that has fallen behind the pace line, or a
+        // stopped one caught out while the pack is running, gets the fear
+        // particles -- and the stopped ones duck.
+        if ((rat->unk4 == 1) && (((rat->unk8 >> 8) + 0x28) < (gRatRace->unk018 >> 8))) {
+            sprite_set_anim(gSpriteHandler, rat->sweatSprite, anim_rat_fear_particles_barely, -1, 1, 0, 0);
+            anim = sprite_get_data(gSpriteHandler, rat->ratSprite, 7);
+            if (anim == (intptr_t)anim_rat_angry_run_r) {
+                sprite_set_x(gSpriteHandler, rat->sweatSprite, (s16)((func_0803b230(rat) >> 8) - 0xc));
+            } else {
+                sprite_set_x(gSpriteHandler, rat->sweatSprite, (s16)(func_0803b230(rat) >> 8));
+            }
+            sprite_set_visible(gSpriteHandler, rat->sweatSprite, TRUE);
+        } else if ((rat->unk4 == 2) && (gRatRace->unk038 == 0) &&
+                   (((rat->unk5 == 2) && (((rat->unk8 >> 8) + 0x10) < (gRatRace->unk018 >> 8))) ||
+                    ((rat->unk5 == 0) && (((rat->unk8 >> 8) + 0x38) < (gRatRace->unk018 >> 8))))) {
+            sprite_set_anim(gSpriteHandler, rat->sweatSprite, anim_rat_fear_particles_miss, -1, 1, 0, 0);
+            sprite_set_x(gSpriteHandler, rat->sweatSprite, (s16)(func_0803b230(rat) >> 8));
+            sprite_set_visible(gSpriteHandler, rat->sweatSprite, TRUE);
+            sprite_set_anim(gSpriteHandler, rat->ratSprite, anim_rat_duck, 0, 0, 0, 0);
+        } else {
+            sprite_set_visible(gSpriteHandler, rat->sweatSprite, FALSE);
+        }
+
+        // Rat 1 carries the sign; the player carries its label.
+        if (rat->unk5 == 1) {
+            sprite_set_x(gSpriteHandler, gRatRace->trafficLightSprite,
+                         (s16)((func_0803b230(rat) >> 8) + 3));
+        }
+        if (rat->unk5 == 0) {
+            sprite_set_x_y(gSpriteHandler, gRatRace->playerLabelSprite,
+                           (s16)((func_0803b230(rat) >> 8) - 3), 0x94);
+        }
+    }
+
+    func_0803ad60();
+}
 #endif
 
 #ifndef PLATFORM_PC
@@ -915,10 +1192,41 @@ void func_0803baa0(struct RatRaceDashParticle *particle) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803baf8.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803baf8] Dust puff finished
+void func_0803baf8(void *unused, s16 spriteId, struct RatRaceDashParticle *particle) {
+    func_0800c604(0);
+    particle->active = FALSE;
+    sprite_set_y(gSpriteHandler, particle->sprite, -0x40);
+    sprite_set_visible(gSpriteHandler, particle->sprite, FALSE);
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803bb2c.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803bb2c] Kick up one dust puff
+void func_0803bb2c(s32 x) {
+    struct RatRaceDashParticle *particle = gRatRace->particles;
+    u32 i;
+
+    for (i = 0; particle->active; i++, particle++) {
+        if (i >= 8) return;
+    }
+    if (i > 8) return;
+
+    particle->active = TRUE;
+    particle->x = x;
+    sprite_set_x_y(gSpriteHandler, particle->sprite, (s16)(x >> 8),
+                   (s16)(0x90 - agb_random(0xe)));
+    sprite_set_visible(gSpriteHandler, particle->sprite, TRUE);
+    sprite_set_anim_cel(gSpriteHandler, particle->sprite, 0);
+    sprite_set_playback(gSpriteHandler, particle->sprite, 1, 0x7f, 4);
+    sprite_set_callback(gSpriteHandler, particle->sprite,
+                        (void *)func_0803baf8, (uintptr_t)particle);
+}
 #endif
 
 #ifndef PLATFORM_PC

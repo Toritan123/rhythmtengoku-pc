@@ -9,10 +9,11 @@
 struct Rat {
     s16 ratSprite;
     s16 sweatSprite;
-    u8 unk4;
-    u8 unk5;
-    u32 unk8;
-    u32 unkC;
+    u8 unk4;        // state: 0 entering, 1 running, 2 stopped, 3/4 collided, 5 angry, 6 crouched, 7 cheering
+    u8 unk5;        // 0 = the player's rat
+    s32 unk8;       // 16.8 track position. Signed: the code shifts it with ASRS and
+                    // compares it with BLT/BGT, and it starts negative in version 0.
+    u32 unkC;       // follow-up for func_0803aef4; only ever accessed as a byte
 };
 
 // One of the nine dash-dust puffs. 8 bytes.
@@ -81,11 +82,12 @@ struct RatRaceEngineData {
     u8  unk0DA;                                 // 0x0DA
     u8  unk0DB;
     s16 trafficLightSprite;                     // 0x0DC
-    u8  unk0DE;                                 // 0x0DE
+    u8  unk0DE;                                 // 0x0DE  sign state (func_0803ad60)
     s8  affineGroup;                            // 0x0DF
-    u8  unk0E0[2];
-    s16 unk0E2;                                 // 0x0E2
-    s16 unk0E4;                                 // 0x0E4
+    s8  unk0E0;                                 // 0x0E0  sign rotation, starts at 0x40
+    u8  unk0E1;
+    u16 unk0E2;                                 // 0x0E2  sign hold timer
+    s16 unk0E4;                                 // 0x0E4  shake amount after a collision
     u8  unk0E6[2];
     s32 unk0E8;                                 // 0x0E8
     struct RatRacePlate plates[6];              // 0x0EC
@@ -164,19 +166,19 @@ extern void func_0803aa9c(void); // Scroll the backgrounds, and spot the goal
 extern void func_0803aba4(struct Rat *rat, u32 index); // Init. one Rat
 extern void func_0803ac98(); // Engine Event 0D (?)
 extern void func_0803ad50(); // Engine Event 10 (?)
-// extern ? func_0803ad60(?);
+extern void func_0803ad60(void); // Animate the sign and its shake
 extern void func_0803aef4(void *unused, s16 spriteId, struct Rat *rat); // Rat animation finished
 extern void func_0803b034(u32 gait); // Engine Event 01 (Set the Pack Gait)
-// extern ? func_0803b1ac(?);
-// extern ? func_0803b1e8(?);
-// extern ? func_0803b230(?);
+extern s32 func_0803b1ac(s32 x); // One frame of running, pulled toward the pace line
+extern void func_0803b1e8(void); // Update whether the player is clear of the pace line
+extern s32 func_0803b230(struct Rat *rat); // A rat screen x, 16.8
 extern void func_0803b258(struct Rat *rat); // Player runs into the rat ahead
-// extern ? func_0803b37c(?);
+extern void func_0803b37c(void); // Update the rats
 extern void func_0803b924(void); // The player stops
 extern void func_0803b9fc(void); // The player dashes
 extern void func_0803baa0(struct RatRaceDashParticle *particle); // Init. one dust puff
-// extern ? func_0803baf8(?);
-// extern ? func_0803bb2c(?);
+extern void func_0803baf8(void *unused, s16 spriteId, struct RatRaceDashParticle *particle); // Dust puff finished
+extern void func_0803bb2c(s32 x); // Kick up one dust puff
 extern void func_0803bbd8(struct RatRaceDashParticle *particle); // Scroll one dust puff
 extern void func_0803bc08(void); // Scroll the dust puffs
 extern void func_0803bc40(struct RatRacePlate *plate); // Init. one plate

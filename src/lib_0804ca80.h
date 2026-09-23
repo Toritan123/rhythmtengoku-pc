@@ -145,7 +145,10 @@ struct Sprite {
     s16 zLinkPrev;      // ID of Sprite with Next-Lowest Z Value
     s16 zLinkNext;      // ID of Sprite with Next-Highest Z Value
     s8_8 currentCelTime; // Time Left for Current Animation Cel
-    void (*callbackFunc)(struct SpriteHandler *, s16, u32, ...); // Callback Function
+    // The third parameter carries callbackArg, which callers fill with
+    // pointers (e.g. the rat a Rat Race callback should update). It must be
+    // pointer-width: typed u32 it truncated the pointer on a 64-bit host.
+    void (*callbackFunc)(struct SpriteHandler *, s16, uintptr_t, ...); // Callback Function
     uintptr_t callbackArg;    // Callback Argument
     u16 totalDuration;  // Total Duration
     u16 memID;          // Memory ID

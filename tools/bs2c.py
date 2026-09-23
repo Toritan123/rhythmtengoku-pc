@@ -346,6 +346,19 @@ class Emitter:
             body = "".join(f"    (const struct MarkingCriteria *)({self.obj_ref(w)}),\n" for w in words)
             return f"const struct MarkingCriteria *{name}[] = {{\n{body}}};"
 
+        # The same table without its terminator. Only rat_race's has this: the
+        # ROM genuinely omits it (the .bs marks it "@! No criteria terminator"),
+        # and on the GBA whatever follows in ROM ends the walk harmlessly. Here
+        # the neighbouring object is arbitrary, results_get_negative_comments
+        # reads past the end, dereferences it as a MarkingCriteria and crashes
+        # in strcat. The .bs.c is PC-only -- the GBA build assembles the .bs --
+        # so terminating it here cannot disturb the matching ROM.
+        if (words and not hwords
+                and all("marking_criteria" in w for w in words)):
+            body = "".join(f"    (const struct MarkingCriteria *)({self.obj_ref(w)}),\n" for w in words)
+            return (f"const struct MarkingCriteria *{name}[] = {{\n{body}"
+                    f"    END_OF_CRITERIA, // missing in the ROM; see bs2c.py\n}};")
+
         # Anything else is a plain data table local to this file — grade
         # thresholds, comment lists, text tables.  No header declares them, so
         # the only consumer is this file taking their address, and emitting

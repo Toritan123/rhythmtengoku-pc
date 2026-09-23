@@ -81,7 +81,12 @@ The SRAM read/write path itself has worked all along, in
 
 1. Callback-argument slots typed `s32`/`u32` (`onFinishArg`, `callbackArg`,
    `ScheduledFunctionTask.param`, `globalVariable`) that callers pass
-   pointers through → widen to `intptr_t`/`uintptr_t`.
+   pointers through → widen to `intptr_t`/`uintptr_t`. **Check the function
+   pointer type too, not just the storage**: `struct Sprite::callbackArg` was
+   already `uintptr_t`, but `callbackFunc` was declared
+   `(struct SpriteHandler *, s16, u32, ...)`, so the call truncated the
+   pointer anyway. Any engine whose sprite callback reads its third argument
+   as a pointer crashed on it; rat_race was the first.
 2. Function *return* types callers cast back to a pointer.
 3. Allocations sized with `sizeof(u32)` for a pointer array.
 4. Struct sizes baked into the decompiled data tables
@@ -94,7 +99,8 @@ These crash far from their cause. The scan for shapes 1–2:
 make -f Makefile.pc BUILD=build/warn EXTRA_CFLAGS="-Wpointer-to-int-cast -Wint-to-pointer-cast -Wvoid-pointer-to-int-cast"
 ```
 
-For 3–4, use an **lldb watchpoint**. **AddressSanitizer does not work on
+For 3–4, use an **lldb watchpoint** -- but see below: lldb itself crashes on
+this machine since the update to Darwin 27. **AddressSanitizer does not work on
 this machine** — native arm64 it hangs in `get_dyld_hdr`, under Rosetta it
 SIGILLs. That is Apple clang 17's runtime vs the macOS 26 dyld cache, not an
 architecture problem. Don't retry it.
@@ -132,23 +138,16 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
 `script_studio_*` are data, and comparing against text symbols only reports
 ~200 of them as missing when they are not.
 
-## State (measured 2026-09-07)
+## State (measured 2026-09-23)
 
-- **327 functions exist only as a no-op stub**: named engine/system
+- **323 functions exist only as a no-op stub**: named engine/system
   functions, unnamed `func_08XXXXXX`, and 23 scene/script data entries.
-- Done: `rhythm_tweezers`, `rhythm_test`, `clappy_trio`, `samurai_slice`
-  (all 43 functions, struct recovered).
+- Done: `rhythm_tweezers`, `rhythm_test`, `clappy_trio`, `samurai_slice`,
+  `rat_race` (structs recovered for the last two).
 - Engines needing 2 or fewer: `mechanical_horse`, `metronome`, `tap_trial`,
   `tram_pauline` (2 each); `quiz_show`, `drum_studio` (1 each).
-- Largest remaining: `drum_intro` 19, `rat_race` 18, `toss_boys` /
-  `mannequin` / `bunny_hop` 14 each, `samurai_slice` 10.
-- **`rat_race`**: struct recovered; everything is translated except
-  `engine_update` and the one function that blocks it, `func_0803b37c` --
-  557 instructions, two jump tables, the per-frame rat state machine. It has
-  no weak stub, so `engine_update` cannot be translated until it is.
-  `func_0803a8e4` (the cat) and `func_0803aa9c` (parallax and the goal) are
-  translated but **not yet reached at run time**, because only engine_update
-  calls them.
+- Largest remaining: `drum_intro` 19, `toss_boys` / `mannequin` /
+  `bunny_hop` 14 each.
 - **To turn a raw `D_030053c0 + 0xNNN` into a field name, anchor on a field's
   own absolute address, not on another field's offset comment.** Working back
   from `localVariables // [D_030053c0 + 0x160]` put `musicVolume` at 0x198 and
@@ -174,6 +173,17 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
 - The `*_rom` stubs (`math_sqrt_rom`, `read_sram_fast_rom`, …) are IWRAM blobs
   the GBA copied at run time; they are stubbed **on purpose**, not a backlog.
 - `perfect` crashes intermittently (~1 run in 6), undiagnosed and pre-existing.
+- **Anything drawn through `text_printer` is invisible on PC**:
+  `text_printer_print_glyph` is `#ifdef`'d to a no-op, because the GBA copies
+  an ARM routine into IWRAM and calls it. That covers result-screen comments,
+  tutorial text and menu descriptions. Text drawn with `bmp_font_obj_*` (the
+  OBJ font) does render. Worth fixing before more engines: players cannot
+  read the instructions.
+- **Data tables the ROM leaves unterminated** break on PC, because the GBA got
+  away with whatever happened to follow in ROM. `rat_race_marking_criteria`
+  was one (its .bs says `@! No criteria terminator`); `tools/bs2c.py` now
+  appends END_OF_CRITERIA for it. Grep the .bs sources for `@!` comments
+  before assuming a table is well formed.
 
 ## Scene overrides in platform/game_globals.c
 
@@ -219,3 +229,12 @@ breakpoint command add -s python -o "print('>>>HIT'); return False" 1
 
 Note `timeout(1)` does not exist on this machine; background the process and
 `kill` it instead.
+
+**lldb crashes on `target create` since the OS moved to Darwin 27**
+(lldb-1703.0.236.103), so the breakpoint recipe above does not currently
+work. What does, without adding code:
+- the built-in crash handler prints a symbolised backtrace on SIGSEGV to the
+  log, which found both rat_race crashes;
+- `RTPC_TRACE=1` scene transitions show how far a run got;
+- `RTPC_SHOTS=N` with `RTPC_SHOT_DIR` and a pixel diff of consecutive frames
+  (PIL `ImageChops.difference(...).getbbox()`) proves something moved.

@@ -188,10 +188,11 @@ const struct MarkingCriteria rat_race_marking_criteria_0 = {
     /* maxMissesBeforeFail */ 5,
 };
 
-const void *rat_race_marking_criteria[] = {
-    (const void *)(&rat_race_marking_criteria_0),
-    (const void *)(&rat_race_marking_criteria_1),
-    (const void *)(&rat_race_marking_criteria_2),
+const struct MarkingCriteria *rat_race_marking_criteria[] = {
+    (const struct MarkingCriteria *)(&rat_race_marking_criteria_0),
+    (const struct MarkingCriteria *)(&rat_race_marking_criteria_1),
+    (const struct MarkingCriteria *)(&rat_race_marking_criteria_2),
+    END_OF_CRITERIA, // missing in the ROM; see bs2c.py
 };
 
 const struct Beatscript rat_race_sub_08a1b5f0[] = {
