@@ -173,12 +173,16 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
 - The `*_rom` stubs (`math_sqrt_rom`, `read_sram_fast_rom`, …) are IWRAM blobs
   the GBA copied at run time; they are stubbed **on purpose**, not a backlog.
 - `perfect` crashes intermittently (~1 run in 6), undiagnosed and pre-existing.
-- **Anything drawn through `text_printer` is invisible on PC**:
-  `text_printer_print_glyph` is `#ifdef`'d to a no-op, because the GBA copies
-  an ARM routine into IWRAM and calls it. That covers result-screen comments,
-  tutorial text and menu descriptions. Text drawn with `bmp_font_obj_*` (the
-  OBJ font) does render. Worth fixing before more engines: players cannot
-  read the instructions.
+- **`text_printer` draws on PC** (2026-09-23). `text_print_glyph_to_vram_rom`
+  (the ARM routine the GBA copies into IWRAM) is translated in C as
+  `pc_print_glyph_to_vram` in `src/text_printer.c`; the `_rom` stub stays on
+  purpose. Glyphs are 1bpp, 16 px wide, bit 4p+k = pixel p of row k. Mind
+  ARM `LSR #32` == 0, which is undefined in C. The PC `func_08009de4` also
+  built OBJ tile numbers as `X + (Y + 64) * 32`; the +64 set attr2 bit 11
+  (priority) and put text behind BGs -- the options description box was the
+  visible case. Two display bugs seen while checking this, both pre-existing
+  and not text: brown tile garbage on the rhythm_tweezers onion, and the
+  yellow "モノラル" label overlapping "ステレオ" in options.
 - **Data tables the ROM leaves unterminated** break on PC, because the GBA got
   away with whatever happened to follow in ROM. `rat_race_marking_criteria`
   was one (its .bs says `@! No criteria terminator`); `tools/bs2c.py` now

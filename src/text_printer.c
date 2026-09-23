@@ -109,6 +109,78 @@ s32 text_font_calculate_string_width(s32 font, const char *string) {
     return totalWidth;
 }
 
+#ifdef PLATFORM_PC
+// PC translation of text_print_glyph_to_vram_rom (asm/code_08000a00.s), the
+// ARM routine the GBA copies into IWRAM and calls through args[].
+//
+// A glyph is 1bpp, 16 pixels wide. Each source word packs 8 pixels x 4 rows,
+// interleaved so that pixel p of row k is bit 4p + k; masking with 0x11111111
+// splits it into four 4bpp rows whose pixels are 0 or 1. Those are ORed into
+// the tile shifted left by `shift`: the upper bits of shift, 4 * (x % 8), move
+// the glyph along the row, and the bottom two, the line colour, move each
+// pixel up within its own nibble -- so the ink comes out as colour 1, 2, 4 or 8
+// without a separate multiply. Whatever shifts off the tile's right edge goes
+// into the next tile.
+
+#define GLYPH_PLANE_MASK 0x11111111
+
+// ARM's LSR by a register yields 0 for 32; in C that shift is undefined.
+static inline u32 glyph_lsr(u32 value, u32 amount) {
+    return (amount >= 32) ? 0 : (value >> amount);
+}
+
+// branch_080011f4: one source word into the 4 rows held in `rows` for the tile
+// at *tile, then advance to the next tile and load its rows with the overflow
+// already ORed in. The caller stores them.
+static void pc_glyph_or_word(u32 **tile, u32 rows[4], const u32 **src, u32 shift) {
+    u32 word = *(*src)++;
+    u32 plane[4];
+    u32 k;
+
+    plane[0] = GLYPH_PLANE_MASK & word;
+    plane[1] = GLYPH_PLANE_MASK & (word >> 1);
+    plane[2] = GLYPH_PLANE_MASK & (word >> 2);
+    plane[3] = GLYPH_PLANE_MASK & (word >> 3);
+
+    for (k = 0; k < 4; k++) {
+        rows[k] |= plane[k] << shift;
+        (*tile)[k] = rows[k];
+    }
+
+    *tile += 0x20 / sizeof(u32);    // the tile to the right, same rows
+    for (k = 0; k < 4; k++) {
+        rows[k] = (*tile)[k] | glyph_lsr(plane[k], 0x20 - shift);
+    }
+}
+
+// Four rows of a 16-pixel band: two source words across up to three tiles,
+// then back to the first tile, four rows further down.
+static void pc_glyph_band(u32 **tile, const u32 **src, u32 shift) {
+    u32 rows[4];
+    u32 k;
+
+    for (k = 0; k < 4; k++) rows[k] = (*tile)[k];
+    pc_glyph_or_word(tile, rows, src, shift);
+    pc_glyph_or_word(tile, rows, src, shift);
+    for (k = 0; k < 4; k++) (*tile)[k] = rows[k];
+    *tile -= 0x30 / sizeof(u32);
+}
+
+static void pc_print_glyph_to_vram(u32 *tile, const u32 *src, u32 shift, s32 font) {
+    // Large glyphs (font 2) are 16 rows; small and medium are 12, drawn into
+    // rows 4..15 so that all three share a baseline.
+    if (font < 2) {
+        tile += 0x10 / sizeof(u32);
+    } else {
+        pc_glyph_band(&tile, &src, shift);
+    }
+    pc_glyph_band(&tile, &src, shift);
+    tile += 0x3e0 / sizeof(u32);    // together with the -0x30, one tile row down
+    pc_glyph_band(&tile, &src, shift);
+    pc_glyph_band(&tile, &src, shift);
+}
+#endif
+
 
 // Print Glyph to VRAM
 void text_printer_print_glyph(s32 tileOfsX, s32 tileOfsY, s32 font, s32 glyphID, s32 lineColors) {
@@ -124,7 +196,19 @@ void text_printer_print_glyph(s32 tileOfsX, s32 tileOfsY, s32 font, s32 glyphID,
     args[3] = font;
     printGlyphToVRAM(args);
 #else
-    (void)tileOfsX; (void)tileOfsY; (void)font; (void)glyphID; (void)lineColors;
+    u32 *tile;
+    const u32 *src;
+    u32 shift;
+
+    if (glyphID < 0) return;
+
+    // Same arguments the GBA packs into args[], but kept as real pointers: in
+    // a u32[] the VRAM address would lose its top half on a 64-bit host.
+    tile = (u32 *)(VRAMBase + ((tileOfsX >> 3) * 32) + (tileOfsY * 32 * 32));
+    src = (const u32 *)(D_089380ac[font].glyphData + (D_089380ac[font].glyphDataSize * glyphID));
+    shift = ((tileOfsX & 7) << 2) + lineColors;
+
+    pc_print_glyph_to_vram(tile, src, shift, font);
 #endif
 }
 
@@ -460,7 +544,7 @@ struct Animation *func_08009de4(u32 memID, s32 tileBaseX, s32 tileBaseY, s32 fon
     // Values from the original ASM (D_089380ac[font].unkA = font height).
     switch (anchor) {
         case 1:  // CENTER
-            xPosBase = -(lineWidth >> 1);
+            xPosBase = (-lineWidth) >> 1;   // NEGS then ASRS: rounds odd widths down, not toward zero
             yOffset = -(s32)D_089380ac[font].unkA;
             break;
         case 2:  // ??? (anchor that only shifts Y)
@@ -478,8 +562,12 @@ struct Animation *func_08009de4(u32 memID, s32 tileBaseX, s32 tileBaseY, s32 fon
             break;
     }
 
-    // Base tile = X + (Y + 64) * 32 in VRAM tile coordinates.
-    tileBase = (u16)(tileBaseX + (tileBaseY + 64) * 32);
+    // OBJ tile number: X + Y * 32. The +64 above only turns tileBaseY into a
+    // row of VRAM as a whole, where OBJ tiles start at 0x10000; OAM numbers
+    // them from that base, so it does not belong here (08009f30 has none).
+    // With it, bit 11 of every attr2 was set -- a priority bit -- and text
+    // could land behind BGs it should sit in front of.
+    tileBase = (u16)(tileBaseX + (tileBaseY * 32));
 
     // 32x16 wide sprites (4 tiles)
     for (i = 0; i < count32; i++) {
