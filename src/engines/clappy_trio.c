@@ -230,10 +230,10 @@ void clappy_trio_cue_despawn(void) {
 // Cue - Hit (https://decomp.me/scratch/UAIPR)
 #ifndef PLATFORM_PC
 #include "asm/engines/clappy_trio/asm_080308f4.s"
-#endif
-
-// This function works as intended when the Makefile's NONMATCHING is set to 1
-/*
+#else
+// Upstream's NONMATCHING C (it does not match agbcc's output byte for
+// byte), enabled for PC after checking it against the assembly above
+// instruction by instruction.
 void clappy_trio_cue_hit(struct Cue *cue, struct ClappyTrioCue *info, u32 pressed, u32 released) {
     struct Trio *trio = &gClappyTrio->trio;
 
@@ -253,7 +253,7 @@ void clappy_trio_cue_hit(struct Cue *cue, struct ClappyTrioCue *info, u32 presse
         gClappyTrio->revertGrayscale = TRUE;
     }
 }
-*/
+#endif
 
 void clappy_trio_cue_barely(struct Cue *cue, struct ClappyTrioCue *info, u32 pressed, u32 released) {
     struct Trio *trio = &gClappyTrio->trio;
@@ -292,10 +292,10 @@ void clappy_trio_input_event(u32 pressed, u32 released) {
 // Common Event 0 (Beat Animation) (https://decomp.me/scratch/UuWC8)
 #ifndef PLATFORM_PC
 #include "asm/engines/clappy_trio/asm_08030a60.s"
-#endif
-
-// This function works as intended when the Makefile's NONMATCHING is set to 1
-/*
+#else
+// Upstream's NONMATCHING C (it does not match agbcc's output byte for
+// byte), enabled for PC after checking it against the assembly above
+// instruction by instruction.
 void clappy_trio_common_beat_animation(void) {
     struct Trio *trio = &gClappyTrio->trio;
     struct Animation *anim;
@@ -357,7 +357,8 @@ void clappy_trio_common_beat_animation(void) {
         palette_fade_to(get_current_mem_id(), 0x10, 8, clappy_trio_bg_pal[1], clappy_trio_obj_pal[0], BG_PALETTE_BUFFER(0x10));
         gClappyTrio->revertGrayscale = FALSE;
     }
-}*/
+}
+#endif
 
 
 // Common Event 1 (Display Text)
