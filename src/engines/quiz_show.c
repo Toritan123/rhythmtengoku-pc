@@ -134,6 +134,67 @@ void quiz_show_init_gfx1(void) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/quiz_show/asm_08037460.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08037460] Game Engine Start
+void quiz_show_engine_start(u32 version) {
+    struct QuizShowCharacter *character;
+    struct TextPrinter *printer;
+
+    gQuizShow->version = version;
+    quiz_show_init_gfx1();
+    scene_show_obj_layer();
+    scene_set_bg_layer_display(BG_LAYER_0, FALSE, 0, 0, 0, 0x1c, 0);
+    scene_set_bg_layer_display(BG_LAYER_1, FALSE, 0, 0, 0, 0x1d, 1);
+    scene_set_bg_layer_display(BG_LAYER_2, TRUE, 0, 0, 0, 0x1e, 2);
+    scene_set_bg_layer_display(BG_LAYER_3, TRUE, 0, 0, 0, 0x1f, 3);
+
+    printer = text_printer_create_new(get_current_mem_id(), 3, 0x50, 0x1e);
+    gQuizShow->textPrinter = printer;
+    text_printer_set_x_y(printer, 0x54, 0x24);
+    text_printer_set_layer(gQuizShow->textPrinter, 0x800);
+    text_printer_center_by_content(gQuizShow->textPrinter, TRUE);
+    text_printer_set_palette(gQuizShow->textPrinter, 2);
+    text_printer_set_colors(gQuizShow->textPrinter, 0);
+    text_printer_run_func_on_finish(gQuizShow->textPrinter, scene_show_bg_layer, BG_LAYER_1);
+    text_printer_run_func_on_clear(gQuizShow->textPrinter, scene_hide_bg_layer, BG_LAYER_1);
+    gameplay_set_text_printer(gQuizShow->textPrinter);
+
+    character = &gQuizShow->host;
+    character->body = sprite_create(gSpriteHandler, anim_quiz_show_host_body, 0, 0x32, 0x50, 0xc800, 1, 0x7f, 0);
+    character->head = sprite_create(gSpriteHandler, anim_quiz_show_host_head, 0, 0x32, 0x50, 0x8800, 1, 0x7f, 0);
+    character->rightArm = sprite_create(gSpriteHandler, anim_quiz_show_host_press_button_r, 0, 0x4c, 0x65, 0x8805, 1, 0x7f, 0);
+    character->leftArm = sprite_create(gSpriteHandler, anim_quiz_show_host_press_button_l, 0, 0x32, 0x69, 0x87fb, 1, 0x7f, 0);
+    character->leftButton = sprite_create(gSpriteHandler, anim_quiz_show_button_host_l, 0, 0x3b, 0xa0, 0x880a, 1, 0x7f, 0);
+    character->rightButton = sprite_create(gSpriteHandler, anim_quiz_show_button_host_r, 0, 0x3a, 0x9f, 0x880a, 1, 0x7f, 0);
+    character->digit1 = sprite_create(gSpriteHandler, anim_quiz_show_podium_num, 0, 0x4d, 0x86, 0x8814, 0, 0, 0);
+    character->digit2 = sprite_create(gSpriteHandler, anim_quiz_show_podium_num, 0, 0x3d, 0x89, 0x8814, 0, 0, 0);
+    func_080378d8(0, 0);
+    sprite_set_anim(gSpriteHandler, character->rightArm, anim_quiz_show_host_arm_r, 0, 0, 0, 0);
+    sprite_set_anim(gSpriteHandler, character->leftArm, anim_quiz_show_host_arm_l, 0, 0, 0, 0);
+
+    character = &gQuizShow->player;
+    character->body = sprite_create(gSpriteHandler, anim_quiz_show_player_body, 0, 0xb6, 0x52, 0xc800, 1, 0x7f, 0);
+    character->head = sprite_create(gSpriteHandler, anim_quiz_show_player_head, 0, 0xb6, 0x52, 0x8800, 1, 0x7f, 0);
+    character->rightArm = sprite_create(gSpriteHandler, anim_quiz_show_player_press_button_r, 0, 0xb9, 0x69, 0x87fb, 1, 0x7f, 0);
+    character->leftArm = sprite_create(gSpriteHandler, anim_quiz_show_player_press_button_l, 0, 0xa5, 0x65, 0x8805, 1, 0x7f, 0);
+    character->leftButton = sprite_create(gSpriteHandler, anim_quiz_show_button_player_l, 0, 0xa8, 0x9f, 0x880a, 1, 0x7f, 0);
+    character->rightButton = sprite_create(gSpriteHandler, anim_quiz_show_button_player_r, 0, 0xa8, 0x9f, 0x880a, 1, 0x7f, 0);
+    character->digit1 = sprite_create(gSpriteHandler, anim_quiz_show_podium_num, 0, 0xa9, 0x89, 0x8814, 0, 0, 0);
+    character->digit2 = sprite_create(gSpriteHandler, anim_quiz_show_podium_num, 0, 0x99, 0x86, 0x8814, 0, 0, 0);
+    func_080378d8(1, 0);
+    sprite_set_anim(gSpriteHandler, character->rightArm, anim_quiz_show_player_arm_r, 0, 0, 0, 0);
+    sprite_set_anim(gSpriteHandler, character->leftArm, anim_quiz_show_player_arm_l, 0, 0, 0, 0);
+
+    func_080372e8();
+    gameplay_set_input_buttons(0xf1, 0);
+    func_08037178();
+
+    gQuizShow->unk_44 = 0x78;
+    gQuizShow->unk_46 = 0x78;
+    gQuizShow->unk_48 = 0;
+    gQuizShow->unk_49 = 0;
+}
 #endif
 
 void quiz_show_engine_event_stub(void) {

@@ -3,7 +3,11 @@
 #pragma once
 
 #ifndef GLOBAL_VARIABLE
-#define GLOBAL_VARIABLE (((uintptr_t)&D_030053c0 + 0x24))
+// The .inc writes this as D_030053c0 + 0x24, a GBA byte offset. On a 64-bit
+// host the struct's layout differs, so name the field instead: the scripts'
+// `switch INT8, GLOBAL_VARIABLE` (e.g. after `run agb_random`) otherwise read
+// some other field and matched no case.
+#define GLOBAL_VARIABLE ((uintptr_t)&D_030053c0.globalVariable)
 #endif
 #ifndef A_BUTTON
 #define A_BUTTON ((1 << 0))

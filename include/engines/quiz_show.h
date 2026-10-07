@@ -35,6 +35,8 @@ struct QuizShowCharacter {
     s16 digit1; // 0xc
     s16 digit2; // 0xe
     s16 count; // 0x10
+    u16 unk_12; // 0x12  padding: quiz_show_engine_start puts the player's
+                // sprites at 0x1C, so the struct is 0x14 bytes
 };
 
 struct QuizShowEngineData {
@@ -84,10 +86,10 @@ extern struct GameEngine quiz_show_engine;
 
 // Functions:
 // extern ? func_0803709c(?);
-// extern ? func_08037178(?);
+extern void func_08037178(void);
 extern void func_08037280(); // Engine Event 0F (?)
 extern void func_080372c0(); // Engine Event 10 (?)
-// extern ? func_080372e8(?);
+extern void func_080372e8(void);
 // extern ? func_08037378(?);
 extern void func_080373ac(); // Engine Event 05 (?)
 extern void func_080373dc(); // Engine Event 06 (?)
@@ -97,7 +99,7 @@ extern void quiz_show_init_gfx1(void); // Graphics Init. 1
 extern void quiz_show_engine_start(u32 version); // Game Engine Start
 extern void quiz_show_engine_event_stub(void); // Engine Event 11 (STUB)
 // extern ? func_0803785c(?);
-// extern ? func_080378d8(?);
+extern void func_080378d8(u32 arg0, s32 arg1);
 extern void func_08037a64(); // Engine Event 01 (?)
 // extern ? func_08037a78(?);
 extern void func_08037be0(); // Engine Event 00 (?)
