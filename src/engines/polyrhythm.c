@@ -409,6 +409,36 @@ s32 polyrhythm_get_block_z(u32 lane, s32 blockID) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/polyrhythm/asm_080364f4.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_080364f4] Push the rods on a lane
+//
+// A piston that fires under a rod sends it flying (func_08036b48) and
+// counts as a hit; one just behind it only lifts the rod's height to what
+// the raised block now gives. Returns how many rods were hit.
+s32 func_080364f4(u32 lane, s32 piston) {
+    struct PolyrhythmRod *rod;
+    s32 block;
+    s32 hits = 0;
+    s32 i;
+
+    if (piston < 0) return 0;
+
+    for (i = 0; i < POLYRHYTHM_ROD_AMOUNT; i++) {
+        rod = &gPolyrhythm->rods[i];
+        if (!rod->active || (rod->lane != lane)) continue;
+
+        block = (rod->horizontal + 8) >> 4;
+        if (piston == block) {
+            func_08036b48(rod);
+            hits++;
+        } else if (piston == block - 1) {
+            rod->yOffset = func_080365f8(rod, rod->horizontal);
+        }
+    }
+
+    return hits;
+}
 #endif
 
 

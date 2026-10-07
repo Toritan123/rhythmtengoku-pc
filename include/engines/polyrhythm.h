@@ -114,10 +114,10 @@ extern s32 polyrhythm_get_lane_start_x(u32); // Get Lane X
 extern s32 polyrhythm_get_lane_start_y(u32); // Get Lane Y
 extern s32 polyrhythm_get_block_height(u32, s32); // Get Block Height
 extern s32 polyrhythm_get_block_z(u32, s32); // Get Layer
-// extern ? func_080364f4(?);
+extern s32 func_080364f4(u32 lane, s32 piston); // Push the rods on a lane
 extern void polyrhythm_init_rods(void); // Initialise Rods
 extern s32 func_080365c8(struct PolyrhythmRod *, s32); // Get Rod Next unk10
-// extern ? func_080365f8(?);
+extern s32 func_080365f8(struct PolyrhythmRod *, s32);
 extern s32 func_08036604(struct PolyrhythmRod *); // Get Rod Next Horizontal
 extern s32 func_0803661c(struct PolyrhythmRod *, s32); // Get Rod Next Layer
 extern void func_08036630(struct PolyrhythmRod *); // Update Rod (State 0)
@@ -127,6 +127,6 @@ extern void func_08036988(void); // STUB
 extern void polyrhythm_update_rods(void); // Update Rods
 extern void polyrhythm_spawn_rod(u32); // Spawn Rod
 extern void polyrhythm_event_spawn_rod(u32); // Engine Event 03 (Spawn Rod)
-// extern ? func_08036b48(?);
+extern void func_08036b48(struct PolyrhythmRod *);
 extern void polyrhythm_play_applause(void); // Conditional Applause
 extern void polyrhythm_event_play_applause(void); // Engine Event 04 (Conditional Applause)
