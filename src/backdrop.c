@@ -1,4 +1,9 @@
 #include "code_08003b28.h"
+#include "syscall.h"
+#include "src/code_080068f8.h"
+#ifdef PLATFORM_PC
+extern void ppu_set_hblank_palette(const u16 *source, u32 firstEntry, u32 count);
+#endif
 
 #ifndef PLATFORM_PC
 asm(".include \"include/gba.inc\"");//Temporary
@@ -48,6 +53,24 @@ void func_08003f28(void) {
 // Flush Gradient to Palette RAM (DMA0)
 void func_08003f50(void) {
     u32 controls;
+
+#ifdef PLATFORM_PC
+    // There is no HBlank DMA on PC. Hand the per-line table to the renderer
+    // instead: platform/ppu.c reads line y's colours from
+    // source[y * wordCount ...] for the palette entries at dest, which is
+    // what the immediate copy plus the repeating HBlank transfer produce.
+    // Only 16-bit transfers into palette RAM are used by this game.
+    if (sBackdropRenderer.enabled && !sBackdropRenderer.wordSize
+        && ((uintptr_t)sBackdropRenderer.dest >= PaletteRAMBase)
+        && ((uintptr_t)sBackdropRenderer.dest < PaletteRAMBase + 0x400)) {
+        ppu_set_hblank_palette(sBackdropRenderer.source,
+                               ((uintptr_t)sBackdropRenderer.dest - PaletteRAMBase) / 2,
+                               sBackdropRenderer.wordCount);
+    } else {
+        ppu_set_hblank_palette(NULL, 0, 0);
+    }
+    return;
+#endif
 
     REG_DMA0CNT = 0;
 
@@ -116,6 +139,64 @@ void func_08004058(void) {
 // Generate Gradient (https://decomp.me/scratch/2u6Wo)
 #ifndef PLATFORM_PC
 #include "asm/code_08003980/asm_08004070.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08004070] Generate the gradient
+//
+// Interpolates scanlines [start, end) from colour 1 to colour 2 of the BG
+// palette, and fills the lines above with colour 1 and below with colour 2.
+// Unless forced, nothing happens while both colours are unchanged. While a
+// palette fade is running (any of bits 1 and 4-15 of the word at
+// D_03004b10 + 0x854) the colours come from the fade's source palettes.
+void func_08004070(u32 force) {
+    const u16 *palette;
+    u16 color1, color2;
+    s32 r1, g1, b1, dr, dg, db;
+    s32 lines, step, t, i;
+    u32 progress;
+    u16 *dst;
+
+    if (D_03004b10.unk854_1 || D_03004b10.unk854_4) {
+        palette = (const u16 *)D_030046c0;
+    } else {
+        palette = (const u16 *)D_03004b10.bgPalette;
+    }
+
+    color1 = palette[sColor1Index];
+    color2 = palette[sColor2Index];
+
+    if (!force && (color1 == sColor1Value) && (color2 == sColor2Value)) return;
+
+    sColor1Value = color1;
+    sColor2Value = color2;
+
+    r1 = color1 & 0x1f;
+    g1 = (color1 >> 5) & 0x1f;
+    b1 = (color1 >> 10) & 0x1f;
+    dr = (color2 & 0x1f) - r1;
+    dg = ((color2 >> 5) & 0x1f) - g1;
+    db = ((color2 >> 10) & 0x1f) - b1;
+
+    lines = sGradientEndIndex - sGradientStartIndex;
+    dst = &sGradientBuffer[sGradientStartIndex];
+    step = Div(0x1000000, lines);
+    progress = 0;
+
+    for (i = lines; i > 0; i--) {
+        t = progress >> 16;
+        *dst++ = (r1 + ((dr * t) >> 8))
+               | ((g1 + ((dg * t) >> 8)) << 5)
+               | ((b1 + ((db * t) >> 8)) << 10);
+        progress += step;
+    }
+
+    for (i = 0; i < sGradientStartIndex; i++) {
+        sGradientBuffer[i] = color1;
+    }
+    for (i = sGradientEndIndex; i <= 0x9f; i++) {
+        sGradientBuffer[i] = color2;
+    }
+}
 #endif
 
 

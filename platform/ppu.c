@@ -79,21 +79,43 @@ static SDL_Texture *s_tex = NULL;
 
 // ─── palette helpers ─────────────────────────────────────────────────────────
 
+// HBlank palette DMA. On the GBA the gradient backdrop (src/backdrop.c)
+// rewrites a few palette entries before every scanline from a per-line table.
+// The renderer works layer by layer, so instead of copying it tracks the
+// line being drawn (s_line) and substitutes those entries on the fly.
+static const uint16_t *s_hbl_src = NULL;
+static uint32_t s_hbl_first = 0, s_hbl_count = 0;
+static int s_line = 0;
+
+void ppu_set_hblank_palette(const uint16_t *source, uint32_t firstEntry, uint32_t count)
+{
+    s_hbl_src   = source;
+    s_hbl_first = firstEntry;
+    s_hbl_count = count;
+}
+
+static inline uint16_t pal_entry(int entry)
+{
+    if (s_hbl_src && (uint32_t)(entry - (int)s_hbl_first) < s_hbl_count)
+        return s_hbl_src[s_line * s_hbl_count + (entry - s_hbl_first)];
+    return *(uint16_t *)(gba_palette + entry * 2);
+}
+
 static inline uint16_t bg_palette16(int pal, int idx)
 {
-    return *(uint16_t *)(gba_palette + (pal * 16 + idx) * 2);
+    return pal_entry(pal * 16 + idx);
 }
 static inline uint16_t bg_palette256(int idx)
 {
-    return *(uint16_t *)(gba_palette + idx * 2);
+    return pal_entry(idx);
 }
 static inline uint16_t obj_palette16(int pal, int idx)
 {
-    return *(uint16_t *)(gba_palette + 0x200 + (pal * 16 + idx) * 2);
+    return pal_entry(0x100 + pal * 16 + idx);
 }
 static inline uint16_t obj_palette256(int idx)
 {
-    return *(uint16_t *)(gba_palette + 0x200 + idx * 2);
+    return pal_entry(0x100 + idx);
 }
 
 // ─── tile helpers ───────────────────────────────────────────────────────────
@@ -151,6 +173,7 @@ static void render_text_bg(int bgn, int prio)
     int map_h = (mapsize & 2) ? 64 : 32;
 
     for (int y = 0; y < GBA_H; y++) {
+        s_line = y;
         int ty = (y + vofs) & (map_h * 8 - 1);
         int tile_row_in_map = ty / 8;
         int tile_py = ty % 8;
@@ -245,6 +268,7 @@ static void render_affine_bg(int bgn, int prio)
     if (ref_y & 0x08000000) ref_y |= 0xF0000000;
 
     for (int y = 0; y < GBA_H; y++) {
+        s_line = y;
         // Screen-space (cx,cy) → texture (tx,ty) via the affine matrix
         int32_t tx_fp = ref_x + pb * y;
         int32_t ty_fp = ref_y + pd * y;
@@ -290,6 +314,7 @@ static void render_bitmap_mode3(void)
 {
     // 240×160 15-bit direct colour, single frame buffer
     for (int y = 0; y < GBA_H; y++) {
+        s_line = y;
         for (int x = 0; x < GBA_W; x++) {
             uint16_t c = *(uint16_t *)(gba_vram + (y * GBA_W + x) * 2);
             s_fb[y * GBA_W + x] = bgr555_to_rgba8888(c);
@@ -303,6 +328,7 @@ static void render_bitmap_mode4(void)
     uint16_t dispcnt = IOREG16(IO_DISPCNT);
     int page_off = (dispcnt & (1 << 4)) ? 0xA000 : 0x0;
     for (int y = 0; y < GBA_H; y++) {
+        s_line = y;
         for (int x = 0; x < GBA_W; x++) {
             uint8_t idx = gba_vram[page_off + y * GBA_W + x];
             uint16_t c  = bg_palette256(idx);
@@ -383,6 +409,7 @@ static void render_sprites(int prio)
         for (int py = 0; py < sh; py++) {
             int screen_y = y_screen + py;
             if (screen_y < 0 || screen_y >= GBA_H) continue;
+            s_line = screen_y;
 
             for (int px_s = 0; px_s < sw; px_s++) {
                 int screen_x = x_screen + px_s;
@@ -467,11 +494,16 @@ void ppu_render_frame(void)
     // Backdrop colour (palette entry 0)
     uint16_t backdrop_c = *(uint16_t *)gba_palette;
     uint32_t backdrop   = bgr555_to_rgba8888(backdrop_c);
+    (void)backdrop_c;
 
     // Fill with backdrop and reset priority
-    for (int i = 0; i < GBA_W * GBA_H; i++) {
-        s_fb[i]   = backdrop;
-        s_prio[i] = 0xFF; // no layer drawn yet
+    for (int y = 0; y < GBA_H; y++) {
+        s_line = y;
+        uint32_t line_backdrop = s_hbl_src ? bgr555_to_rgba8888(pal_entry(0)) : backdrop;
+        for (int x = 0; x < GBA_W; x++) {
+            s_fb[y * GBA_W + x]   = line_backdrop;
+            s_prio[y * GBA_W + x] = 0xFF; // no layer drawn yet
+        }
     }
 
     if (dispcnt & (1 << 7)) {
