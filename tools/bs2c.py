@@ -38,8 +38,17 @@ STRUCTURAL = {"script", "struct", "endstruct", "text", "endtext", "beatscript_cm
 
 def strip_comments(line):
     line = re.sub(r"/\*.*?\*/", " ", line)      # C-style, used inside macro bodies
-    line = re.sub(r"@.*$", "", line)            # asm line comment
-    return line.strip()
+    # asm line comment -- but not an '@' inside a string: Shift-JIS puts 0x40
+    # in the trail byte of many characters (the full-width space is 81 40),
+    # and cutting there silently dropped whole text blocks.
+    out, quoted = [], False
+    for i, ch in enumerate(line):
+        if ch == '"' and (i == 0 or line[i - 1] != "\\"):
+            quoted = not quoted
+        elif ch == "@" and not quoted:
+            break
+        out.append(ch)
+    return "".join(out).strip()
 
 
 def split_args(s):
@@ -230,6 +239,43 @@ class Emitter:
 
     # ---- rendering -------------------------------------------------------
 
+    @staticmethod
+    def c_bytes(lit):
+        """An assembler string body (read as latin-1) as a C literal body.
+        Escapes pass through; bytes >= 0x80 (Shift-JIS) become octal escapes,
+        which cannot swallow a following character the way \\x can."""
+        out = []
+        for ch in lit:
+            o = ord(ch)
+            out.append(ch if o < 0x80 else "\\%03o" % o)
+        return "".join(out)
+
+    @staticmethod
+    def is_data(items):
+        return bool(items) and all(isinstance(it, tuple) and len(it) == 2
+                                   and it[0] in ("b", "h") for it in items)
+
+    def render_data(self, name, items):
+        """Raw .byte/.hword data, little-endian, as the GBA laid it out."""
+        out = []
+        for kind, v in items:
+            if kind == "b":
+                out.append(f"(u8)({v})")
+            else:
+                out.append(f"(u8)(({v}) & 0xff), (u8)((({v}) >> 8) & 0xff)")
+        return (f"const u8 {name}[] __attribute__((aligned(4))) = {{\n    "
+                + ",\n    ".join(out) + "\n};")
+
+    def render_text(self, name, items):
+        parts = []
+        for kind, terminated, lit in items:
+            parts.append(self.c_bytes(lit) + ("\\0" if terminated else ""))
+        body = "".join(parts)
+        # C adds the final terminator itself.
+        if body.endswith("\\0"):
+            body = body[:-2]
+        return f'const char {name}[] = "{body}";'
+
     OBJECT_SYMBOL = re.compile(r"^[A-Za-z_]\w*$")
 
     def obj_ref(self, tok):
@@ -379,6 +425,8 @@ class Emitter:
         """Every identifier appearing in the rendered operands."""
         names = set()
         for kind, name, items in self.blocks:
+            if kind == "text":
+                continue    # string contents, not symbol references
             for it in items:
                 for tok in it if isinstance(it, tuple) else (it,):
                     for w in re.findall(r"[A-Za-z_]\w*", str(tok)):
@@ -410,7 +458,11 @@ class Emitter:
 
         # Scripts may `call`/`goto` labels defined later in the same file.
         for kind, nm, items in self.blocks:
-            if kind == "script":
+            if kind == "text":
+                fwd.append(f"extern const char {nm}[];")
+            if kind == "script" and self.is_data(items):
+                fwd.append(f"extern const u8 {nm}[];")
+            elif kind == "script":
                 fwd.append(f"extern const struct Beatscript {nm}[];")
             elif kind == "struct":
                 w = [v for k, v in items if k == "w"]
@@ -423,16 +475,26 @@ class Emitter:
                     fwd.append(f"extern const struct MarkingCriteria {nm};")
                 elif w and not h and w[-1].strip() in ("END_OF_CRITERIA", "NULL", "0"):
                     fwd.append(f"extern const struct MarkingCriteria *{nm}[];")
+                elif w and not h and all("marking_criteria" in x for x in w):
+                    fwd.append(f"extern const struct MarkingCriteria *{nm}[];")
+                elif w and not h:
+                    fwd.append(f"extern const void *{nm}[];")
+                elif h and not w:
+                    fwd.append(f"extern const u16 {nm}[];")
         # Render the bodies first: render_script() is what discovers which
         # scene headers the offsetof() expressions need.
         body = []
         for kind, name, items in self.blocks:
-            if kind == "script":
+            if kind == "script" and self.is_data(items):
+                body.append(self.render_data(name, items))
+            elif kind == "script":
                 body.append(self.render_script(name, items))
             elif kind == "struct":
                 s = self.render_struct(name, items)
                 if s:
                     body.append(s)
+            elif kind == "text":
+                body.append(self.render_text(name, items))
             body.append("")
 
         parts = [
@@ -466,7 +528,23 @@ def translate(path, macros, root, index=None, consts=None):
     incs = collect_includes(path, root)
     if incs:
         macros = load_macros(root, INC_FILES + [i for i in incs if i not in INC_FILES])
-    for raw in open(path, errors="replace"):
+    # A .bs may define its own macros (quiz_show_endless.bs does).
+    own = load_macros(root, [os.path.relpath(path, root)])
+    if own:
+        macros = dict(macros)
+        macros.update(own)
+    in_macro_def = False
+    # latin-1 keeps every byte: the text blocks hold Shift-JIS strings that
+    # must reach the C output unchanged.
+    for raw in open(path, encoding="latin-1"):
+        # Skip the bodies of macros defined in this file; they were loaded above.
+        word = strip_comments(raw).split(None, 1)
+        if word and word[0] == ".macro":
+            in_macro_def = True
+        if in_macro_def:
+            if word and word[0] == ".endm":
+                in_macro_def = False
+            continue
         for line in expand(raw, macros):
             tok = line.split(None, 1)
             head = tok[0]
@@ -493,9 +571,16 @@ def translate(path, macros, root, index=None, consts=None):
                 for v in split_args(rest):
                     em.add(("h", v))
             elif head in (".ascii", ".asciz", ".string") and em.kind == "text":
-                # Text blocks are already present as hand-written C string
-                # tables (games/*/\*_text.c); nothing to emit from here.
-                pass
+                # Text blocks define strings that exist nowhere else (the
+                # games/*/*_text.c tables hold other, D_-named strings), so
+                # emit them. .asciz/.string add a terminator, .ascii does not.
+                for lit in re.findall(r'"((?:[^"\\]|\\.)*)"', rest):
+                    em.add(("s", head != ".ascii", lit))
+            elif head in (".byte", ".hword") and em.kind == "script":
+                # Raw data under a script label: Sick Beats' virus paths are
+                # 4-byte {u8 command, u8 arg, u16 rest} records written this way.
+                for v in split_args(rest):
+                    em.add(("b" if head == ".byte" else "h", v))
             elif head.endswith(":") or head in KNOWN_DIRECTIVES:
                 pass
             elif head in (".word", ".hword"):

@@ -31,6 +31,25 @@ extern struct Scene scene_drum_intro_unused;
 extern struct Scene scene_drum_intro_unused_2;
 extern struct Scene scene_drum_intro_unused_2_skipped_intro;
 extern struct Scene scene_drum_intro_unused_3;
+extern struct Scene scene_drum_lesson_basic_1;
+extern struct Scene scene_drum_lesson_basic_2;
+extern struct Scene scene_drum_lesson_hi_tech_1;
+extern struct Scene scene_drum_lesson_hi_tech_2;
+extern struct Scene scene_drum_lesson_long_1;
+extern struct Scene scene_drum_lesson_long_2;
+extern struct Scene scene_drum_lesson_long_3;
+extern struct Scene scene_drum_lesson_long_4;
+extern struct Scene scene_drum_lesson_long_5;
+extern struct Scene scene_drum_lesson_long_6;
+extern struct Scene scene_drum_lesson_short_1;
+extern struct Scene scene_drum_lesson_short_2;
+extern struct Scene scene_drum_lesson_short_3;
+extern struct Scene scene_drum_lesson_short_4;
+extern struct Scene scene_drum_lesson_short_5;
+extern struct Scene scene_drum_lesson_short_6;
+extern struct Scene scene_drum_lesson_short_7;
+extern struct Scene scene_drum_lesson_short_8;
+extern struct Scene scene_drum_lesson_short_9;
 extern struct Scene scene_drum_live;
 extern struct Scene scene_drum_samurai_demo_cutscene;
 extern struct Scene scene_drum_samurai_opening_cutscene;
@@ -81,10 +100,14 @@ extern struct Scene scene_power_calligraphy_2;
 extern struct Scene scene_power_calligraphy_skipped_practice;
 extern struct Scene scene_quiz_show;
 extern struct Scene scene_quiz_show_2;
+extern struct Scene scene_quiz_show_endless;
 extern struct Scene scene_quiz_show_skipped_practice;
 extern struct Scene scene_rap_machine;
 extern struct Scene scene_rap_men;
 extern struct Scene scene_rap_men_2;
+extern struct Scene scene_rap_men_skipped_practice;
+extern struct Scene scene_rap_women;
+extern struct Scene scene_rap_women_unused;
 extern struct Scene scene_rat_race;
 extern struct Scene scene_rat_race_2;
 extern struct Scene scene_rat_race_skipped_practice;
@@ -115,6 +138,7 @@ extern struct Scene scene_samurai_slice_2;
 extern struct Scene scene_showtime;
 extern struct Scene scene_showtime_skipped_practice;
 extern struct Scene scene_sick_beats;
+extern struct Scene scene_sick_beats_endless;
 extern struct Scene scene_snappy_trio;
 extern struct Scene scene_snappy_trio_unused;
 extern struct Scene scene_sneaky_spirits;
@@ -131,6 +155,8 @@ extern struct Scene scene_spaceball_unused_2;
 extern struct Scene scene_staff_credit;
 extern struct Scene scene_staff_credit_remix_6;
 extern struct Scene scene_studio;
+extern struct Scene scene_tanuki_and_monkey;
+extern struct Scene scene_tanuki_and_monkey_skipped_intro;
 extern struct Scene scene_tap_trial;
 extern struct Scene scene_tap_trial_2;
 extern struct Scene scene_tap_trial_skipped_practice;
@@ -179,6 +205,25 @@ const struct { const char *name; struct Scene *scene; } gPcSceneTable[] = {
     { "drum_intro_unused_2", &scene_drum_intro_unused_2 },
     { "drum_intro_unused_2_skipped_intro", &scene_drum_intro_unused_2_skipped_intro },
     { "drum_intro_unused_3", &scene_drum_intro_unused_3 },
+    { "drum_lesson_basic_1", &scene_drum_lesson_basic_1 },
+    { "drum_lesson_basic_2", &scene_drum_lesson_basic_2 },
+    { "drum_lesson_hi_tech_1", &scene_drum_lesson_hi_tech_1 },
+    { "drum_lesson_hi_tech_2", &scene_drum_lesson_hi_tech_2 },
+    { "drum_lesson_long_1", &scene_drum_lesson_long_1 },
+    { "drum_lesson_long_2", &scene_drum_lesson_long_2 },
+    { "drum_lesson_long_3", &scene_drum_lesson_long_3 },
+    { "drum_lesson_long_4", &scene_drum_lesson_long_4 },
+    { "drum_lesson_long_5", &scene_drum_lesson_long_5 },
+    { "drum_lesson_long_6", &scene_drum_lesson_long_6 },
+    { "drum_lesson_short_1", &scene_drum_lesson_short_1 },
+    { "drum_lesson_short_2", &scene_drum_lesson_short_2 },
+    { "drum_lesson_short_3", &scene_drum_lesson_short_3 },
+    { "drum_lesson_short_4", &scene_drum_lesson_short_4 },
+    { "drum_lesson_short_5", &scene_drum_lesson_short_5 },
+    { "drum_lesson_short_6", &scene_drum_lesson_short_6 },
+    { "drum_lesson_short_7", &scene_drum_lesson_short_7 },
+    { "drum_lesson_short_8", &scene_drum_lesson_short_8 },
+    { "drum_lesson_short_9", &scene_drum_lesson_short_9 },
     { "drum_live", &scene_drum_live },
     { "drum_samurai_demo_cutscene", &scene_drum_samurai_demo_cutscene },
     { "drum_samurai_opening_cutscene", &scene_drum_samurai_opening_cutscene },
@@ -229,10 +274,14 @@ const struct { const char *name; struct Scene *scene; } gPcSceneTable[] = {
     { "power_calligraphy_skipped_practice", &scene_power_calligraphy_skipped_practice },
     { "quiz_show", &scene_quiz_show },
     { "quiz_show_2", &scene_quiz_show_2 },
+    { "quiz_show_endless", &scene_quiz_show_endless },
     { "quiz_show_skipped_practice", &scene_quiz_show_skipped_practice },
     { "rap_machine", &scene_rap_machine },
     { "rap_men", &scene_rap_men },
     { "rap_men_2", &scene_rap_men_2 },
+    { "rap_men_skipped_practice", &scene_rap_men_skipped_practice },
+    { "rap_women", &scene_rap_women },
+    { "rap_women_unused", &scene_rap_women_unused },
     { "rat_race", &scene_rat_race },
     { "rat_race_2", &scene_rat_race_2 },
     { "rat_race_skipped_practice", &scene_rat_race_skipped_practice },
@@ -263,6 +312,7 @@ const struct { const char *name; struct Scene *scene; } gPcSceneTable[] = {
     { "showtime", &scene_showtime },
     { "showtime_skipped_practice", &scene_showtime_skipped_practice },
     { "sick_beats", &scene_sick_beats },
+    { "sick_beats_endless", &scene_sick_beats_endless },
     { "snappy_trio", &scene_snappy_trio },
     { "snappy_trio_unused", &scene_snappy_trio_unused },
     { "sneaky_spirits", &scene_sneaky_spirits },
@@ -279,6 +329,8 @@ const struct { const char *name; struct Scene *scene; } gPcSceneTable[] = {
     { "staff_credit", &scene_staff_credit },
     { "staff_credit_remix_6", &scene_staff_credit_remix_6 },
     { "studio", &scene_studio },
+    { "tanuki_and_monkey", &scene_tanuki_and_monkey },
+    { "tanuki_and_monkey_skipped_intro", &scene_tanuki_and_monkey_skipped_intro },
     { "tap_trial", &scene_tap_trial },
     { "tap_trial_2", &scene_tap_trial_2 },
     { "tap_trial_skipped_practice", &scene_tap_trial_skipped_practice },
@@ -298,6 +350,6 @@ const struct { const char *name; struct Scene *scene; } gPcSceneTable[] = {
     { "wizards_waltz_2", &scene_wizards_waltz_2 },
     { "wizards_waltz_skipped_practice", &scene_wizards_waltz_skipped_practice },
 };
-const int gPcSceneTableCount = 146;
+const int gPcSceneTableCount = 172;
 
 #endif

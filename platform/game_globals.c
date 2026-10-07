@@ -245,7 +245,6 @@ static u32 pc_game_stub_loop(void) {
 // On GBA they come from assembled .bs files; on PC we provide stubs.
 #define PC_GAME_STUB(name) \
     struct Scene name = { NULL, 0, (u32(*)())pc_game_stub_loop, 0, NULL, 0, 0 }
-PC_GAME_STUB(scene_polyrhythm_2);
 PC_GAME_STUB(scene_clappy_trio_2);
 PC_GAME_STUB(scene_space_dance_2);
 PC_GAME_STUB(scene_bunny_hop_2);
@@ -256,19 +255,13 @@ PC_GAME_STUB(scene_ninja_bodyguard_2);
 PC_GAME_STUB(scene_fireworks_2);
 PC_GAME_STUB(scene_quiz_show_2);
 PC_GAME_STUB(scene_power_calligraphy_2);
-PC_GAME_STUB(scene_rap_men);
 PC_GAME_STUB(scene_rap_men_2);
 PC_GAME_STUB(scene_samurai_slice_2);
 PC_GAME_STUB(scene_wizards_waltz_2);
 PC_GAME_STUB(scene_bon_odori_2);
 PC_GAME_STUB(scene_mechanical_horse_2);
 PC_GAME_STUB(scene_tram_and_pauline);
-PC_GAME_STUB(scene_sick_beats);
 // Remix stages
-PC_GAME_STUB(scene_remix_2);
-PC_GAME_STUB(scene_remix_4);
-PC_GAME_STUB(scene_remix_6);
-PC_GAME_STUB(scene_remix_7);
 // Unused variants listed in scenes.h
 
 #endif // PLATFORM_PC
