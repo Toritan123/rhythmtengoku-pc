@@ -70,6 +70,43 @@ void sick_beats_play_particle_sound(void) {
 // Process Particle
 #ifndef PLATFORM_PC
 #include "asm/engines/sick_beats/asm_080429e8.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_080429e8] Process Particle
+//
+// Throws the next of the 20 particles from the flask on a random arc,
+// plays its note when it lands, and hides it again after a random while.
+// The random cel is drawn from the byte at 0x26F (particlePitch here), as
+// the assembly does; the calls to agb_random keep the original order.
+void func_080429e8(void) {
+    s16 sprite = gSickBeats->particleSprites[gSickBeats->particleCurrent];
+    u32 side, destX, destY;
+    s16 amplitude;
+    u16 duration;
+    s32 task, hold;
+
+    sprite_set_visible(gSpriteHandler, sprite, TRUE);
+    sprite_set_anim_cel(gSpriteHandler, sprite, (s8)agb_random(gSickBeats->particlePitch));
+    sprite_set_x_y(gSpriteHandler, sprite, 0xae, 0x8a);
+
+    // 40 px to either side of x = 0xAE, then +-16 of jitter.
+    side = (u16)agb_random(2) << 1;
+    destX = (u16)((((1 - side) * 5) << 19) + (0xae << 16) >> 16);
+    destX = (u16)(destX + agb_random(0x20) + 0xfff0);
+    destY = (u16)(agb_random(0x18) + 0x1007e);
+    amplitude = (s16)(agb_random(0x20) + 0x20);
+    duration = (u16)(ticks_to_frames(0x18) + agb_random(0x1e) - 10);
+
+    task = scene_move_sprite_sine_wave(sprite, (s16)destX, (s16)destY, amplitude, duration);
+    run_func_after_task(task, sick_beats_play_particle_sound, 0);
+
+    hold = ticks_to_frames(0x78);
+    gSickBeats->particleCounters[gSickBeats->particleCurrent] = agb_random(0xb4) + hold;
+
+    if (++gSickBeats->particleCurrent > 0x13) {
+        gSickBeats->particleCurrent = 0;
+    }
+}
 #endif
 
 // Process X Particles

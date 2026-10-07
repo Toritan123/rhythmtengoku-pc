@@ -156,7 +156,7 @@ extern struct Animation *sick_beats_doctor_anim[];
 extern void sick_beats_init_particles(void); // Init Particles
 extern void sick_beats_update_particles(void); // Update Particles
 extern void sick_beats_play_particle_sound(void); // Play Particle Sound
-// extern ? func_080429e8(?); // Process Particle
+extern void func_080429e8(void); // Process Particle
 extern void sick_beats_process_x_particles(u32); // Process X Particles
 extern void sick_beats_increment_particle_pitch(void); // Engine Event 0x06 (Increment Particle Pitch)
 extern void sick_beats_init_counters(void); // Init Counters
