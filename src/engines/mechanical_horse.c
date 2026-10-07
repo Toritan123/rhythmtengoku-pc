@@ -52,10 +52,36 @@ void func_08040d10() {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/mechanical_horse/asm_08040d90.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08040d90] Load the queued background, then fade it in (func_08040d10)
+void func_08040d90(void) {
+    s32 task;
+
+    task = func_08002ee0(get_current_mem_id(), mechanical_horse_backgrounds[gMechanicalHorse->unk2ff].gfxTable, 0x2000);
+    run_func_after_task(task, func_08040d10, 0);
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/mechanical_horse/asm_08040dd8.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08040dd8] Start the queued background change: fade the current one out
+void func_08040dd8(void) {
+    s32 task;
+
+    gMechanicalHorse->unk300 = 1;
+    gMechanicalHorse->unk2ff = gMechanicalHorse->unk306;
+    gMechanicalHorse->unk302 = gMechanicalHorse->unk308;
+    gMechanicalHorse->unk304 = gMechanicalHorse->unk30a;
+    gMechanicalHorse->unk306 = -1;
+
+    task = palette_fade_out(get_current_mem_id(), (u8)gMechanicalHorse->unk304, 2,
+                            &mechanical_horse_backgrounds[gMechanicalHorse->unk2fe].palette[0][0],
+                            gMechanicalHorse->unk302, D_03004b10.bgPalette[0]);
+    run_func_after_task(task, func_08040d90, 0);
+}
 #endif
 
 void func_08040e80() {
@@ -67,6 +93,18 @@ void func_08040e80() {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/mechanical_horse/asm_08040eb0.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08040eb0] Queue a background change (cancelled if it is already showing)
+void func_08040eb0(s32 bg, u16 color, u16 frames) {
+    if (gMechanicalHorse->unk2fe == bg) {
+        gMechanicalHorse->unk306 = -1;
+    } else {
+        gMechanicalHorse->unk306 = bg;
+        gMechanicalHorse->unk308 = color;
+        gMechanicalHorse->unk30a = frames;
+    }
+}
 #endif
 
 void mechanical_horse_init_gfx3() {
@@ -224,6 +262,27 @@ void func_08041444(int arg0) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/mechanical_horse/asm_080415c0.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_080415c0] Engine Event 0x01 (Set the Lesson)
+//
+// Gives the teacher's horse and jockey the lesson's animations and lays out
+// its four step labels.
+void func_080415c0(u32 lesson) {
+    struct MechanicalHorseSub4 *label;
+    u8 i;
+
+    gMechanicalHorse->unk2cc = lesson;
+    sprite_set_anim(gSpriteHandler, gMechanicalHorse->horse[1].sprite, mechanical_horse_anim[lesson], 0, 0, 0, 0);
+    sprite_set_anim(gSpriteHandler, gMechanicalHorse->jockey[1].sprite, mechanical_horse_jockey_anim[lesson], 0, 0, 0, 0);
+
+    for (i = 0; i < 4; i++) {
+        label = &gMechanicalHorse->unk26c[i];
+        label->pos_x = D_0805aab0[lesson][i] << 8;
+        sprite_set_x_y(gSpriteHandler, label->sprite, (s16)(label->pos_x >> 8), (s16)(label->pos_y >> 8));
+        sprite_set_anim(gSpriteHandler, label->sprite, mechanical_horse_lesson_text_anim[lesson][i], 1, 0, 0, 0);
+    }
+}
 #endif
 
 // prints specified text?
@@ -249,10 +308,67 @@ void func_08041744(u32 arg0) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/mechanical_horse/asm_080417ac.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_080417ac] Engine Event 0x05 (End the Lesson if the Teacher Is Through)
+//
+// While the teacher's horse is still left of x = 0x58 the lesson loops on.
+// Otherwise the player's horse is stopped (unless this is lesson 3), the
+// horse whinnies, the lesson music fades and the loop is let go.
+void func_080417ac(void) {
+    struct SongHeader *music;
+
+    if (gMechanicalHorse->horse[1].pos_x > 0x5800) {
+        beatscript_enable_loops();
+        return;
+    }
+
+    if (gMechanicalHorse->unk2cc != 3) {
+        gMechanicalHorse->horse[0].unk2 = 0;
+        gMechanicalHorse->horse[0].cel = 0;
+        gMechanicalHorse->horse[0].unk10 = 0;
+        sprite_set_anim(gSpriteHandler, gMechanicalHorse->horse[0].sprite, anim_horse_still, 0, 0, 0, 0);
+        sprite_set_anim(gSpriteHandler, gMechanicalHorse->jockey[0].sprite, anim_horse_walk_jockey, 0, 0, 0, 0);
+    }
+
+    gMechanicalHorse->unk2ea = 0;
+    play_sound(&s_uma_hihin_seqData);
+
+    music = mechanical_horse_lesson_bgm[gMechanicalHorse->unk2cc];
+    if (gMechanicalHorse->unk2cc <= 2) {
+        fade_out_sound(music, ticks_to_frames(0x60));
+    } else {
+        fade_out_sound(music, ticks_to_frames(0xc0));
+    }
+
+    func_08041744(0);
+    beatscript_disable_loops();
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/mechanical_horse/asm_0804188c.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0804188c] Settle the jockey after a jump
+void func_0804188c(void) {
+    struct MechanicalHorseJockey *jockey = &gMechanicalHorse->jockey[0];
+    s8 cel;
+
+    if (jockey->unk2 == 1) {
+        cel = sprite_get_anim_cel(gSpriteHandler, jockey->sprite);
+        if (cel <= 2) return;
+    } else if (jockey->unk2 == 2) {
+        cel = sprite_get_anim_cel(gSpriteHandler, jockey->sprite);
+        if (cel <= 1) return;
+    } else {
+        return;
+    }
+
+    gMechanicalHorse->jockey[0].unk2 = 0;
+    sprite_set_anim(gSpriteHandler, gMechanicalHorse->jockey[0].sprite,
+                    mechanical_horse_jockey_anim[gMechanicalHorse->unk2cc], 0, 0, 0, 0);
+}
 #endif
 
 u8 func_08041940(void) {
@@ -342,31 +458,253 @@ void func_08041970(void) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/mechanical_horse/asm_08041c98.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08041c98] Player's horse starts
+void func_08041c98(void) {
+    struct MechanicalHorseHorse *horse = &gMechanicalHorse->horse[0];
+    u8 hoof;
+
+    horse->unk2 = 1;
+    horse->unk4 = 0;
+    horse->cel = 0;
+    sprite_set_anim(gSpriteHandler, horse->sprite, mechanical_horse_anim[gMechanicalHorse->unk2cc], 0, 0, 0, 0);
+    sprite_set_anim(gSpriteHandler, gMechanicalHorse->jockey[0].sprite,
+                    mechanical_horse_jockey_anim[gMechanicalHorse->unk2cc], 0, 0, 0, 0);
+
+    hoof = func_08041940();
+    gMechanicalHorse->unk3c[hoof].unk3 = 0;
+    gMechanicalHorse->unk3c[hoof].unk2 = 2;
+    func_08041444(0);
+
+    horse->unk10 += D_0805aa20[gMechanicalHorse->unk2cc];
+    gMechanicalHorse->unk2eb = 1;
+
+    // Bounce the first step label, and arm the second.
+    gMechanicalHorse->unk26c[0].pos_y = 0x9000;
+    gMechanicalHorse->unk26c[0].unk14 = (u32)-0x200;
+    gMechanicalHorse->unk26c[0].unk2 = 1;
+    sprite_set_y(gSpriteHandler, gMechanicalHorse->unk26c[0].sprite, (s16)(gMechanicalHorse->unk26c[0].pos_y >> 8));
+    gMechanicalHorse->unk26c[1].unk2 = 2;
+    gMechanicalHorse->unk26c[1].unk3 = ticks_to_frames(D_0805aa60[gMechanicalHorse->unk2cc][horse->cel]);
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/mechanical_horse/asm_08041ddc.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08041ddc] Player's horse keeps pace
+void func_08041ddc(void) {
+    struct MechanicalHorseHorse *horse = &gMechanicalHorse->horse[0];
+    u8 hoof = func_08041940();
+    u8 step, next;
+
+    gMechanicalHorse->unk3c[hoof].unk3 = horse->cel;
+    gMechanicalHorse->unk3c[hoof].unk2 = 2;
+
+    // Bounce the label for this step...
+    step = horse->cel;
+    gMechanicalHorse->unk26c[step].pos_y = 0x9000;
+    gMechanicalHorse->unk26c[step].unk14 = (u32)-0x200;
+    gMechanicalHorse->unk26c[step].unk2 = 1;
+    sprite_set_y(gSpriteHandler, gMechanicalHorse->unk26c[step].sprite,
+                 (s16)(gMechanicalHorse->unk26c[step].pos_y >> 8));
+
+    // ...and arm the next one.
+    next = (u8)(horse->cel + 1);
+    if (next > D_0805aa00[gMechanicalHorse->unk2cc]) next = 0;
+    gMechanicalHorse->unk26c[next].unk2 = 2;
+    gMechanicalHorse->unk26c[next].unk3 = ticks_to_frames(D_0805aa60[gMechanicalHorse->unk2cc][next]);
+
+    func_08041444(0);
+    horse->unk4 = 0;
+
+    if (gMechanicalHorse->unk2ea == 1) {
+        gMechanicalHorse->unk2ea = 2;
+    } else {
+        gMechanicalHorse->unk2ea = 1;
+    }
+
+    horse->unk10 += D_0805aa20[gMechanicalHorse->unk2cc] * 2;
+    gMechanicalHorse->unk2eb = 0;
+
+    gMechanicalHorse->music_volume += 0xc;
+    if (gMechanicalHorse->music_volume > 0x100) gMechanicalHorse->music_volume = 0x100;
+
+    if (gMechanicalHorse->unk2ee != 0) {
+        gMechanicalHorse->unk2f0 = clamp_int32(gMechanicalHorse->unk2f0 + 1, 0x100, 0x800);
+    }
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/mechanical_horse/asm_08041f80.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08041f80] Player's horse stops (stray input)
+void func_08041f80(void) {
+    struct MechanicalHorseHorse *horse = &gMechanicalHorse->horse[0];
+
+    horse->unk2 = 0;
+    horse->cel = 0;
+    sprite_set_anim(gSpriteHandler, horse->sprite, anim_horse_still, 0, 0, 0, 0);
+    sprite_set_anim(gSpriteHandler, gMechanicalHorse->jockey[0].sprite, anim_horse_walk_jockey, 0, 0, 0, 0);
+    gMechanicalHorse->unk2ea = 0;
+
+    // Lose an eighth of the speed, rounded toward zero.
+    horse->unk10 = (s32)horse->unk10 - ((s32)horse->unk10 / 8);
+
+    if (gMechanicalHorse->unk2ee != 0) {
+        gMechanicalHorse->unk2f0 = (((s32)gMechanicalHorse->unk2f0 - 0x100) * 0xdc >> 8) + 0x100;
+    }
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/mechanical_horse/asm_08042020.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08042020] Player's horse stops (miss) -- the same as func_08041f80
+void func_08042020(void) {
+    struct MechanicalHorseHorse *horse = &gMechanicalHorse->horse[0];
+
+    horse->unk2 = 0;
+    horse->cel = 0;
+    sprite_set_anim(gSpriteHandler, horse->sprite, anim_horse_still, 0, 0, 0, 0);
+    sprite_set_anim(gSpriteHandler, gMechanicalHorse->jockey[0].sprite, anim_horse_walk_jockey, 0, 0, 0, 0);
+    gMechanicalHorse->unk2ea = 0;
+
+    horse->unk10 = (s32)horse->unk10 - ((s32)horse->unk10 / 8);
+
+    if (gMechanicalHorse->unk2ee != 0) {
+        gMechanicalHorse->unk2f0 = (((s32)gMechanicalHorse->unk2f0 - 0x100) * 0xdc >> 8) + 0x100;
+    }
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/mechanical_horse/asm_080420c0.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_080420c0] Update the horses' speed and the teacher's position
+void func_080420c0(void) {
+    struct MechanicalHorseHorse *player = &gMechanicalHorse->horse[0];
+    struct MechanicalHorseHorse *teacher = &gMechanicalHorse->horse[1];
+    s32 top = D_0805aa20[gMechanicalHorse->unk2cc + 4];
+    s32 speed;
+
+    // The player's speed decays by a 24th a frame, capped at twice the top.
+    speed = (s32)player->unk10;
+    speed -= speed / 0x18;
+    player->unk10 = speed;
+    if (speed > top * 2) player->unk10 = top * 2;
+    if ((s32)player->unk10 <= 0x1f) player->unk10 = 0;
+
+    // The teacher decays by a 32nd and drifts back by the player's speed.
+    speed = (s32)teacher->unk10;
+    speed -= speed / 0x20;
+    teacher->unk10 = speed;
+    teacher->pos_x += speed - ((s32)(gMechanicalHorse->unk2f0 * (s32)player->unk10) >> 8);
+    if (speed > top) teacher->unk10 = top;
+    if ((s32)teacher->unk10 <= 0x1f) teacher->unk10 = 0;
+
+    if (teacher->pos_x > D_0805aaa0[gMechanicalHorse->unk2cc]) teacher->pos_x = D_0805aaa0[gMechanicalHorse->unk2cc];
+    if (teacher->pos_x < -0x6400) teacher->pos_x = -0x6400;
+
+    sprite_set_x(gSpriteHandler, teacher->sprite, (s16)(teacher->pos_x >> 8));
+    sprite_set_x(gSpriteHandler, gMechanicalHorse->jockey[1].sprite, (s16)(teacher->pos_x >> 8));
+
+    // Lessons 2 and 3 hold the gallop pose a little before landing.
+    teacher->unk4++;
+    if ((gMechanicalHorse->unk2cc == 2) && (teacher->cel == 0)
+        && (sprite_get_anim_cel(gSpriteHandler, teacher->sprite) == 2)
+        && ((s32)teacher->unk4 >= (s32)ticks_to_frames(6))) {
+        sprite_set_anim_cel(gSpriteHandler, teacher->sprite, 3);
+    }
+    if ((gMechanicalHorse->unk2cc == 3) && (teacher->cel == 0)
+        && (sprite_get_anim_cel(gSpriteHandler, teacher->sprite) == 3)
+        && ((s32)teacher->unk4 >= (s32)ticks_to_frames(6))) {
+        sprite_set_anim_cel(gSpriteHandler, teacher->sprite, 4);
+    }
+
+    if (!gMechanicalHorse->unk2e9) return;
+
+    if (player->unk2 == 0) {
+        // Standing still lets the music fade, down to a quarter.
+        if (--gMechanicalHorse->music_volume <= 0x3f) gMechanicalHorse->music_volume = 0x40;
+        return;
+    }
+
+    player->unk4++;
+    if ((gMechanicalHorse->unk2cc == 2) && (player->cel == 0)
+        && (sprite_get_anim_cel(gSpriteHandler, player->sprite) == 2)
+        && ((s32)player->unk4 >= (s32)ticks_to_frames(6))) {
+        sprite_set_anim_cel(gSpriteHandler, player->sprite, 3);
+    }
+    if ((gMechanicalHorse->unk2cc == 3) && (player->cel == 0)
+        && (sprite_get_anim_cel(gSpriteHandler, player->sprite) == 3)
+        && ((s32)player->unk4 >= (s32)ticks_to_frames(6))) {
+        sprite_set_anim_cel(gSpriteHandler, player->sprite, 4);
+    }
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/mechanical_horse/asm_0804231c.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0804231c] Bounce the lesson step labels
+//
+// State 2 counts unk3 down, then pops the label up (state 1), which falls
+// back under gravity until it lands at y = 0x90.
+void func_0804231c(void) {
+    struct MechanicalHorseSub4 *label;
+    u8 i;
+
+    for (i = 0; i < 4; i++) {
+        label = &gMechanicalHorse->unk26c[i];
+        if (label->unk2 == 0) continue;
+
+        if (label->unk2 == 2) {
+            if (--label->unk3 != 0) continue;
+            label->pos_y = 0x9000;
+            label->unk14 = (u32)-0x100;
+            label->unk2 = 1;
+            label->unk3 = 0;
+            sprite_set_y(gSpriteHandler, label->sprite, (s16)(label->pos_y >> 8));
+            continue;
+        }
+
+        label->pos_y += (s32)label->unk14;
+        label->unk14 += 0x40;
+        if (label->pos_y > 0x9000) {
+            label->pos_y = 0x9000;
+            label->unk14 = 0;
+            label->unk2 = 0;
+        }
+        sprite_set_y(gSpriteHandler, label->sprite, (s16)(label->pos_y >> 8));
+    }
+}
 #endif
 
 // https://decomp.me/scratch/58myn
 #ifndef PLATFORM_PC
 #include "asm/engines/mechanical_horse/asm_08042438.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08042438] Scroll the ground and the trees with the player's speed
+void func_08042438(void) {
+    s32 product = (s32)gMechanicalHorse->horse[0].unk10 * gMechanicalHorse->unk2f0;
+
+    gMechanicalHorse->unk2d0 = product >> 8;
+    // Half of unk2d0, rounded toward zero the way the assembly does it
+    // (adding the product's sign bit before an arithmetic shift).
+    gMechanicalHorse->unk2d4 += (s32)(gMechanicalHorse->unk2d0 + (s32)((u32)product >> 31)) >> 1;
+    gMechanicalHorse->unk2d8 += gMechanicalHorse->unk2d0;
+    scene_set_bg_layer_pos(BG_LAYER_1, (s16)((s32)gMechanicalHorse->unk2d4 >> 8), 0);
+    scene_set_bg_layer_pos(BG_LAYER_2, (s16)((s32)gMechanicalHorse->unk2d8 >> 8), 0);
+}
 #endif
 
 void func_0804249c(void) {
@@ -390,10 +728,68 @@ void func_080424f0(u16 unk) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/mechanical_horse/asm_08042504.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08042504] Engine Event 0x07 (Set the Tempo from the Speed)
+void func_08042504(void) {
+    s32 tempo;
+
+    if (gMechanicalHorse->unk2ee == 0) return;
+
+    tempo = (((s32)gMechanicalHorse->unk2f0 - 0x100) / 2) + 0x100;
+    tempo *= gMechanicalHorse->unk2ee;
+    set_beatscript_tempo((u16)((u32)(tempo << 8) >> 16));
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/mechanical_horse/asm_08042548.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08042548] Update the dashboard
+//
+// Above speed 0x140 the speedometer panel (BG3, two needles, the
+// high-speed light) replaces the step labels. The needles jitter by a
+// random 0-63 at their stop, and the speedometer picks the background.
+void func_08042548(void) {
+    u32 fast;
+    s32 over, limit, angle;
+    u32 i;
+
+    if (!gMechanicalHorse->unk2e9) return;
+
+    fast = (gMechanicalHorse->unk2f0 > 0x13f);
+    affine_sprite_set_visible(gMechanicalHorse->tachometer_hand, fast);
+    affine_sprite_set_visible(gMechanicalHorse->speedometer_hand, fast);
+    sprite_set_visible(gSpriteHandler, gMechanicalHorse->high_speed_light_sprite, fast);
+    if (fast) {
+        scene_show_bg_layer(BG_LAYER_3);
+    } else {
+        scene_hide_bg_layer(BG_LAYER_3);
+    }
+
+    for (i = 0; i < 4; i++) {
+        sprite_set_visible(gSpriteHandler, gMechanicalHorse->unk26c[i].sprite, (u16)(fast ^ 1));
+    }
+
+    if (!fast) return;
+
+    over = (s32)gMechanicalHorse->unk2f0 - 0x100;
+
+    limit = (u16)agb_random(0x40) + 0x352;
+    angle = clamp_int32(((over * 7) * 0xaa) / 0x180 - 0x1fe, -0x2a8, limit);
+    affine_sprite_set_rotation(gMechanicalHorse->tachometer_hand, (s16)angle);
+    if (angle < 0x1fe) {
+        sprite_set_visible(gSpriteHandler, gMechanicalHorse->high_speed_light_sprite, FALSE);
+    }
+
+    limit = (u16)agb_random(0x40) + 0x352;
+    angle = clamp_int32(((over * 5) * 0xaa) / 0x180 - 0x1fe, -0x2a8, limit);
+    affine_sprite_set_rotation(gMechanicalHorse->speedometer_hand, (s16)angle);
+    gMechanicalHorse->unk2e8 = (angle >= -0xaa);
+
+    func_08040eb0(clamp_int32((angle + 0xaa) / 0xaa, 0, 5), 0x7fff, 0x40);
+}
 #endif
 
 void mechanical_horse_engine_update() {
@@ -413,10 +809,33 @@ void mechanical_horse_engine_stop() {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/mechanical_horse/asm_08042758.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08042758] Cue - Spawn
+void mechanical_horse_cue_spawn(struct Cue *cue, struct MechanicalHorseCue *info, u32 lesson) {
+    info->halfway = FALSE;
+    info->lesson = lesson;
+    info->hoof = func_08041940();
+    gMechanicalHorse->unk3c[info->hoof].unk2 = 1;
+    gMechanicalHorse->unk3c[info->hoof].unk4 = ticks_to_frames(0xc);
+    gMechanicalHorse->unk3c[info->hoof].unk3 = info->lesson;
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/mechanical_horse/asm_080427b0.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_080427b0] Cue - Update
+u32 mechanical_horse_cue_update(struct Cue *cue, struct MechanicalHorseCue *info, u32 runningTime, u32 duration) {
+    if (runningTime > ticks_to_frames(0x18)) return TRUE;
+
+    if (!info->halfway && (runningTime >= ticks_to_frames(0xc))) {
+        func_08041444(1);
+        info->halfway = TRUE;
+    }
+    return FALSE;
+}
 #endif
 
 void mechanical_horse_cue_despawn(struct Cue *cue, struct MechanicalHorseCue *data) {

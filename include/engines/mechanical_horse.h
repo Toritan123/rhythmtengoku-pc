@@ -73,15 +73,19 @@ struct MechanicalHorseEngineData {
     s8 unk2ff; // next bg?
     u8 unk300;
     u16 unk302;
-    u8 unk304;
-    u8 pad305;
-    s8 unk306;
-    u8 pad307[0x5];
+    u16 unk304;     // 0x304  fade frames (read as a byte)
+    s8 unk306;      // 0x306  queued background, -1 = none (func_08040eb0)
+    u8 pad307;
+    u16 unk308;     // 0x308  queued fade colour
+    u16 unk30a;     // 0x30A  queued fade frames
     u24_8 unk30c;
 };
 
 struct MechanicalHorseCue {
-    /* add fields here */
+    u8 halfway;     // set once the cue has passed its midpoint (func_08041444(1))
+    u8 lesson;      // spawn parameter
+    u8 hoof;        // index into unk3c from func_08041940
+    u8 unk3;
 };
 
 struct MechanicalHorseBG {
@@ -124,34 +128,34 @@ extern void func_08040c2c(void);
 extern void func_08040c58(void);
 extern void func_08040cfc(void);
 extern void func_08040d10(void);
-// extern ? func_08040d90(?);
-// extern ? func_08040dd8(?);
+extern void func_08040d90(void); // Load the queued background
+extern void func_08040dd8(void); // Start the queued background fade
 extern void func_08040e80(void);
-// extern ? func_08040eb0(?);
+extern void func_08040eb0(s32 bg, u16 color, u16 frames); // Queue a background change
 extern void mechanical_horse_init_gfx3(void); // Graphics Init. 3
 extern void mechanical_horse_init_gfx2(void); // Graphics Init. 2
 extern void mechanical_horse_init_gfx1(void); // Graphics Init. 1
 extern void mechanical_horse_engine_start(u32 version); // Game Engine Start
 extern void func_08041444(); // Engine Event 0x00 (?)
-extern void func_080415c0(); // Engine Event 0x01 (?)
+extern void func_080415c0(u32 lesson); // Engine Event 0x01 (Set the Lesson)
 extern void func_080416cc(const char* string); // Engine Event 0x02 (?)
 extern void func_08041730(u8); // Engine Event 0x03 (?)
 extern void func_08041744(u32); // Engine Event 0x04 (?)
-extern void func_080417ac(); // Engine Event 0x05 (?)
-// extern ? func_0804188c(?);
+extern void func_080417ac(void); // Engine Event 0x05 (End the Lesson if the Teacher Is Through)
+extern void func_0804188c(void); // Settle the jockey after a jump
 extern u8 func_08041940(void);
 extern void func_08041970(void);
-// extern ? func_08041c98(?);
-// extern ? func_08041ddc(?);
-// extern ? func_08041f80(?);
-// extern ? func_08042020(?);
-// extern ? func_080420c0(?);
-// extern ? func_0804231c(?);
+extern void func_08041c98(void); // Player's horse starts
+extern void func_08041ddc(void); // Player's horse keeps pace
+extern void func_08041f80(void); // Player's horse stops (input)
+extern void func_08042020(void); // Player's horse stops (miss)
+extern void func_080420c0(void); // Update the horses' speed
+extern void func_0804231c(void); // Bounce the lesson texts
 extern void func_08042438(void);
 extern void func_0804249c(void);
 extern void func_080424f0(u16); // Engine Event 0x06 (?)
-extern void func_08042504(); // Engine Event 0x07 (?)
-// extern ? func_08042548(?);
+extern void func_08042504(void); // Engine Event 0x07 (Set the Tempo from the Speed)
+extern void func_08042548(void); // Update the dashboard
 extern void mechanical_horse_engine_update(void); // Game Engine Update
 extern void mechanical_horse_engine_stop(void); // Game Engine Stop
 extern void mechanical_horse_cue_spawn(struct Cue *, struct MechanicalHorseCue *, u32 lesson); // Cue - Spawn
