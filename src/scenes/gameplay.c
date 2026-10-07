@@ -262,7 +262,9 @@ void gameplay_set_current_engine(const struct GameEngine *engine, u32 version) {
 
     if (engine->gameDataSize > 0) {
         gGameplay->gameEngineData = mem_heap_alloc(GBA_STRUCT_BYTES(engine->gameDataSize));
-        dma3_fill(0, gGameplay->gameEngineData, engine->gameDataSize, 0x20, 0x200);
+        // Clear all of it: on a 64-bit host the struct is larger than
+        // gameDataSize, and its later fields would otherwise start as heap junk.
+        dma3_fill(0, gGameplay->gameEngineData, GBA_STRUCT_BYTES(engine->gameDataSize), 0x20, 0x200);
     } else {
         gGameplay->gameEngineData = NULL;
     }

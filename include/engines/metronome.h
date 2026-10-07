@@ -2,28 +2,36 @@
 
 #include "global.h"
 #include "engines.h"
+#include "src/affine_sprite.h"
 
 #include "games/metronome/graphics/metronome_graphics.h"
 
 // Engine Types:
+// Offsets recovered from metronome_engine_start and its neighbours; the
+// comments give the GBA offsets. The pointer at 0x04 makes everything after
+// it sit later on a 64-bit host.
 struct MetronomeEngineData {
-    u8 pad2[0xa];
-    u16 unk_a;
-    u8 unk_c;
-    u8 pad5[0x3];
-    s16 unk_10;
-    s16 unk_12;
-    s16 unk_14;
-    s16 unk_16[3];
-    u8 pad[0x6];
-    s16 unk_22;
-    s16 unk_24;
-    s16 unk_26;
-    u16 score; // 28
-    u8 unk_2a;
-    u8 unk_2b;
-    u16 unk_2c;
-    u8 pad4[0x2];
+    u8  version;                    // 0x00
+    struct AffineSprite *pendulum;  // 0x04
+    s16 unk_8;                      // 0x08  swing amplitude (0x140)
+    u16 unk_a;                      // 0x0A  swing phase, interpolated by event 00
+    u8  unk_c;                      // 0x0C
+    s16 unk_e;                      // 0x0E  bird marker sprite
+    s16 unk_10;                     // 0x10  timing meter sprite
+    s16 unk_12;                     // 0x12  bird sprite
+    s16 unk_14;                     // 0x14  score counter sprite
+    s16 unk_16[3];                  // 0x16  score digit sprites
+    s16 faces[2];                   // 0x1C
+    u8  faceStates[2];              // 0x20
+    s16 unk_22;                     // 0x22  text sprites
+    s16 unk_24;                     // 0x24
+    s16 unk_26;                     // 0x26
+    u16 score;                      // 0x28
+    u8  unk_2a;                     // 0x2A
+    u8  unk_2b;
+    u16 unk_2c;                     // 0x2C  countdown shown by the score digits
+    u8  unk_2e;                     // 0x2E  toggled by L
+    u8  unk_2f;                     // 0x2F  toggled by R: timing meter visible
 };
 
 struct MetronomeCue {
@@ -57,12 +65,12 @@ extern void metronome_init_gfx2(void); // Graphics Init. 2
 extern void metronome_init_gfx1(void); // Graphics Init. 1
 extern void metronome_engine_start(u32 version); // Game Engine Start
 extern void func_08035780(); // Engine Event 00 (?)
-extern void func_080357c4(); // Engine Event 01 (?)
+extern void func_080357c4(u32 sound); // Engine Event 01 (Beat)
 extern void func_080358b0(); // Engine Event 02 (?)
 extern void func_080358d8(); // Engine Event 03 (?)
 extern void func_080358f8(); // Engine Event 04 (STUB)
 // extern ? func_080358fc(?);
-// extern ? func_080359e8(?);
+extern void func_080359e8(void); // Show the countdown
 extern void metronome_engine_update(void); // Game Engine Update
 extern void metronome_engine_stop(void); // Game Engine Stop
 extern void metronome_cue_spawn(struct Cue *, struct MetronomeCue *); // Cue - Spawn

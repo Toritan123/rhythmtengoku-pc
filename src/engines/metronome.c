@@ -37,6 +37,60 @@ void metronome_init_gfx1(void) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/metronome/asm_08035488.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08035488] Game Engine Start
+void metronome_engine_start(u32 version) {
+    struct Animation *text;
+    u32 i;
+
+    gMetronome->version = version;
+    metronome_init_gfx1();
+    scene_show_obj_layer();
+
+    gMetronome->pendulum = create_affine_sprite(anim_metronome_pendulum, 0, 0x78, 0x90, 0x4800,
+                                                0x100, 0, 1, 0, 0, 0);
+    gMetronome->unk_8 = 0x140;
+    gMetronome->unk_a = 0;
+
+    gMetronome->unk_e = sprite_create(gSpriteHandler, anim_metronome_bird_marker, 0, 0x78, 0x20, 0x480a, 1, 0x7f, 0);
+    gMetronome->unk_10 = sprite_create(gSpriteHandler, anim_metronome_timing_meter, 5, 0x78, 0x20, 0x480a, 0, 0, 0);
+    gMetronome->unk_12 = sprite_create(gSpriteHandler, anim_metronome_bird, 0, 0x78, 0x20, 0x480a, 1, 0x7f, 0);
+    gMetronome->unk_14 = sprite_create(gSpriteHandler, anim_metronome_score_counter, 0, 0xd8, 0x14, 0x479d, 0, 0, 0x8000);
+    for (i = 0; i < 3; i++) {
+        gMetronome->unk_16[i] = sprite_create(gSpriteHandler, anim_metronome_score_num, 0, 0xd8, 0x14, 0x479c, 0, 0x7f, 0x8000);
+    }
+
+    gMetronome->faces[0] = sprite_create(gSpriteHandler, anim_metronome_face_l, 0, 1000, 1000, 0x4864, 0, 0, 0);
+    gMetronome->faces[1] = sprite_create(gSpriteHandler, anim_metronome_face_r, 0, 1000, 1000, 0x4864, 0, 0, 0);
+    for (i = 0; i < 2; i++) {
+        gMetronome->faceStates[i] = 0;
+    }
+
+    dma3_fill(0, (void *)(VRAMBase + 0x16000), 0x1800, 0x20, 0x200);
+
+    text = text_printer_get_unformatted_line_anim(get_current_mem_id(), 0, 0x18, 0, D_0805a694, 1, 0, 0x100);
+    gMetronome->unk_22 = sprite_create(gSpriteHandler, text, 0, 0x78, 0x40, 0x480a, 0, 0, 0x8000);
+    sprite_set_base_palette(gSpriteHandler, gMetronome->unk_22, 4);
+
+    text = text_printer_get_unformatted_line_anim(get_current_mem_id(), 0, 0x1a, 0, D_0805a6c0, 1, 2, 0x100);
+    gMetronome->unk_24 = sprite_create(gSpriteHandler, text, 0, 0x78, 0x54, 0x480a, 0, 0, 0x8000);
+    sprite_set_base_palette(gSpriteHandler, gMetronome->unk_24, 4);
+
+    text = text_printer_get_unformatted_line_anim(get_current_mem_id(), 0, 0x1c, 0, D_0805a6c8, 1, 0, 0x100);
+    gMetronome->unk_26 = sprite_create(gSpriteHandler, text, 0, 0x78, 0x40, 0x480a, 0, 0, 0x8000);
+    sprite_set_base_palette(gSpriteHandler, gMetronome->unk_26, 4);
+
+    gMetronome->score = 0;
+    gMetronome->unk_2a = 0;
+    gMetronome->unk_2c = 0x20;
+    gMetronome->unk_2e = 0;
+    gMetronome->unk_2f = 0;
+    func_080359e8();
+
+    gameplay_set_input_buttons(A_BUTTON, 0);
+    set_next_scene(&scene_results_ver_score);
+}
 #endif
 
 void func_08035780(u32 arg0) {
@@ -56,6 +110,49 @@ void func_08035780(u32 arg0) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/metronome/asm_080357c4.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_080357c4] Engine Event 01 (Beat)
+//
+// Resets the bird marker, counts the countdown down while it is shown, and
+// sends back whichever face (alternating with unk_c) was put out.
+void func_080357c4(u32 sound) {
+    struct MetronomeUnknownMovementData *move;
+    s16 face;
+    u32 i;
+
+    sprite_set_anim_cel(gSpriteHandler, gMetronome->unk_e, 0);
+    if (sound) {
+        play_sound(&s_metro_count1_seqData);
+    }
+
+    if ((gMetronome->unk_2c != 0) && (gMetronome->unk_2a != 0)) {
+        gMetronome->unk_2c--;
+        func_080359e8();
+        if (gMetronome->unk_2c == 0) {
+            play_sound(&s_metro_tin_seqData);
+        } else if (gMetronome->unk_2c <= 3) {
+            play_sound(&s_metro_count2_seqData);
+        }
+    }
+
+    i = (gMetronome->unk_c + 1) & 1;
+    face = gMetronome->faces[i];
+
+    switch (gMetronome->faceStates[i]) {
+        case 1:
+            move = &D_089e5890[i];
+            break;
+        case 2:
+            move = &D_089e58a0[i];
+            break;
+        default:
+            return;
+    }
+
+    scene_move_sprite_sine_vel(face, 1, move->initX, move->initY, ticks_to_frames(0xc));
+    gMetronome->faceStates[i] = 0;
+}
 #endif
 
 void func_080358b0(void) {
@@ -115,6 +212,27 @@ void func_080359e8(void) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/metronome/asm_08035ab0.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08035ab0] Game Engine Update
+//
+// Swings the pendulum; L and R flip two debug toggles, R showing the timing
+// meter.
+void metronome_engine_update(void) {
+    s32 swing;
+
+    swing = gMetronome->unk_8 * gSineTable[((s16)gMetronome->unk_a + 0x200) & 0x7ff];
+    affine_sprite_set_rotation(gMetronome->pendulum, (swing << 8) >> 16);
+
+    if (D_03004afc & LEFT_SHOULDER_BUTTON) {
+        gMetronome->unk_2e ^= 1;
+    }
+    if (D_03004afc & RIGHT_SHOULDER_BUTTON) {
+        gMetronome->unk_2f ^= 1;
+    }
+
+    sprite_set_visible(gSpriteHandler, gMetronome->unk_10, gMetronome->unk_2f);
+}
 #endif
 
 void metronome_engine_stop(void) {  
