@@ -65,13 +65,13 @@ extern void tram_pauline_init_gfx3(void); // Graphics Init. 3
 extern void tram_pauline_init_gfx2(void); // Graphics Init. 2
 extern void tram_pauline_init_gfx1(void); // Graphics Init. 1
 extern void tram_pauline_engine_start(u32 version); // Game Engine Start
-extern void func_08040064(); // Engine Event 0x00 (?)
-extern void func_080400d0(); // Engine Event 0x01 (?)
-// extern ? func_0804016c(?);
-// extern ? func_08040314(?);
+extern void func_08040064(u32 fox); // Engine Event 0x00 (Fox Lands)
+extern void func_080400d0(u32 arg); // Engine Event 0x01 (Fox Jumps)
+extern void func_0804016c(u8 fox); // Fox transforms (hit)
+extern void func_08040314(u8 fox); // Fox half-transforms (barely)
 extern void func_08040434(); // Engine Event 0x02 (?)
-// extern ? func_080404c4(?);
-// extern ? func_08040718(?);
+extern void func_080404c4(u8 fox, u8 mode); // Flex the fox's trampoline
+extern void func_08040718(void); // Move the foxes
 extern void tram_pauline_engine_update(void); // Game Engine Update
 extern void tram_pauline_engine_stop(void); // Game Engine Stop
 extern void tram_pauline_cue_spawn(struct Cue *, struct TramPaulineCue *, u32 character); // Cue - Spawn

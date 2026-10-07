@@ -165,9 +165,13 @@ static void render_text_bg(int bgn, int prio)
             int tile_px = tx % 8;
 
             // Map entry: pick the right 32×32 screen based on position
+            // Screen blocks are laid out consecutively: 64x32 is SC0 SC1 side
+            // by side, 32x64 is SC0 above SC1 (the next 2 KB, not the third
+            // block), and only 64x64 uses all four.
             int screen = 0;
             if (mapsize == 1 || mapsize == 3) screen |= (tile_col_in_map >= 32) ? 1 : 0;
-            if (mapsize == 2 || mapsize == 3) screen |= (tile_row_in_map >= 32) ? 2 : 0;
+            if (mapsize == 2) screen |= (tile_row_in_map >= 32) ? 1 : 0;
+            if (mapsize == 3) screen |= (tile_row_in_map >= 32) ? 2 : 0;
 
             int local_col = tile_col_in_map & 31;
             int local_row = tile_row_in_map & 31;
