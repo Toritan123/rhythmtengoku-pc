@@ -548,6 +548,56 @@ void play_drumtech_seq_from_beatscript(s32 args) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/night_walk/asm_0802ab7c.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0802ab7c] Play DrumTech Note
+//
+// 0xfffe is a rest; 0xffff hands (pitch << 16 | volume) to runNoteFunc.
+// Anything else plays drumBank[drumID] on its own sound player, scaled by
+// the note and controller volumes, and arms that player's stop timer.
+//
+// One deliberate difference: a drum with soundPlayerID -1 (toss_boys has
+// one) makes the original read sound_player_table[-1] -- the last words of
+// the table before it in ROM -- and stop whatever that points at, then
+// write the duration to the byte before the controller. Both are outside
+// the objects on PC, so for a negative ID they are skipped; the note itself
+// still plays through play_sound, as in the original.
+struct SoundPlayer *play_drumtech_note(u32 drumID, u32 volume, s32 pitch) {
+    const struct DrumTechInstrument *drum;
+    struct SoundPlayer *player;
+
+    if (drumID == DRUMTECH_NOTE_REST) {
+        return NULL;
+    }
+
+    if (drumID == DRUMTECH_NOTE_FUNC) {
+        if (D_03001568->runNoteFunc != NULL) {
+            D_03001568->runNoteFunc((pitch << 16) | volume);
+        }
+        return NULL;
+    }
+
+    drum = &D_03001568->drumBank[drumID];
+
+    if (drum->soundPlayerID >= 0) {
+        stop_soundplayer(sound_player_table[drum->soundPlayerID].soundPlayer);
+    }
+
+    if (drum->soundPlayerID < 0) {
+        player = play_sound(drum->sound);
+    } else {
+        player = play_sound_in_player(drum->soundPlayerID, drum->sound);
+    }
+
+    set_soundplayer_volume(player, (u32)(drum->volume * volume * D_03001568->volume) >> 16);
+    set_soundplayer_pitch(player, (s16)((u16)drum->pitch + pitch));
+
+    if (drum->soundPlayerID >= 0) {
+        D_03001568->soundTimers[drum->soundPlayerID] = drum->duration;
+    }
+
+    return player;
+}
 #endif
 
 
