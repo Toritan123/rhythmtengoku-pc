@@ -54,6 +54,66 @@ void tap_trial_play_girl_action(u32 action) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/tap_trial/asm_0803db30.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803db30] Engine Event 0x00 (Play Monkey Action)
+//
+// Like tap_trial_play_girl_action, but for both monkeys at once, and it also
+// plays the action's sound. Most actions then hand on to the girl.
+void tap_trial_play_monkey_action(u32 action) {
+    struct TapTrialAction *monkeyAction = &tap_trial_monkey_action_table[gTapTrial->version][action];
+    struct SoundPlayer *player;
+    u32 jump = FALSE;
+    u32 speed;
+    s32 x;
+    u32 i;
+
+    if (monkeyAction->animID >= 0) {
+        for (i = 0; i < 2; i++) {
+            sprite_set_anim(gSpriteHandler, gTapTrial->unk_12[i],
+                            tap_trial_get_anim(monkeyAction->animID),
+                            monkeyAction->playbackArg1, monkeyAction->playbackArg2,
+                            monkeyAction->playbackArg3, monkeyAction->playbackArg4);
+        }
+    }
+
+    if (action == 10) {
+        jump = TRUE;
+        schedule_function_call(get_current_mem_id(), tap_trial_play_monkey_action, 0xd, ticks_to_frames(0x6));
+    }
+
+    if (action == 11) {
+        jump = TRUE;
+    }
+
+    if (jump) {
+        for (i = 0; i < 2; i++) {
+            x = sprite_get_data(gSpriteHandler, gTapTrial->unk_12[i], SPRITE_DATA_X_POS);
+            scene_move_sprite_sine_wave(gTapTrial->unk_12[i], (s16)x, 0x73, 0x28, ticks_to_frames(0x18));
+        }
+    }
+
+    gTapTrial->unk_16 = ticks_to_frames(monkeyAction->duration);
+
+    if (monkeyAction->sfx != NULL) {
+        stop_soundplayer(sound_player_table[monkeyAction->sfx->soundPlayer].soundPlayer);
+        player = play_sound(monkeyAction->sfx);
+        set_soundplayer_volume(player, monkeyAction->sfxVolume);
+        set_soundplayer_pitch(player, monkeyAction->sfxPitch);
+        // The pitch is read back as unsigned here, as in the original.
+        speed = ((get_beatscript_tempo() << 8) / 120) + ((u16)monkeyAction->sfxPitch / 0x600);
+        set_soundplayer_speed(player, (u16)speed);
+    }
+
+    switch (action) {
+        case 4: case 5: case 6: case 7:
+        case 12: case 14: case 15: case 16:
+            break;
+        default:
+            tap_trial_play_girl_action(action);
+            break;
+    }
+}
 #endif
 
 void tap_trial_init_gfx3(void) {
@@ -432,6 +492,23 @@ void func_0803e644(void) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/tap_trial/asm_0803e6d0.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803e6d0] Input Event
+//
+// A tap with no cue to meet. Unless the girl's current action is 9-14 she
+// still taps, with the hand-clap sound replacing the tap sound; either way
+// unk_1e is bumped, as tap_trial_cue_miss does.
+void tap_trial_input_event(u32 pressed, u32 released) {
+    if ((gTapTrial->unk_10 > 0xe) || (gTapTrial->unk_10 < 9)) {
+        func_0803e644();
+        stop_sound(&s_f_tap_tap_seqData);
+        play_sound(&s_tebyoushi_pati_seqData);
+    }
+
+    gTapTrial->unk_1e++;
+    func_0803e420(100);
+}
 #endif
 
 void tap_trial_common_beat_animation(void) {
