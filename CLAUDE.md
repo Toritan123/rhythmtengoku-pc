@@ -140,10 +140,17 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
 
 ## State (measured 2026-10-07)
 
-- **306 functions exist only as a no-op stub**: named engine/system
-  functions, unnamed `func_08XXXXXX`, and 23 scene/script data entries.
+- **264 functions exist only as a no-op stub**, all engine code apart from
+  the intentional IWRAM-blob stubs (`*_rom`, `func_08000a00`,
+  `fast_blend_*`, `__umodsi3`, `midi_directsound_init` -- each has a PC
+  replacement). No scene is a stub any more.
+- Per engine (2026-10-07): drum_intro 63, drum_studio 48 (the drum lessons
+  crash in func_080277b8 until it is done), ninja_bodyguard 31, bunny_hop 23,
+  toss_boys 23, showtime 21, mannequin_factory 21, mechanical_horse 15.
+  Count with the `comm` list against each engine's asm directory.
 - Done: `rhythm_tweezers`, `rhythm_test`, `clappy_trio`, `samurai_slice`,
-  `rat_race` (structs recovered for the last two).
+  `rat_race`, `tap_trial`, `metronome`, `tram_and_pauline`, `polyrhythm`,
+  `quiz_show`, `sick_beats`, plus DrumTech's `play_drumtech_note`.
 - **"Done" means no stub left for that engine — check it with the `comm`
   list above, filtered by the engine's address range, not by reading the
   .c file for `#else` blocks.** rat_race was reported done on 2026-09-23
@@ -152,10 +159,6 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
   never attributed to the engine. A quick per-file check: an
   `#ifndef PLATFORM_PC` / `#include "asm/..."` / `#endif` with no `#else`
   is a function with no PC body *unless* a NONMATCHING C version follows.
-- Engines needing 2 or fewer: `mechanical_horse`, `metronome`, `tap_trial`,
-  `tram_pauline` (2 each); `quiz_show`, `drum_studio` (1 each).
-- Largest remaining: `drum_intro` 19, `toss_boys` / `mannequin` /
-  `bunny_hop` 14 each.
 - **To turn a raw `D_030053c0 + 0xNNN` into a field name, anchor on a field's
   own absolute address, not on another field's offset comment.** Working back
   from `localVariables // [D_030053c0 + 0x160]` put `musicVolume` at 0x198 and
@@ -202,6 +205,28 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
   `BASEROM_SHA1` in the Makefile. Read ROM bytes from it (offset = address
   - 0x08000000) instead of guessing table contents; Shift-JIS data in the
   .c files does not show up in a plain `grep -r`.
+- **Things the 2026-10-07 pass found, worth checking first next time:**
+  - `PC_GAME_STUB` scenes in platform/game_globals.c bounce straight back to
+    game select. 7 real games hid there (Rap Men, Sick Beats, Remixes
+    2/4/6/7, Polyrhythm 2); the 16 left are names nothing references.
+  - `tools/bs2c.py` must read .bs as latin-1, emit `text` blocks, ignore '@'
+    inside strings (Shift-JIS trail byte 0x40), and emit raw `.byte/.hword`
+    script blocks. Regenerating the older 80 .bs.c changes 8 of them for
+    unrelated reasons -- regenerate only what you add.
+  - Raw GBA offsets in C macros: `GLOBAL_VARIABLE` was `&D_030053c0 + 0x24`
+    and every `switch INT8, GLOBAL_VARIABLE` (random branches) matched no
+    case. Grep for `+ 0x` against a struct base whenever a branch never fires.
+  - The Makefile silences -Wimplicit-function-declaration. A missing
+    prototype truncated create_affine_sprite's pointer (metronome crash).
+    Rebuild with `EXTRA_CFLAGS=-Wimplicit-function-declaration` and check any
+    implicitly called function that returns a pointer.
+  - PPU: 32x64 maps read their lower half from the wrong screen block; HBlank
+    palette DMA (gradient backdrops) is emulated via ppu_set_hblank_palette.
+  - Engine data is allocated as GBA_STRUCT_BYTES and now zeroed in full.
+  - `RTPC_AUDIO_DUMP=<wav>` (not headless) proves sound: drum_studio was RMS 0
+    before play_drumtech_note existed.
+  - "NOT TRANSLATED" placeholders are strong symbols and hide from the stub
+    count: `grep -rn "NOT TRANSLATED" src`.
 - **Data tables the ROM leaves unterminated** break on PC, because the GBA got
   away with whatever happened to follow in ROM. `rat_race_marking_criteria`
   was one (its .bs says `@! No criteria terminator`); `tools/bs2c.py` now
