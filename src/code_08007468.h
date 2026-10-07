@@ -107,8 +107,8 @@ extern u32 start_new_texture_loader(u16 memID, struct CompressedData **textureLi
 
 /* ? */
 extern s32 clamp_int32(s32 var, s32 min, s32 max); // Signed Clamp
-// extern ? func_080087e8(?);
-// extern ? func_08008910(?);
+extern void func_080087e8(s32 layer, s32 x, s32 y, s32 width, s32 height, s32 rotation, u16 centerX, u16 centerY, s32 mode);
+extern void func_08008910(s32 layer, s32 x, s32 y, s32 width, s32 height, u32 rotation);
 // extern ? func_08008938(?);
 // extern ? func_08008968(?);
 // extern ? func_08008990(?);

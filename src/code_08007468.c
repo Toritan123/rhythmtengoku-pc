@@ -1313,10 +1313,52 @@ s32 clamp_int32(s32 var, s32 min, s32 max) {
 
 #ifndef PLATFORM_PC
 #include "asm/code_08007468/asm_080087e8.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_080087e8] Scale and rotate an affine BG
+//
+// Fits the 240x160 screen to a width x height window (8.8 fixed) rotated by
+// `rotation`, turning about (centerX, centerY), with the window's centre at
+// (x, y). mode 0 takes the angle from the 256-step tables, anything else
+// from gSineTable (2048 steps). Only BG2 and BG3 can be affine.
+void func_080087e8(s32 layer, s32 x, s32 y, s32 width, s32 height, s32 rotation,
+                   u16 centerX, u16 centerY, s32 mode) {
+    s32 sin, cos;
+    s32 offX, offY;
+    u16 pa, pb, pc, pd;
+
+    if ((u32)(layer - 2) > 1) return;
+
+    if (mode == 0) {
+        sin = D_08935fcc[rotation & 0xff];
+        cos = D_089361cc[rotation & 0xff];
+    } else {
+        sin = gSineTable[rotation & 0x7ff];
+        cos = gSineTable[(rotation + 0x200) & 0x7ff];
+    }
+
+    offX = -fast_divsi3((s16)centerX * width, 0xf0);
+    offY = -fast_divsi3((s16)centerY * height, 0xa0);
+
+    pa = fast_divsi3((width * cos) >> 8, 0xf0);
+    pc = fast_divsi3((width * sin) >> 8, 0xf0);
+    pb = -fast_divsi3((height * sin) >> 8, 0xa0);
+    pd = fast_divsi3((height * cos) >> 8, 0xa0);
+
+    func_08006e30(layer, pa, pb, pc, pd,
+                  (((offX * cos) - (offY * sin)) >> 8) + x,
+                  (((offX * sin) + (offY * cos)) >> 8) + y);
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/code_08007468/asm_08008910.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08008910] Scale and rotate an affine BG about the screen centre
+void func_08008910(s32 layer, s32 x, s32 y, s32 width, s32 height, u32 rotation) {
+    func_080087e8(layer, x, y, width, height, (u8)rotation, 0x78, 0x50, 0);
+}
 #endif
 
 #ifndef PLATFORM_PC
