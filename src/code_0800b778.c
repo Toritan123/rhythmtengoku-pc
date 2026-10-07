@@ -1,6 +1,7 @@
 #include "global.h"
 #ifdef PLATFORM_PC
 #include <stdio.h>
+#include <string.h>
 #endif
 #include "code_0800b778.h"
 #include "syscall.h"
@@ -2128,6 +2129,130 @@ void func_0800ee9c(void *objPalette) {
 
 #ifndef PLATFORM_PC
 #include "asm/code_0800b778/asm_0800eebc.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0800eebc] OBJ Font Format Parser
+//
+// The filter scene_create_obj_font_printer installs on every OBJ font it
+// makes, so every string drawn through one passes here first. It was a weak
+// stub that wrote nothing, which left the parsed buffer empty: those fonts
+// printed no glyphs at all (the Rat Race speech bubbles were the visible case).
+//
+// Shift-JIS pairs are copied through. ASCII is widened to the full-width
+// glyphs the OBJ font has: A-Z become full-width a-z, and _ ! ? , - their
+// full-width forms; other ASCII is copied as is. '@' starts a two-character
+// escape:
+//   @0-@9  insert D_030053c0.strings[n] (func_0800f070)
+//   @n     no output
+//   @b     resume output
+//   @f     suppress output until @b or @m
+//   @m     resume output -- the assembly first clears the flag and then sets
+//          it again unless a register that is always zero here says
+//          otherwise, so it behaves exactly like @b
+// While output is suppressed everything is skipped except further escapes.
+void func_0800eebc(char *dest, const char *src) {
+    // r8 in the assembly: set to 0 and never written again.
+    const u32 alt = FALSE;
+    u32 output = TRUE;
+    const char *punct;
+    const char *insert;
+    char c;
+
+    while ((c = *src) != '\0') {
+        if ((s8)c < 0) {
+            // A Shift-JIS run, two bytes at a time for as long as the next
+            // byte is another lead byte.
+            if (output) {
+                do {
+                    *dest++ = *src++;
+                    *dest++ = *src++;
+                } while ((s8)*src < 0);
+            } else {
+                do {
+                    src += 2;
+                } while ((s8)*src < 0);
+            }
+            continue;
+        }
+
+        if ((u8)(c - 'A') <= 'Z' - 'A') {
+            if (output) {
+                do {
+                    *dest++ = D_089ccc94[(*src - 'A') * 2];
+                    *dest++ = D_089ccc94[(*src - 'A') * 2 + 1];
+                    src++;
+                } while ((u8)(*src - 'A') <= 'Z' - 'A');
+            } else {
+                do {
+                    src++;
+                } while ((u8)(*src - 'A') <= 'Z' - 'A');
+            }
+            continue;
+        }
+
+        punct = NULL;
+        switch (c) {
+            case '@':
+                switch (src[1]) {
+                    case 'b':
+                        output = TRUE;
+                        break;
+                    case 'f':
+                        output = (alt != FALSE);
+                        break;
+                    case 'm':
+                        output = FALSE;
+                        if (!alt) output = TRUE;
+                        break;
+                    case 'n':
+                        if (output) {
+                            *dest = '\0';
+                            dest += strlen(dest);
+                        }
+                        break;
+                    default:
+                        if ((src[1] >= '0') && (src[1] <= '9') && output) {
+                            *dest = '\0';
+                            insert = D_030053c0.strings[src[1] - '0'];
+                            if (insert != NULL) strcat(dest, insert);
+                            dest += strlen(dest);
+                        }
+                        break;
+                }
+                src += 2;
+                continue;
+
+            case '$':
+                // Same as @n: two characters, no output.
+                if (output) {
+                    *dest = '\0';
+                    dest += strlen(dest);
+                }
+                src += 2;
+                continue;
+
+            case '_': punct = D_0804f370; break;
+            case '!': punct = D_0804f374; break;
+            case '?': punct = D_0804f378; break;
+            case ',': punct = D_0804f37c; break;
+            case '-': punct = D_0804f380; break;
+
+            default:
+                if (output) *dest++ = c;
+                src++;
+                continue;
+        }
+
+        if (output) {
+            *dest = '\0';
+            strcat(dest, punct);
+            dest += 2;
+        }
+        src++;
+    }
+
+    *dest = '\0';
+}
 #endif
 
 

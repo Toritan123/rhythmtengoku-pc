@@ -34,9 +34,10 @@ struct RatRacePlate {
 
 // Field offsets recovered from the engine's own assembly
 // (asm/engines/rat_race/). sizeof() is 0x120 on the GBA, as the placeholder
-// this replaces asserted; on a 64-bit host it grows by the one pointer at
-// 0x004, which shifts every offset below it by four -- so do not reuse the
-// raw numbers in scripts or tables.
+// this replaces asserted. On a 64-bit host the pointer at 0x004 moves to 8
+// for alignment and is 8 bytes wide, so everything after it sits 8 bytes
+// later (and unk0E8, also a pointer, adds more) -- do not reuse the raw
+// numbers in scripts or tables.
 struct RatRaceEngineData {
     u8  version;                                // 0x000
     u8  unk001[3];
@@ -89,7 +90,7 @@ struct RatRaceEngineData {
     u16 unk0E2;                                 // 0x0E2  sign hold timer
     s16 unk0E4;                                 // 0x0E4  shake amount after a collision
     u8  unk0E6[2];
-    s32 unk0E8;                                 // 0x0E8
+    struct SongHeader *unk0E8;                  // 0x0E8  sound for the next sign change (event 10)
     struct RatRacePlate plates[6];              // 0x0EC
     u8  unk11C;                                 // 0x11C
     u8  unk11D;                                 // 0x11D
@@ -125,23 +126,23 @@ extern void rat_race_init_gfx2(void); // Graphics Init. 2
 extern void rat_race_init_gfx1(void); // Graphics Init. 1
 extern void rat_race_engine_start(u32 version); // Game Engine Start
 extern void rat_race_engine_event_stub(); // Engine Event 00 (STUB)
-extern void func_0803a158(); // Engine Event 02 (?)
+extern void func_0803a158(u32 mode); // Engine Event 02 (Set the Track Mode)
 extern void func_0803a164(void); // Decay the run speed
 extern void func_0803a198(void); // Advance the track
-extern void func_0803a1d4(); // Engine Event 09 (?)
-extern void func_0803a1e4(); // Engine Event 0A (?)
-extern void func_0803a1f8(); // Engine Event 03 (?)
-extern void func_0803a204(); // Engine Event 04 (?)
-// extern ? func_0803a230(?);
-extern void func_0803a2a8(); // Engine Event 06 (?)
-extern void func_0803a350(); // Engine Event 07 (?)
-extern void func_0803a3b8(); // Engine Event 08 (?)
+extern void func_0803a1d4(u32 boost); // Engine Event 09 (Set the Next Speed Boost)
+extern void func_0803a1e4(void); // Engine Event 0A (Fill the Speed Budget)
+extern void func_0803a1f8(s32 volume); // Engine Event 03 (Set the Target Music Volume)
+extern void func_0803a204(void); // Engine Event 04 (Fade the Music to the Target Volume)
+extern void func_0803a230(void *unused, s16 spriteId, const char *string); // Speech bubble opened
+extern void func_0803a2a8(const char *string); // Engine Event 06 (A Rat Speaks)
+extern void func_0803a350(const char *string); // Engine Event 07 (Close the Speech Bubble)
+extern void func_0803a3b8(u32 enable); // Engine Event 08 (Enable the Speech Bubble and Sign)
 extern void func_0803a3c4(void); // Keep the speech bubble over its rat
-extern void func_0803a41c(); // Engine Event 0C (?)
-extern void func_0803a434(); // Engine Event 0F (?)
+extern void func_0803a41c(void); // Engine Event 0C (Release the Player From the Pace Line)
+extern void func_0803a434(void); // Engine Event 0F (Hide the Player Label)
 extern void rat_race_engine_update(void); // Game Engine Update
-extern void func_0803a47c(); // Engine Event 11 (?)
-extern void func_0803a490(); // Engine Event 12 (?)
+extern void func_0803a47c(void); // Engine Event 11 (Stop Letting the Player Start Running)
+extern void func_0803a490(u32 index); // Engine Event 12 (Set the Cue Result Index for Collisions)
 extern void rat_race_engine_stop(void); // Game Engine Stop
 extern s32 func_0803a4a8(u32 kind); // Where a crockery cue starts
 extern void rat_race_cue_spawn_stop(struct Cue *, struct RatRaceCue *, u32 param); // Cue - Spawn (Stop)
@@ -159,13 +160,13 @@ extern void rat_race_common_beat_animation(void); // Common Event 0 (Beat Animat
 extern void rat_race_common_display_text(void); // Common Event 1 (Display Text, Unimplemented)
 extern void rat_race_common_init_tutorial(struct Scene *); // Common Event 2 (Init. Tutorial)
 extern void func_0803a678(void); // Init. the Cat
-extern void func_0803a798(); // Engine Event 05 (?)
+extern void func_0803a798(u32 state); // Engine Event 05 (Set the Cat State)
 extern void func_0803a8e4(void); // Update the cat
-extern void func_0803aa58(); // Engine Event 0B (?)
+extern void func_0803aa58(void); // Engine Event 0B (Bring Up the Goal)
 extern void func_0803aa9c(void); // Scroll the backgrounds, and spot the goal
 extern void func_0803aba4(struct Rat *rat, u32 index); // Init. one Rat
-extern void func_0803ac98(); // Engine Event 0D (?)
-extern void func_0803ad50(); // Engine Event 10 (?)
+extern void func_0803ac98(u32 cel); // Engine Event 0D (Set the Sign)
+extern void func_0803ad50(struct SongHeader *sound); // Engine Event 10 (Set the Sound for the Next Sign Change)
 extern void func_0803ad60(void); // Animate the sign and its shake
 extern void func_0803aef4(void *unused, s16 spriteId, struct Rat *rat); // Rat animation finished
 extern void func_0803b034(u32 gait); // Engine Event 01 (Set the Pack Gait)
@@ -182,6 +183,6 @@ extern void func_0803bb2c(s32 x); // Kick up one dust puff
 extern void func_0803bbd8(struct RatRaceDashParticle *particle); // Scroll one dust puff
 extern void func_0803bc08(void); // Scroll the dust puffs
 extern void func_0803bc40(struct RatRacePlate *plate); // Init. one plate
-extern void func_0803bc98(); // Engine Event 0E (?)
+extern void func_0803bc98(void); // Engine Event 0E (Send In a Plate)
 extern void func_0803bd0c(struct RatRacePlate *plate); // Scroll one plate
 extern void func_0803bd58(void); // Scroll the plates

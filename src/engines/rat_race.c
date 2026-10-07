@@ -160,6 +160,13 @@ void rat_race_engine_event_stub(void) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a158.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a158] Engine Event 02 (Set the Track Mode)
+// 0 holds the pace line still; 1 and 2 let func_0803a198 move it.
+void func_0803a158(u32 mode) {
+    gRatRace->unk01C = mode;
+}
 #endif
 
 #ifndef PLATFORM_PC
@@ -199,34 +206,126 @@ void func_0803a198(void) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a1d4.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a1d4] Engine Event 09 (Set the Next Speed Boost)
+// Read by func_0803b034 the next time the pack starts running.
+void func_0803a1d4(u32 boost) {
+    gRatRace->unk02C = boost;
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a1e4.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a1e4] Engine Event 0A (Fill the Speed Budget)
+void func_0803a1e4(void) {
+    struct RatRaceEngineData *ratRace = gRatRace;
+
+    ratRace->unk024 = 0x10000;
+    ratRace->unk020 = 0x10000;
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a1f8.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a1f8] Engine Event 03 (Set the Target Music Volume)
+void func_0803a1f8(s32 volume) {
+    gRatRace->unk070 = volume;
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a204.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a204] Engine Event 04 (Fade the Music to the Target Volume)
+void func_0803a204(void) {
+    scene_start_integer_interp(1, ticks_to_frames(0xc), &D_030053c0.musicVolume,
+                               D_030053c0.musicVolume, gRatRace->unk070);
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a230.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a230] Speech bubble opened: print its line
+//
+// Sprite callback installed by func_0803a2a8; the callback argument is the
+// string itself, so it travels as a full pointer.
+void func_0803a230(void *unused, s16 spriteId, const char *string) {
+    struct PrintedTextAnim *text;
+
+    func_0800c604(0);
+    delete_bmp_font_obj_text_anim(gRatRace->objFont, gRatRace->textSprite);
+    text = bmp_font_obj_print_c(gRatRace->objFont, string, 1, 0xc);
+    sprite_set_anim(gSpriteHandler, gRatRace->textSprite, (struct Animation *)text, 0, 1, 0, 0);
+    sprite_set_x(gSpriteHandler, gRatRace->textSprite, (s16)gRatRace->textX);
+    sprite_set_playback(gSpriteHandler, gRatRace->bubbleSprite, 0, 0, 0);
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a2a8.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a2a8] Engine Event 06 (A Rat Speaks)
+//
+// The bubble alternates between the two rats ahead of the player, but only
+// when it has closed again (cel 0); a line that arrives mid-bubble reuses it.
+// The text itself is printed by func_0803a230 once the bubble has opened.
+void func_0803a2a8(const char *string) {
+    struct RatRaceEngineData *ratRace = gRatRace;
+    struct Animation *anim;
+
+    if (!ratRace->unk010) return;
+
+    if (sprite_get_anim_cel(gSpriteHandler, ratRace->bubbleSprite) == 0) {
+        gRatRace->unk014 = (gRatRace->unk014 == 0);
+        anim = (gRatRace->unk014 != 0) ? anim_rat_text_bubble_r : anim_rat_text_bubble_l;
+        sprite_set_anim(gSpriteHandler, gRatRace->bubbleSprite, anim, 0, 1, 0x7f, 4);
+    }
+
+    sprite_set_playback(gSpriteHandler, gRatRace->bubbleSprite, 1, 0x7f, 4);
+    sprite_set_callback(gSpriteHandler, gRatRace->bubbleSprite,
+                        (void *)func_0803a230, (uintptr_t)string);
+    sprite_set_visible(gSpriteHandler, gRatRace->bubbleSprite, TRUE);
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a350.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a350] Engine Event 07 (Close the Speech Bubble)
+//
+// Prints the closing string (blank in the script) and plays the bubble
+// backwards to cel 0.
+void func_0803a350(const char *string) {
+    struct RatRaceEngineData *ratRace = gRatRace;
+    struct PrintedTextAnim *text;
+
+    if (!ratRace->unk010) return;
+
+    delete_bmp_font_obj_text_anim(ratRace->objFont, ratRace->textSprite);
+    text = bmp_font_obj_print_c(gRatRace->objFont, string, 1, 0xf);
+    sprite_set_anim(gSpriteHandler, gRatRace->textSprite, (struct Animation *)text, 0, 1, 0, 0);
+    sprite_set_playback(gSpriteHandler, gRatRace->bubbleSprite, -1, 0, 2);
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a3b8.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a3b8] Engine Event 08 (Enable the Speech Bubble and Sign)
+void func_0803a3b8(u32 enable) {
+    gRatRace->unk010 = enable;
+}
 #endif
 
 #ifndef PLATFORM_PC
@@ -249,10 +348,23 @@ void func_0803a3c4(void) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a41c.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a41c] Engine Event 0C (Release the Player From the Pace Line)
+void func_0803a41c(void) {
+    gRatRace->unk0D2 = FALSE;
+    gRatRace->unk0DA = TRUE;
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a434.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a434] Engine Event 0F (Hide the Player Label)
+void func_0803a434(void) {
+    sprite_set_visible(gSpriteHandler, gRatRace->playerLabelSprite, FALSE);
+}
 #endif
 
 #ifndef PLATFORM_PC
@@ -273,10 +385,22 @@ void rat_race_engine_update(void) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a47c.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a47c] Engine Event 11 (Stop Letting the Player Start Running)
+void func_0803a47c(void) {
+    gRatRace->unk11C = FALSE;
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a490.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a490] Engine Event 12 (Set the Cue Result Index for Collisions)
+void func_0803a490(u32 index) {
+    gRatRace->unk11E = index;
+}
 #endif
 
 #ifndef PLATFORM_PC
@@ -504,6 +628,56 @@ void func_0803a678(void) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803a798.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803a798] Engine Event 05 (Set the Cat State)
+//
+// Sets the state func_0803a8e4 animates (3 lowers the cat, 4 looks around,
+// 5 closes the eyes, 6 raises it again) and restarts its clock. Some states
+// also change sprites here, once.
+void func_0803a798(u32 state) {
+    struct RatRaceEngineData *ratRace = gRatRace;
+
+    ratRace->unk080 = 0;
+    ratRace->unk07C = state;
+
+    switch (state) {
+        case 0:
+            // Back to the start: up out of view, eyelids open and hidden, paws away.
+            gRatRace->catX = 0x5000;
+            sprite_set_visible(gSpriteHandler, gRatRace->catEyelidsSprite, FALSE);
+            sprite_set_anim_cel(gSpriteHandler, gRatRace->catEyelidsSprite, 0);
+            sprite_set_visible(gSpriteHandler, gRatRace->catPawSprite, FALSE);
+            sprite_set_visible(gSpriteHandler, gRatRace->catPawMirrorSprite, FALSE);
+            break;
+
+        case 1:
+            // One paw.
+            sprite_set_anim_cel(gSpriteHandler, gRatRace->catPawSprite, 0);
+            sprite_set_playback(gSpriteHandler, gRatRace->catPawSprite, 1, 0x7f, 0);
+            sprite_set_visible(gSpriteHandler, gRatRace->catPawSprite, TRUE);
+            break;
+
+        case 2:
+            // The other paw, with the cat's cry.
+            play_sound(&s_rat_cat_seqData);
+            sprite_set_anim_cel(gSpriteHandler, gRatRace->catPawMirrorSprite, 0);
+            sprite_set_playback(gSpriteHandler, gRatRace->catPawMirrorSprite, 1, 0x7f, 0);
+            sprite_set_visible(gSpriteHandler, gRatRace->catPawMirrorSprite, TRUE);
+            break;
+
+        case 4:
+            gRatRace->catX = 0;
+            break;
+
+        case 5:
+            sprite_set_visible(gSpriteHandler, gRatRace->catEyelidsSprite, TRUE);
+            break;
+
+        default:
+            break;
+    }
+}
 #endif
 
 #ifndef PLATFORM_PC
@@ -566,6 +740,21 @@ void func_0803a8e4(void) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803aa58.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803aa58] Engine Event 0B (Bring Up the Goal)
+//
+// From here layer 0 shows the goal banner instead of the cat; unk0D4 marks
+// where on the track it appeared, and func_0803aa9c scrolls it in.
+void func_0803aa58(void) {
+    struct RatRaceEngineData *ratRace;
+
+    gRatRace->unk0D3 = TRUE;
+    ratRace = gRatRace;
+    ratRace->unk0D4 = ratRace->unk030;
+    scene_set_bg_layer_display(BG_LAYER_0, TRUE, (ratRace->unk030 - ratRace->unk0D4) >> 8, 0,
+                               0, 0x18, 0x4000);
+}
 #endif
 
 #ifndef PLATFORM_PC
@@ -642,10 +831,47 @@ void func_0803aba4(struct Rat *rat, u32 index) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803ac98.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803ac98] Engine Event 0D (Set the Sign)
+//
+// cel 0 swings the sign in if it is not already showing, 1-3 hold it on
+// that light, and 4 starts the hold timer before it swings out. Event 10
+// can name the sound for the next change; it defaults to the signal beep.
+// Cel 3 is silent.
+void func_0803ac98(u32 cel) {
+    struct RatRaceEngineData *ratRace = gRatRace;
+    struct SongHeader *sound = ratRace->unk0E8;
+
+    if (sound == NULL) sound = &s_rat_signal_seqData;
+    ratRace->unk0E8 = NULL;
+
+    if (!ratRace->unk010) return;
+
+    if ((cel == 0) && (!sprite_get_visible(gSpriteHandler, ratRace->trafficLightSprite))) {
+        gRatRace->unk0DE = 1;
+        sprite_set_visible(gSpriteHandler, gRatRace->trafficLightSprite, TRUE);
+        play_sound(sound);
+    } else if (cel <= 3) {
+        gRatRace->unk0DE = 2;
+        if (cel != 3) play_sound(sound);
+    } else if (cel == 4) {
+        gRatRace->unk0E2 = 0;
+        gRatRace->unk0DE = 3;
+    }
+
+    sprite_set_anim_cel(gSpriteHandler, gRatRace->trafficLightSprite, (s8)cel);
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803ad50.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803ad50] Engine Event 10 (Set the Sound for the Next Sign Change)
+void func_0803ad50(struct SongHeader *sound) {
+    gRatRace->unk0E8 = sound;
+}
 #endif
 
 #ifndef PLATFORM_PC
@@ -1273,6 +1499,28 @@ void func_0803bc40(struct RatRacePlate *plate) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/rat_race/asm_0803bc98.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0803bc98] Engine Event 0E (Send In a Plate)
+//
+// Takes the first free plate of six, if any, and starts it at the right
+// edge on one of three random cels.
+void func_0803bc98(void) {
+    struct RatRacePlate *plate = gRatRace->plates;
+    u32 i;
+
+    for (i = 0; plate->active; plate++) {
+        i = (u8)(i + 1);
+        if (i > 5) return;
+    }
+    if (i > 5) return;
+
+    plate->active = TRUE;
+    plate->x = 0x17800;
+    sprite_set_x(gSpriteHandler, plate->sprite, (s16)(plate->x >> 8));
+    sprite_set_visible(gSpriteHandler, plate->sprite, TRUE);
+    sprite_set_anim_cel(gSpriteHandler, plate->sprite, (s8)agb_random(3));
+}
 #endif
 
 #ifndef PLATFORM_PC

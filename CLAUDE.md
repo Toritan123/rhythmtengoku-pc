@@ -138,12 +138,20 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
 `script_studio_*` are data, and comparing against text symbols only reports
 ~200 of them as missing when they are not.
 
-## State (measured 2026-09-23)
+## State (measured 2026-10-07)
 
-- **323 functions exist only as a no-op stub**: named engine/system
+- **306 functions exist only as a no-op stub**: named engine/system
   functions, unnamed `func_08XXXXXX`, and 23 scene/script data entries.
 - Done: `rhythm_tweezers`, `rhythm_test`, `clappy_trio`, `samurai_slice`,
   `rat_race` (structs recovered for the last two).
+- **"Done" means no stub left for that engine — check it with the `comm`
+  list above, filtered by the engine's address range, not by reading the
+  .c file for `#else` blocks.** rat_race was reported done on 2026-09-23
+  while 17 of its engine events (cat, sign, speech bubble, plates, goal,
+  music fade) were still weak stubs; they sat in the global count but were
+  never attributed to the engine. A quick per-file check: an
+  `#ifndef PLATFORM_PC` / `#include "asm/..."` / `#endif` with no `#else`
+  is a function with no PC body *unless* a NONMATCHING C version follows.
 - Engines needing 2 or fewer: `mechanical_horse`, `metronome`, `tap_trial`,
   `tram_pauline` (2 each); `quiz_show`, `drum_studio` (1 each).
 - Largest remaining: `drum_intro` 19, `toss_boys` / `mannequin` /
@@ -183,6 +191,17 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
   visible case. Two display bugs seen while checking this, both pre-existing
   and not text: brown tile garbage on the rhythm_tweezers onion, and the
   yellow "モノラル" label overlapping "ステレオ" in options.
+- **`func_0800eebc` (OBJ font format parser) was a stub until 2026-10-07.**
+  `scene_create_obj_font_printer` installs it on every OBJ font, so every
+  string drawn through such a font came out empty -- rat_race's speech
+  bubbles, marching_orders' bubble, and any other engine/scene in
+  `grep -l scene_create_obj_font_printer src`. If OBJ text is missing,
+  check `textObj->parseString` before the renderer.
+- **The base ROM is on this machine**:
+  `~/Downloads/2462 - Rhythm Tengoku (J)(WRG).gba`, sha1 matches
+  `BASEROM_SHA1` in the Makefile. Read ROM bytes from it (offset = address
+  - 0x08000000) instead of guessing table contents; Shift-JIS data in the
+  .c files does not show up in a plain `grep -r`.
 - **Data tables the ROM leaves unterminated** break on PC, because the GBA got
   away with whatever happened to follow in ROM. `rat_race_marking_criteria`
   was one (its .bs says `@! No criteria terminator`); `tools/bs2c.py` now
