@@ -446,6 +446,45 @@ void func_0800714c() {
 
 #ifndef PLATFORM_PC
 #include "asm/code_080068f8/asm_0800716c.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0800716c] Blend the fade palettes toward a colour
+//
+// Moves every colour of D_030046c0 (all 32 palettes) time/duration of the way
+// to `color`. With a mask, only the palettes whose mask word is non-zero, and
+// within them only the colours whose bit is set, are touched.
+void func_0800716c(u16 color, const u16 *mask, u32 duration, u32 time) {
+    u16 *dst = (u16 *)D_030046c0;
+    s32 progress = (time << 8) / duration;
+    s32 r, g, b, r0, g0, b0;
+    u32 pal, i, bits;
+    u16 *c;
+
+    if (mask == NULL) {
+        fast_blend_pal_to_col(dst, color, dst, 0x200, progress);
+        return;
+    }
+
+    r = color & 0x1f;
+    g = (color >> 5) & 0x1f;
+    b = (color >> 10) & 0x1f;
+
+    for (pal = 0; pal < 32; pal++, dst += 16) {
+        bits = *mask++;
+        if (bits == 0) continue;
+        for (i = 0; i < 16; i++) {
+            if (!((bits >> i) & 1)) continue;
+            c = &dst[i];
+            r0 = *c & 0x1f;
+            g0 = (*c >> 5) & 0x1f;
+            b0 = (*c >> 10) & 0x1f;
+            r0 += ((r - r0) * progress) >> 8;
+            g0 += ((g - g0) * progress) >> 8;
+            b0 += ((b - b0) * progress) >> 8;
+            *c = r0 | (g0 << 5) | (b0 << 10);
+        }
+    }
+}
 #endif
 
 

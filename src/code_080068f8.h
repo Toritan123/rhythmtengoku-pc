@@ -53,7 +53,7 @@ extern void func_08007014(u16 colour); // Fill Palette with Solid Colour
 extern void func_0800703c(u16 time, u16 colour); // Fade From Solid Colour
 extern void func_080070c4(u16 time, u16 colour); // Fade To Solid Colour
 extern void func_0800714c(void); // ? (clear unk854_1 and unk854_3)
-// extern ? func_0800716c(?);
+extern void func_0800716c(u16 color, const u16 *mask, u32 duration, u32 time); // Blend the fade palettes toward a colour
 extern void func_0800724c(void); // Update Palette Transition
 extern void func_08007324(u32 update); // Enable Display Updates
 extern void func_08007344(void *paletteFunc); // Set Palette Mod. Function
