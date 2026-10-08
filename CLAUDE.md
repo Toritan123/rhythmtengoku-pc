@@ -140,26 +140,24 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
 
 ## State (measured 2026-10-08)
 
-- **40 weak stubs are left** (2026-10-08): showtime's engine, the
-  intentional IWRAM-blob stubs (`*_rom`, `func_08000a00`, `fast_blend_*`,
+- **Every engine is translated** (2026-10-08). The weak stubs left are the
+  intentional IWRAM-blob ones (`*_rom`, `func_08000a00`, `fast_blend_*`,
   `__umodsi3`, `midi_directsound_init`, `pc_fast_udivsi3_impl` -- each has
-  a PC replacement), and `func_0803d2c0`..`func_0803d4e0`, which nothing
+  a PC replacement) and `func_0803d2c0`..`func_0803d4e0`, which nothing
   references (orphans in auto_stubs.c, no run-time effect). No scene is a
-  stub any more.
-- Engine still in assembly: showtime (35 functions). Count bare
-  `#include "asm/..."` blocks per file -- the stub list only shows the ones
-  something else references.
+  stub any more. From here the work is checking each game plays right.
 - Done: `rhythm_tweezers`, `rhythm_test`, `clappy_trio`, `samurai_slice`,
   `rat_race`, `tap_trial`, `metronome`, `tram_and_pauline`, `polyrhythm`,
   `quiz_show`, `sick_beats`, `mechanical_horse`, `mannequin_factory`,
   `drum_studio` (lessons), `drum_intro` (Drum Samurai cutscenes,
   tanuki_and_monkey, staff credit intro), `ninja_bodyguard`, `bunny_hop`,
-  `toss_boys`, DrumTech's `play_drumtech_note`,
+  `toss_boys`, `showtime`, DrumTech's `play_drumtech_note`,
   screen fades (`func_0800716c`), gradient backdrops (`func_08004070`).
 - **Cleared end to end under `RTPC_AUTO=4`** (every cue hit, results
   screen reached): tanuki_and_monkey (100.0), rat_race (High Level),
   night_walk, space_dance, staff_credit, ninja_bodyguard/reincarnate,
-  bunny_hop, toss_boys/toss_boys_2/remix_5, bouncy_road (all 4), bon_odori,
+  bunny_hop, toss_boys/toss_boys_2/remix_5, showtime (22/22 = every
+  spawn_cue in its script), bouncy_road (all 4), bon_odori,
   bon_dance, cosmic_dance, clappy_trio, drum_girls_live_unused, the drum
   lessons (with RTPC_AUTO_IDLE=600). Use this as the acceptance test for
   an engine, not "it draws".
@@ -223,6 +221,11 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
   the script write was the only thing that set it.
 - The `*_rom` stubs (`math_sqrt_rom`, `read_sram_fast_rom`, …) are IWRAM blobs
   the GBA copied at run time; they are stubbed **on purpose**, not a backlog.
+- **The PPU did not implement windows or colour effects until 2026-10-08**
+  (`platform/ppu.c`): WIN0/WIN1/OBJ window and BLDMOD alpha/brighten/darken,
+  semi-transparent OBJs. Each pixel keeps its top two layers for that. If a
+  game shows a layer where it should not, or something opaque that should be
+  see-through, check the window and blend registers before the engine.
 - `perfect` crashes intermittently (~1 run in 6), undiagnosed and pre-existing.
 - **`text_printer` draws on PC** (2026-09-23). `text_print_glyph_to_vram_rom`
   (the ARM routine the GBA copies into IWRAM) is translated in C as
@@ -232,8 +235,10 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
   built OBJ tile numbers as `X + (Y + 64) * 32`; the +64 set attr2 bit 11
   (priority) and put text behind BGs -- the options description box was the
   visible case. Two display bugs seen while checking this, both pre-existing
-  and not text: brown tile garbage on the rhythm_tweezers onion, and the
-  yellow "モノラル" label overlapping "ステレオ" in options.
+  and not text: brown tile garbage on the rhythm_tweezers onion (not seen in
+  a screenshot after the PPU window/blend work on 2026-10-08; whether that
+  fixed it is unverified), and the yellow "モノラル" label overlapping
+  "ステレオ" in options.
 - **`func_0800eebc` (OBJ font format parser) was a stub until 2026-10-07.**
   `scene_create_obj_font_printer` installs it on every OBJ font, so every
   string drawn through such a font came out empty -- rat_race's speech
