@@ -238,7 +238,9 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
   and not text: brown tile garbage on the rhythm_tweezers onion (not seen in
   a screenshot after the PPU window/blend work on 2026-10-08; whether that
   fixed it is unverified), and the yellow "モノラル" label overlapping
-  "ステレオ" in options.
+  "ステレオ" in options -- the latter is in the cel data itself
+  (`options_cel006` entries 6-7 place the palette-4 "モノラル" at (20, 0)
+  behind the selected word), so most likely the intended look, not a bug.
 - **`func_0800eebc` (OBJ font format parser) was a stub until 2026-10-07.**
   `scene_create_obj_font_printer` installs it on every OBJ font, so every
   string drawn through such a font came out empty -- rat_race's speech
