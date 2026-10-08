@@ -731,7 +731,8 @@ static int pc_cue_trace(void) {
     }
     return on;
 }
-#define PC_CUE_TRACE(...) do { if (pc_cue_trace()) { fprintf(stderr, "[CUE] " __VA_ARGS__); } } while (0)
+static u32 sPcCueFrame; // gameplay frames, counted in gameplay_update_all_cues
+#define PC_CUE_TRACE(...) do { if (pc_cue_trace()) { fprintf(stderr, "[CUE] %6u ", sPcCueFrame); fprintf(stderr, __VA_ARGS__); } } while (0)
 #else
 #define PC_CUE_TRACE(...)
 #endif
@@ -903,6 +904,8 @@ void gameplay_update_all_cues(void) {
     }
 
 #ifdef PLATFORM_PC
+    sPcCueFrame++;
+
     // RTPC_AUTO=4 (test aid, not in the original): press each live cue's
     // first button so that the input lands on its target frame. Inputs are
     // read before cues update, so a press requested now is judged next frame
@@ -910,6 +913,7 @@ void gameplay_update_all_cues(void) {
     {
         extern int pc_autoplay_enabled(void);
         extern void pc_autoplay_press(unsigned buttons, int holdFrames);
+        extern void pc_autoplay_set_hold(unsigned buttons, int holdFrames);
 
         if (pc_autoplay_enabled()) {
             // A live cue, or play inputs that are open while no text box
@@ -929,12 +933,23 @@ void gameplay_update_all_cues(void) {
                 }
                 buttons &= -buttons; // lowest button only
                 if (filter & 0x8000) {
-                    // Release cue: hold the button so it lets go on time.
+                    // Release cue: hold the button (or keep holding it) so
+                    // that it lets go exactly on the target frame.
                     if (cue->runningTime + 8 == cue->duration) {
-                        pc_autoplay_press(buttons, 8);
+                        pc_autoplay_set_hold(buttons, 8);
                     }
                 } else if (cue->runningTime == cue->duration) {
-                    pc_autoplay_press(buttons, 2);
+                    // An engine that also judges releases of this button
+                    // (rat_race: press to stop, release to run) expects it
+                    // held until the release cue; a quick tap would land a
+                    // stray release and a stray re-press, which it marks as
+                    // getting in the way. Hold for up to 10 s (rat_race
+                    // waits ~5 s); a release cue, or the next press cue for
+                    // the same button, cuts it short.
+                    pc_autoplay_press(buttons, (gGameplay->buttonReleaseFilter & buttons) ? 600 : 2);
+                } else if (cue->runningTime + 2 == cue->duration) {
+                    // Let go first if still held, so the press is an edge.
+                    pc_autoplay_set_hold(buttons, 0);
                 }
             }
         }

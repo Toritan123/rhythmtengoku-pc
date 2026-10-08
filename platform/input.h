@@ -4,7 +4,8 @@
 // RTPC_AUTO=4 (perfect autoplay): TRUE when enabled; the game side requests
 // key presses with pc_autoplay_press, applied from the next REG_KEY update.
 int  pc_autoplay_enabled(void);
-void pc_autoplay_press(unsigned buttons, int holdFrames);
+void pc_autoplay_press(unsigned buttons, int holdFrames);     // hold at least this long
+void pc_autoplay_set_hold(unsigned buttons, int holdFrames);  // hold exactly this long
 
 #include <SDL2/SDL.h>
 #include <stdint.h>

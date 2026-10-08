@@ -45,6 +45,16 @@ void pc_autoplay_press(unsigned buttons, int holdFrames)
     s_autoplay_idle = 0;
 }
 
+void pc_autoplay_set_hold(unsigned buttons, int holdFrames)
+{
+    for (int i = 0; i < 10; i++) {
+        if (buttons & (1u << i)) {
+            s_autoplay_hold[i] = holdFrames;
+        }
+    }
+    s_autoplay_idle = 0;
+}
+
 void input_init(void)
 {
     // All buttons released → REG_KEY = 0x03FF
