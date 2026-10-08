@@ -138,21 +138,25 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
 `script_studio_*` are data, and comparing against text symbols only reports
 ~200 of them as missing when they are not.
 
-## State (measured 2026-10-07)
+## State (measured 2026-10-08)
 
-- **About 180 functions exist only as a no-op stub** (2026-10-08), all engine
+- **117 functions exist only as a no-op stub** (2026-10-08), all engine
   code apart from the intentional IWRAM-blob stubs (`*_rom`, `func_08000a00`,
   `fast_blend_*`, `__umodsi3`, `midi_directsound_init` -- each has a PC
   replacement). No scene is a stub any more.
-- Engines still (partly) in assembly: drum_intro (76 functions, also the
-  tanuki_and_monkey intro), ninja_bodyguard (53), bunny_hop (51), toss_boys
-  (42), showtime (35). Count bare `#include "asm/..."` blocks per file -- the
-  stub list only shows the ones something else references.
+- Engines still (partly) in assembly: ninja_bodyguard (53), bunny_hop (51),
+  toss_boys (42), showtime (35). Count bare `#include "asm/..."` blocks per
+  file -- the stub list only shows the ones something else references.
 - Done: `rhythm_tweezers`, `rhythm_test`, `clappy_trio`, `samurai_slice`,
   `rat_race`, `tap_trial`, `metronome`, `tram_and_pauline`, `polyrhythm`,
   `quiz_show`, `sick_beats`, `mechanical_horse`, `mannequin_factory`,
-  `drum_studio` (lessons), DrumTech's `play_drumtech_note`, screen fades
-  (`func_0800716c`), gradient backdrops (`func_08004070`).
+  `drum_studio` (lessons), `drum_intro` (Drum Samurai cutscenes,
+  tanuki_and_monkey, staff credit intro), DrumTech's `play_drumtech_note`,
+  screen fades (`func_0800716c`), gradient backdrops (`func_08004070`).
+- **Cleared end to end under `RTPC_AUTO=4`** (every cue hit, results
+  screen reached): tanuki_and_monkey (100.0), rat_race (High Level),
+  night_walk, space_dance, staff_credit. Use this as the acceptance test for
+  an engine, not "it draws".
 - **rat_race was fully re-audited against the assembly on 2026-10-08**,
   function by function. The only mismatch left was the release filter in
   engine_start (`gameplay_set_input_buttons(A_BUTTON, A_BUTTON)`; the
@@ -161,7 +165,26 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
   for arguments the assembly passes in a register it set for something
   else just before the call.
 - `RTPC_AUTO=2` taps SELECT every 4 s, which *quits* a drum lesson
-  ("セレクトde中止") -- use `RTPC_AUTO=1` for lessons.
+  ("セレクトde中止") -- use `RTPC_AUTO=1` (or 4) for lessons.
+- **Game labels are resolved by `tools/bs2c.py`, not by
+  `include/beatscript_consts.h`.** The `.set` names inside each `load_*`
+  macro (`EVENT_05`, `CUE_TOM`, `PRINT_TEXT`...) collide between games, and
+  the header keeps the first value it saw: staff_credit ran `PRINT_TEXT` as
+  event 5 (crash), the drum lessons spawned `CUE_TOM` as 3 instead of 5,
+  space_dance `CUE_TURN_RIGHT` as 2 instead of 0. bs2c now tracks
+  `.set`/`.equ` in source order. Older .bs.c files still name labels
+  symbolically where the header value happens to agree; that was checked
+  field by field on 2026-10-08 and only the 20 scripts that differed were
+  regenerated.
+- **bs2c used to split macro args on any whitespace**, dropping everything
+  after the first token of `table + (n * 0xC)` or `(a & 0xFF) | (b << 8)`.
+  That broke tanuki_and_monkey's per-pattern text, power_calligraphy's brush
+  y/state, and packed params in remix_6 / space_dance / cosmic_dance. Fixed;
+  `table + byteOffset` into a local `.word` table is emitted as an element
+  index, since the offset counts 4-byte GBA pointers.
+- `drumtech_drum_bank` entries 44-56 have a NULL sound in the ROM too;
+  `midi_player_play_header` ignores a NULL song on PC (the GBA reads the
+  BIOS area as a header).
 - **"Done" means no stub left for that engine — check it with the `comm`
   list above, filtered by the engine's address range, not by reading the
   .c file for `#else` blocks.** rat_race was reported done on 2026-09-23
@@ -268,7 +291,22 @@ its own job, not a consequence of the offset fix.
 `RTPC_SCENE=<name>` boots straight into a scene (`src/main.c`). Names come from
 `gPcSceneTable` and have **no `scene_` prefix** — `rhythm_tweezers`, not
 `scene_rhythm_tweezers`; an unknown name prints the whole list and exits.
-Combine with `RTPC_AUTO=2` and `RTPC_HEADLESS=1`.
+Combine with `RTPC_AUTO=4` and `RTPC_HEADLESS=1`.
+
+**`RTPC_AUTO=4` plays the cues** (2026-10-08): it presses each live cue's
+button on the target frame, holds buttons the engine also judges on
+release until the release cue, and only taps A (for menus and text) after
+5 s with no live cue and no open play inputs. `RTPC_AUTO=1/2` tap A blindly,
+which in engines that treat an unrelated press as "do it again"
+(tanuki_and_monkey) loops a practice forever and in rat_race costs the rank.
+**`RTPC_CUETRACE=1`** logs every spawn, hit/barely with its offset, miss and
+stray input with a frame number -- a run with 0 misses and 0 strays that
+reaches `scene_results_*` is the strongest evidence available without lldb:
+
+```sh
+RTPC_SAVE=/dev/null RTPC_SCENE=night_walk RTPC_AUTO=4 RTPC_CUETRACE=1 RTPC_TRACE=1 \
+  ./build/macos/rhythmtengoku_pc 2> log.txt &   # kill it after the results scene
+```
 
 **Do not use `RTPC_AUTO=3` to exercise an engine.** It mashes every button, so
 it keeps hitting the A+B+START+SELECT soft-reset combo: the game ping-pongs
