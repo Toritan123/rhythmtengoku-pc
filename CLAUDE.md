@@ -140,17 +140,21 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
 
 ## State (measured 2026-10-07)
 
-- **264 functions exist only as a no-op stub**, all engine code apart from
-  the intentional IWRAM-blob stubs (`*_rom`, `func_08000a00`,
+- **About 180 functions exist only as a no-op stub** (2026-10-08), all engine
+  code apart from the intentional IWRAM-blob stubs (`*_rom`, `func_08000a00`,
   `fast_blend_*`, `__umodsi3`, `midi_directsound_init` -- each has a PC
   replacement). No scene is a stub any more.
-- Per engine (2026-10-07): drum_intro 63, drum_studio 48 (the drum lessons
-  crash in func_080277b8 until it is done), ninja_bodyguard 31, bunny_hop 23,
-  toss_boys 23, showtime 21, mannequin_factory 21, mechanical_horse 15.
-  Count with the `comm` list against each engine's asm directory.
+- Engines still (partly) in assembly: drum_intro (76 functions, also the
+  tanuki_and_monkey intro), ninja_bodyguard (53), bunny_hop (51), toss_boys
+  (42), showtime (35). Count bare `#include "asm/..."` blocks per file -- the
+  stub list only shows the ones something else references.
 - Done: `rhythm_tweezers`, `rhythm_test`, `clappy_trio`, `samurai_slice`,
   `rat_race`, `tap_trial`, `metronome`, `tram_and_pauline`, `polyrhythm`,
-  `quiz_show`, `sick_beats`, plus DrumTech's `play_drumtech_note`.
+  `quiz_show`, `sick_beats`, `mechanical_horse`, `mannequin_factory`,
+  `drum_studio` (lessons), DrumTech's `play_drumtech_note`, screen fades
+  (`func_0800716c`), gradient backdrops (`func_08004070`).
+- `RTPC_AUTO=2` taps SELECT every 4 s, which *quits* a drum lesson
+  ("セレクトde中止") -- use `RTPC_AUTO=1` for lessons.
 - **"Done" means no stub left for that engine — check it with the `comm`
   list above, filtered by the engine's address range, not by reading the
   .c file for `#else` blocks.** rat_race was reported done on 2026-09-23
