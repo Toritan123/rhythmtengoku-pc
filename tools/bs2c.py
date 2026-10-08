@@ -69,15 +69,26 @@ def split_args(s):
     return out
 
 
+OPERATOR_CHARS = "+-*/%|&^<>~"
+
+
 def split_macro_args(s):
     """Macro invocation args: separated by commas *or* whitespace (GNU as),
-    but never inside parentheses."""
+    but never inside parentheses, and not by whitespace next to an operator:
+    GNU as keeps `table + (n * 0xC)` together as one argument. Splitting it
+    there silently dropped the offset (drum_intro's dmi_event0B)."""
     out, depth, cur = [], 0, ""
-    for ch in s:
+    for i, ch in enumerate(s):
         if ch in "([":
             depth += 1
         elif ch in ")]":
             depth -= 1
+        if depth == 0 and ch.isspace():
+            prev = cur.rstrip()[-1:]
+            nxt = s[i:].lstrip()[:1]
+            if (prev and prev in OPERATOR_CHARS) or (nxt and nxt in OPERATOR_CHARS):
+                cur += ch
+                continue
         if depth == 0 and (ch == "," or ch.isspace()):
             if cur.strip():
                 out.append(cur.strip())
@@ -301,6 +312,7 @@ class Emitter:
         SubScene defined in the same .bs was missing its & — 25 of the 49
         remaining failures.  Classify them the same way render_struct does."""
         self.local_objects = set()
+        self.local_ptr_tables = set()   # rendered as arrays of pointers
         for kind, name, items in self.blocks:
             if kind != "struct":
                 continue          # scripts and text render as arrays: they decay
@@ -312,10 +324,18 @@ class Emitter:
                      (len(words) == 2 and len(hwords) == 4)
             if single:
                 self.local_objects.add(name)
+            elif words and not hwords:
+                self.local_ptr_tables.add(name)
 
     def ref(self, tok):
         """Render an operand that the assembler would have stored as an address."""
         t = tok.strip()
+        # `table + byteOffset` into a table of .words: the offset counts
+        # 4-byte GBA pointers. Here the elements are host pointers, so turn
+        # it into an element index.
+        m = re.match(r"^([A-Za-z_]\w*)\s*\+\s*(.+)$", t)
+        if m and m.group(1) in getattr(self, "local_ptr_tables", ()):
+            return f"({m.group(1)} + ({m.group(2)}) / 4)"
         if not re.match(r"^[A-Za-z_]\w*$", t):
             return t
         # A plain object needs its address taken; arrays and functions decay.
@@ -429,7 +449,8 @@ class Emitter:
                 continue    # string contents, not symbol references
             for it in items:
                 for tok in it if isinstance(it, tuple) else (it,):
-                    for w in re.findall(r"[A-Za-z_]\w*", str(tok)):
+                    # \b keeps the tail of a number (the xC in 0xC) out.
+                    for w in re.findall(r"\b[A-Za-z_]\w*", str(tok)):
                         names.add(w)
         return names
 
@@ -534,6 +555,20 @@ def translate(path, macros, root, index=None, consts=None):
         macros = dict(macros)
         macros.update(own)
     in_macro_def = False
+    # Labels the game's load_* macros .set (EVENT_05, PRINT_TEXT, CUE_*...).
+    # They are per game and reuse the same names with different values, so
+    # they cannot be global C #defines: beatscript_consts.h keeps the first
+    # one it saw, and staff_credit's PRINT_TEXT (0) became another game's 5,
+    # an engine event past the end of its table. Resolve them here, in source
+    # order, exactly as the assembler does.
+    labels = {}
+
+    def resolve(v):
+        if not labels:
+            return v
+        return re.sub(r"\b[A-Za-z_]\w*\b",
+                      lambda m: f"({labels[m.group(0)]})" if m.group(0) in labels else m.group(0), v)
+
     # latin-1 keeps every byte: the text blocks hold Shift-JIS strings that
     # must reach the C output unchanged.
     for raw in open(path, encoding="latin-1"):
@@ -552,6 +587,12 @@ def translate(path, macros, root, index=None, consts=None):
 
             if head in (".include", ".section", ".end", ".balign", ".align", "glabel"):
                 continue
+            if head in (".set", ".equ"):
+                a = split_args(rest)
+                if len(a) == 2 and re.match(r"^[A-Za-z_]\w*$", a[0]):
+                    labels[a[0]] = resolve(a[1])
+                continue
+            rest = resolve(rest)
             if head == "script":
                 em.start("script", rest)
             elif head == "struct":

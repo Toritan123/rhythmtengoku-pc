@@ -15,15 +15,6 @@
 extern char drum_lessons_sub_08a7d7a0[];   /* undeclared in any header */
 extern char h[];   /* undeclared in any header */
 extern char w[];   /* undeclared in any header */
-extern char x00[];   /* undeclared in any header */
-extern char x01[];   /* undeclared in any header */
-extern char x03[];   /* undeclared in any header */
-extern char x04[];   /* undeclared in any header */
-extern char x0D[];   /* undeclared in any header */
-extern char x0E[];   /* undeclared in any header */
-extern char x36[];   /* undeclared in any header */
-extern char x4A[];   /* undeclared in any header */
-extern char x5BC[];   /* undeclared in any header */
 extern const struct Beatscript script_drum_lesson_short_5_entry[];
 extern const struct SubScene sub_scene_drum_lesson_short_5;
 extern struct Scene scene_drum_lesson_short_5;
@@ -40,6 +31,12 @@ extern const char D_08060148[];
 extern const struct Beatscript D_08060184[];
 extern const char D_08060220[];
 extern const struct Beatscript D_0806025c[];
+extern const void *D_08a416f8[];
+extern const void *D_08a41708[];
+extern const void *D_08a41718[];
+extern const void *D_08a41728[];
+extern const void *D_08a41738[];
+extern const void *D_08a41748[];
 extern const struct Beatscript script_drum_lesson_short_5_main[];
 
 const struct Beatscript script_drum_lesson_short_5_entry[] = {
@@ -77,18 +74,18 @@ struct Scene scene_drum_lesson_short_5 = {
 const char D_0805fea0[] = "\202\346\202\255\202\253\202\242\202\304\203}\203l\202\265\202\304\202\313\201B\n\215D\202\253\202\310\203^\203C\203~\203\223\203O\202\305\202\307\202\244\202\274\201B\n\211\211\221t\202\360\216~\202\337\202\351\202\306\201A\n\202\250\216\350\226{\202\252\202\253\202\257\202\351\203\210\201I";
 
 const struct Beatscript D_0805fef8[] = {
-    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)(CUE_SNARE_L) },
+    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)((0x02)) },
     { 0x00, 0, NULL, (uintptr_t)(24) },
     { 0x00, 0, NULL, (uintptr_t)(12) },
-    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)(CUE_KICK_R) },
+    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)((0x01)) },
     { 0x00, 0, NULL, (uintptr_t)(12) },
-    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)(CUE_SNARE_L) },
+    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)((0x02)) },
     { 0x00, 0, NULL, (uintptr_t)(24) },
     { 0x0E, 0, NULL, (uintptr_t)(0) },
 };
 
 const struct Beatscript D_0805ff58[] = {
-    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)(CUE_KICK_R) },
+    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)((0x01)) },
     { 0x00, 0, NULL, (uintptr_t)(21) },
     { 0x0E, 0, NULL, (uintptr_t)(0) },
 };
@@ -96,8 +93,8 @@ const struct Beatscript D_0805ff58[] = {
 const char D_0805ff7c[] = "\n\202P\203J\217\212\201A\211\271\202\252\202\323\202\246\202\351\203\210\201I\n\202\355\202\251\202\351\202\251\202\310\201H\n\203q\203\223\203g\201FR\203{\203^\203\223";
 
 const struct Beatscript D_0805ffb4[] = {
-    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)(CUE_KICK_R) },
-    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)(CUE_CRASH) },
+    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)((0x01)) },
+    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)((0x07)) },
     { 0x00, 0, NULL, (uintptr_t)(21) },
     { 0x0E, 0, NULL, (uintptr_t)(0) },
 };
@@ -105,13 +102,13 @@ const struct Beatscript D_0805ffb4[] = {
 const char D_0805ffe4[] = "\n\202\263\202\347\202\311\202P\203J\217\212\201A\n\211\271\202\252\202\323\202\246\202\351\203\210\201I\n\202\355\202\251\202\351\202\251\202\310\201H\n";
 
 const struct Beatscript D_08060014[] = {
-    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)(CUE_SNARE_L) },
+    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)((0x02)) },
     { 0x00, 0, NULL, (uintptr_t)(24) },
-    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)(CUE_SNARE_R) },
+    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)((0x03)) },
     { 0x00, 0, NULL, (uintptr_t)(12) },
-    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)(CUE_KICK_R) },
+    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)((0x01)) },
     { 0x00, 0, NULL, (uintptr_t)(12) },
-    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)(CUE_SNARE_L) },
+    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)((0x02)) },
     { 0x00, 0, NULL, (uintptr_t)(24) },
     { 0x0E, 0, NULL, (uintptr_t)(0) },
 };
@@ -119,15 +116,15 @@ const struct Beatscript D_08060014[] = {
 const char D_08060080[] = "\202\334\202\275\202\334\202\275\202P\203J\217\212\201A\n\211\271\202\252\202\323\202\246\202\351\203\210\201I\n\202\355\202\251\202\351\202\251\202\310\201H\n\203q\203\223\203g\201F\217\\\216\232\203{\203^\203\223\211E";
 
 const struct Beatscript D_080600c4[] = {
-    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)(CUE_SNARE_L) },
+    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)((0x02)) },
     { 0x00, 0, NULL, (uintptr_t)(24) },
-    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)(CUE_SNARE_R) },
+    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)((0x03)) },
     { 0x00, 0, NULL, (uintptr_t)(6) },
-    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)(CUE_TOM) },
+    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)((0x05)) },
     { 0x00, 0, NULL, (uintptr_t)(6) },
-    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)(CUE_KICK_R) },
+    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)((0x01)) },
     { 0x00, 0, NULL, (uintptr_t)(12) },
-    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)(CUE_SNARE_L) },
+    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)((0x02)) },
     { 0x00, 0, NULL, (uintptr_t)(24) },
     { 0x0E, 0, NULL, (uintptr_t)(0) },
 };
@@ -135,17 +132,17 @@ const struct Beatscript D_080600c4[] = {
 const char D_08060148[] = "\n\202\273\202\265\202\304\202\334\202\275\202\310\202\361\202\306\201I\n\202P\203J\217\212\201A\211\271\202\252\202\323\202\246\202\351\203\210\201I\n\202\355\202\251\202\351\202\251\202\310\201H\n";
 
 const struct Beatscript D_08060184[] = {
-    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)(CUE_SNARE_L) },
+    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)((0x02)) },
     { 0x00, 0, NULL, (uintptr_t)(24) },
-    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)(CUE_SNARE_R) },
+    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)((0x03)) },
     { 0x00, 0, NULL, (uintptr_t)(6) },
-    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)(CUE_TOM) },
+    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)((0x05)) },
     { 0x00, 0, NULL, (uintptr_t)(6) },
-    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)(CUE_KICK_R) },
+    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)((0x01)) },
     { 0x00, 0, NULL, (uintptr_t)(12) },
-    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)(CUE_SNARE_L) },
+    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)((0x02)) },
     { 0x00, 0, NULL, (uintptr_t)(12) },
-    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)(CUE_SNARE_L) },
+    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)((0x02)) },
     { 0x00, 0, NULL, (uintptr_t)(12) },
     { 0x0E, 0, NULL, (uintptr_t)(0) },
 };
@@ -153,19 +150,19 @@ const struct Beatscript D_08060184[] = {
 const char D_08060220[] = "\n\202\261\202\352\202\334\202\275\202\310\202\361\202\306\201I\201I\n\202P\203J\217\212\201A\211\271\202\252\202\323\202\246\202\351\203\210\201I\n\202\355\202\251\202\351\202\251\202\310\201H\n";
 
 const struct Beatscript D_0806025c[] = {
-    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)(CUE_SNARE_L) },
+    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)((0x02)) },
     { 0x00, 0, NULL, (uintptr_t)(24) },
-    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)(CUE_SNARE_R) },
+    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)((0x03)) },
     { 0x00, 0, NULL, (uintptr_t)(6) },
-    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)(CUE_TOM) },
+    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)((0x05)) },
     { 0x00, 0, NULL, (uintptr_t)(6) },
-    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)(CUE_KICK_R) },
+    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)((0x01)) },
     { 0x00, 0, NULL, (uintptr_t)(12) },
-    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)(CUE_SNARE_L) },
+    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)((0x02)) },
     { 0x00, 0, NULL, (uintptr_t)(12) },
-    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)(CUE_SNARE_R) },
+    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)((0x03)) },
     { 0x00, 0, NULL, (uintptr_t)(6) },
-    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)(CUE_SNARE_L) },
+    { 0x03, 0, (const void *)(gameplay_spawn_cue), (uintptr_t)((0x02)) },
     { 0x00, 0, NULL, (uintptr_t)(6) },
     { 0x0E, 0, NULL, (uintptr_t)(0) },
 };
@@ -217,12 +214,12 @@ const struct Beatscript script_drum_lesson_short_5_main[] = {
     { 0x03, 0, (const void *)(scene_set_music_volume), (uintptr_t)(256) },
     { 0x03, 0, (const void *)(results_enable_input_tracking), (uintptr_t)(FALSE) },
     { 0x03, 0, (const void *)(gameplay_set_engine_event_param), (uintptr_t)(4) },
-    { 0x04, EVENT_08, (const void *)(gameplay_run_engine_event), (uintptr_t)(&drum_studio_engine) },
+    { 0x04, (0x08), (const void *)(gameplay_run_engine_event), (uintptr_t)(&drum_studio_engine) },
     { 0x03, 0, (const void *)(gameplay_set_engine_event_param), (uintptr_t)(1) },
-    { 0x04, EVENT_09, (const void *)(gameplay_run_engine_event), (uintptr_t)(&drum_studio_engine) },
+    { 0x04, (0x09), (const void *)(gameplay_run_engine_event), (uintptr_t)(&drum_studio_engine) },
     { 0x00, 0, NULL, (uintptr_t)(24) },
     { 0x03, 0, (const void *)(gameplay_set_engine_event_param), (uintptr_t)(TRUE) },
-    { 0x04, EVENT_02, (const void *)(gameplay_run_engine_event), (uintptr_t)(&drum_studio_engine) },
+    { 0x04, (0x02), (const void *)(gameplay_run_engine_event), (uintptr_t)(&drum_studio_engine) },
     { 0x03, 0, (const void *)(drum_lesson_script_import_pattern), (uintptr_t)(D_08a416f8) },
     { 0x0D, 0, (const void *)(drum_lessons_sub_08a7d7a0), (uintptr_t)(0) },
     { 0x03, 0, (const void *)(drum_lesson_script_import_pattern), (uintptr_t)(D_08a41708) },
@@ -237,10 +234,10 @@ const struct Beatscript script_drum_lesson_short_5_main[] = {
     { 0x03, 0, (const void *)(drum_lesson_script_import_pattern), (uintptr_t)(D_08a41748) },
     { 0x0D, 0, (const void *)(drum_lessons_sub_08a7d7a0), (uintptr_t)(0) },
     { 0x03, 0, (const void *)(gameplay_set_engine_event_param), (uintptr_t)(TRUE) },
-    { 0x04, SHOW_DIALOGUE, (const void *)(gameplay_run_engine_event), (uintptr_t)(&drum_studio_engine) },
-    { 0x03, 0, (const void *)(gameplay_set_engine_event_param), (uintptr_t)(TEACHER_EXP_GIVE_RANK) },
-    { 0x04, SET_TEACHER_EMOTE, (const void *)(gameplay_run_engine_event), (uintptr_t)(&drum_studio_engine) },
+    { 0x04, (0x10), (const void *)(gameplay_run_engine_event), (uintptr_t)(&drum_studio_engine) },
+    { 0x03, 0, (const void *)(gameplay_set_engine_event_param), (uintptr_t)((4)) },
+    { 0x04, (0x12), (const void *)(gameplay_run_engine_event), (uintptr_t)(&drum_studio_engine) },
     { 0x03, 0, (const void *)(gameplay_set_engine_event_param), (uintptr_t)(0) },
-    { 0x04, GET_LESSON_SCORE, (const void *)(gameplay_run_engine_event), (uintptr_t)(&drum_studio_engine) },
+    { 0x04, (0x14), (const void *)(gameplay_run_engine_event), (uintptr_t)(&drum_studio_engine) },
     { 0x0E, 0, NULL, (uintptr_t)(0) },
 };
