@@ -101,7 +101,9 @@ void rat_race_engine_start(u32 version) {
     gRatRace->unk038 = 1;
     gRatRace->unk070 = 0;
     gRatRace->unk0D2 = 1;
-    gameplay_set_input_buttons(A_BUTTON, 0);
+    // Releases of A count too: the dash cue is RELEASE_BUTTON(A_BUTTON). The
+    // assembly passes the 1 still in R1 from the store just above.
+    gameplay_set_input_buttons(A_BUTTON, A_BUTTON);
 
     for (i = 0; i < 3; i++) {
         func_0803aba4(&gRatRace->rats[i], i);
