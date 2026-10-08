@@ -1,6 +1,11 @@
 #pragma once
 #ifdef PLATFORM_PC
 
+// RTPC_AUTO=4 (perfect autoplay): TRUE when enabled; the game side requests
+// key presses with pc_autoplay_press, applied from the next REG_KEY update.
+int  pc_autoplay_enabled(void);
+void pc_autoplay_press(unsigned buttons, int holdFrames);
+
 #include <SDL2/SDL.h>
 #include <stdint.h>
 

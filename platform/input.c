@@ -20,6 +20,31 @@
 #define GBA_R       (1 << 8)
 #define GBA_L       (1 << 9)
 
+// RTPC_AUTO=4: hold times requested by the game side (pc_autoplay_press),
+// one countdown per GBA key bit.
+static int s_autoplay_hold[10];
+static uint32_t s_autoplay_idle;
+
+int pc_autoplay_enabled(void)
+{
+    static int on = -1;
+    if (on < 0) {
+        const char *e = getenv("RTPC_AUTO");
+        on = (e && atoi(e) == 4);
+    }
+    return on;
+}
+
+void pc_autoplay_press(unsigned buttons, int holdFrames)
+{
+    for (int i = 0; i < 10; i++) {
+        if ((buttons & (1u << i)) && s_autoplay_hold[i] < holdFrames) {
+            s_autoplay_hold[i] = holdFrames;
+        }
+    }
+    s_autoplay_idle = 0;
+}
+
 void input_init(void)
 {
     // All buttons released → REG_KEY = 0x03FF
@@ -75,7 +100,20 @@ void input_update_reg_key(void)
                 fflush(stderr);
             }
         }
-        if (auto_on) {
+        if (auto_on == 4) {
+            // RTPC_AUTO=4: press exactly what the live cues ask for, on time
+            // (see gameplay_update_all_cues). After 5 s without a live cue
+            // it falls back to tapping A every 30 frames, so menus and text
+            // still advance. (Too eager a fallback lands stray presses in
+            // gameplay, which some engines punish or count as "try again".)
+            if (++s_autoplay_idle > 300 && (s_autoplay_idle % 30) < 2) reg &= ~GBA_A;
+            for (int i = 0; i < 10; i++) {
+                if (s_autoplay_hold[i] > 0) {
+                    reg &= ~(1u << i);
+                    s_autoplay_hold[i]--;
+                }
+            }
+        } else if (auto_on) {
             f++;
             if ((f % 30) < 2) reg &= ~GBA_A;
             if (auto_on >= 2 && (f % 240) < 2) reg &= ~GBA_SELECT;

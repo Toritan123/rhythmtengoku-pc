@@ -721,6 +721,21 @@ void gameplay_add_cue_result_miss(s32 offset) {
 }
 
 
+#ifdef PLATFORM_PC
+// RTPC_CUETRACE=1 (test aid): log cue spawns and judgements to stderr.
+static int pc_cue_trace(void) {
+    static int on = -1;
+    if (on < 0) {
+        const char *e = getenv("RTPC_CUETRACE");
+        on = (e != NULL && *e != '0');
+    }
+    return on;
+}
+#define PC_CUE_TRACE(...) do { if (pc_cue_trace()) { fprintf(stderr, "[CUE] " __VA_ARGS__); } } while (0)
+#else
+#define PC_CUE_TRACE(...)
+#endif
+
 // [func_080179f4] Spawn Cue
 void gameplay_spawn_cue(s32 id) {
     const struct CueDefinition *cueDef;
@@ -751,6 +766,7 @@ void gameplay_spawn_cue(s32 id) {
     } else {
         newCue->duration = ticks_to_frames(cueDef->duration);
     }
+    PC_CUE_TRACE("spawn id=%d duration=%d\n", id, newCue->duration);
 
     newCue->spawnSfx  = ((gGameplay->nextCueSpawnSfx != NULL)  ? gGameplay->nextCueSpawnSfx  : cueDef->spawnSfx);
     newCue->hitSfx    = ((gGameplay->nextCueHitSfx != NULL)    ? gGameplay->nextCueHitSfx    : cueDef->hitSfx);
@@ -833,6 +849,7 @@ void gameplay_enable_cue_spawning(u32 enable) {
 }
 
 
+
 // [func_08017b98] Update Cue
 void gameplay_update_cue(struct Cue *cue) {
     struct CueDefinition *cueDef;
@@ -851,6 +868,7 @@ void gameplay_update_cue(struct Cue *cue) {
     if (!cue->unk48_b0 && !cue->hasExpired) {
         if (cue->runningTime > cue->duration + missTimeOffset) {
             cue->hasExpired = TRUE;
+            PC_CUE_TRACE("miss filter=%04x t=%d/%d\n", cue->data.buttonFilter, cue->runningTime, cue->duration);
             if (cueDef->missFunc != NULL) {
                 cueDef->missFunc(cue, cue->gameCueInfo);
             }
@@ -883,6 +901,45 @@ void gameplay_update_all_cues(void) {
         gameplay_update_cue(cue);
         cue = prev;
     }
+
+#ifdef PLATFORM_PC
+    // RTPC_AUTO=4 (test aid, not in the original): press each live cue's
+    // first button so that the input lands on its target frame. Inputs are
+    // read before cues update, so a press requested now is judged next frame
+    // against this frame's runningTime.
+    {
+        extern int pc_autoplay_enabled(void);
+        extern void pc_autoplay_press(unsigned buttons, int holdFrames);
+
+        if (pc_autoplay_enabled()) {
+            // A live cue, or play inputs that are open while no text box
+            // waits for A, counts as activity: the A-tapping fallback must
+            // not land stray presses in gameplay, which engines such as
+            // tanuki_and_monkey treat as "do this bit again".
+            if ((gGameplay->cues != NULL)
+             || (gGameplay->playInputsEnabled && !gGameplay->pausedAtTextBox)) {
+                pc_autoplay_press(0, 0);
+            }
+            for (cue = gGameplay->cues; cue != NULL; cue = cue->prev) {
+                u16 filter = cue->data.buttonFilter;
+                u16 buttons = filter & 0x3ff;
+
+                if (cue->unk48_b0 || cue->hasExpired || (buttons == 0)) {
+                    continue;
+                }
+                buttons &= -buttons; // lowest button only
+                if (filter & 0x8000) {
+                    // Release cue: hold the button so it lets go on time.
+                    if (cue->runningTime + 8 == cue->duration) {
+                        pc_autoplay_press(buttons, 8);
+                    }
+                } else if (cue->runningTime == cue->duration) {
+                    pc_autoplay_press(buttons, 2);
+                }
+            }
+        }
+    }
+#endif
 }
 
 
@@ -957,6 +1014,9 @@ void gameplay_register_hit_barely(struct Cue *cue, s32 timingLevel, s32 offset, 
     gGameplay->ignoreThisCueResult = FALSE;
     cue->unk48_b0 = TRUE;
     gGameplay->lastCueInputOffset = offset;
+    PC_CUE_TRACE("%s filter=%04x offset=%d press=%04x release=%04x\n",
+                 (timingLevel == CUE_TIMING_HIT) ? "hit" : "barely",
+                 cueDef->buttonFilter, offset, pressed, released);
 
     if (timingLevel == CUE_TIMING_HIT) {
         hitEvent = cueDef->hitFunc;
@@ -1061,6 +1121,7 @@ void gameplay_update_inputs(u32 pressed, u32 released) {
     }
 
     if (missInput) {
+        PC_CUE_TRACE("stray input %08x\n", unrelatedInputs);
         gameplay_add_cue_result(0, CUE_RESULT_NONE, 0); // marking criteria, enum, accuracy
         if (gGameplay->gameEngine->inputFunc != NULL) {
             gGameplay->gameEngine->inputFunc(unrelatedInputs & 0xffff, unrelatedInputs >> 16);
