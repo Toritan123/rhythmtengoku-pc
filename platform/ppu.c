@@ -70,10 +70,31 @@ static uint32_t s_fb[GBA_W * GBA_H];
 
 int gPcFrameNo = 0;   // frame counter, also used by the scene trace
 
-// Per-pixel priority + alpha tracking (lower priority number wins)
-// High nibble = priority of BG/OBJ that drew this pixel (0-3, 4=none yet)
-// Low bit     = 1 if a non-transparent OBJ was drawn here
-static uint8_t s_prio[GBA_W * GBA_H];
+// Per-pixel layer stack. The GBA needs the top two layers of every pixel for
+// colour effects (BLDMOD alpha blending), so each layer pixel is offered to
+// put_px() with a sort key -- (priority << 9) | order, lower is in front;
+// OBJ order is the sprite index, BG n is 128 + n, the backdrop is 4 << 9 --
+// and the top two survive. Colours stay BGR555 until the final pass.
+enum { LAYER_BG0, LAYER_BG1, LAYER_BG2, LAYER_BG3, LAYER_OBJ, LAYER_BD };
+#define KEY_BACKDROP (4 << 9)
+static uint16_t s_key[GBA_W * GBA_H],   s_key2[GBA_W * GBA_H];
+static uint16_t s_col[GBA_W * GBA_H],   s_col2[GBA_W * GBA_H];
+static uint8_t  s_layer[GBA_W * GBA_H], s_layer2[GBA_W * GBA_H];
+static uint8_t  s_semi[GBA_W * GBA_H];   // top pixel is a semi-transparent OBJ
+// Window enable bits per pixel (WININ/WINOUT format: BG0-3, OBJ, effects).
+static uint8_t  s_win[GBA_W * GBA_H];
+static uint8_t  s_objwin[GBA_W * GBA_H]; // inside the OBJ window
+
+static inline void put_px(int i, uint16_t key, int layer, uint16_t col, int semi)
+{
+    if (!(s_win[i] & (1 << layer))) return;
+    if (key < s_key[i]) {
+        s_key2[i] = s_key[i]; s_col2[i] = s_col[i]; s_layer2[i] = s_layer[i];
+        s_key[i] = key; s_col[i] = col; s_layer[i] = (uint8_t)layer; s_semi[i] = (uint8_t)semi;
+    } else if (key < s_key2[i]) {
+        s_key2[i] = key; s_col2[i] = col; s_layer2[i] = (uint8_t)layer;
+    }
+}
 
 static SDL_Texture *s_tex = NULL;
 
@@ -166,6 +187,7 @@ static void render_text_bg(int bgn, int prio)
     int mapbase   = BGCNT_MAPBASE(bgcnt) * 0x800;
     int is256     = BGCNT_PALETTE256(bgcnt);
     int mapsize   = BGCNT_MAPSIZE(bgcnt);
+    uint16_t key  = (uint16_t)((prio << 9) | (128 + bgn));
 
     // Map dimensions in 8-pixel tiles (text BG)
     // mapsize: 0=32×32, 1=64×32, 2=32×64, 3=64×64
@@ -179,9 +201,8 @@ static void render_text_bg(int bgn, int prio)
         int tile_py = ty % 8;
 
         for (int x = 0; x < GBA_W; x++) {
-            int px = s_prio[y * GBA_W + x];
-            // Already covered by a higher- or equal-priority layer
-            if ((px >> 4) <= prio) continue;
+            // Already covered by two layers in front of this one
+            if (s_key2[y * GBA_W + x] <= key) continue;
 
             int tx = (x + hofs) & (map_w * 8 - 1);
             int tile_col_in_map = tx / 8;
@@ -214,16 +235,12 @@ static void render_text_bg(int bgn, int prio)
                 int tbase = tiledata + tileid * 64;
                 colidx = tile8bpp_pixel(tbase, py_in_tile, px_in_tile);
                 if (colidx == 0) continue; // transparent
-                uint16_t colour = bg_palette256(colidx);
-                s_fb[y * GBA_W + x]   = bgr555_to_rgba8888(colour);
-                s_prio[y * GBA_W + x] = (prio << 4);
+                put_px(y * GBA_W + x, key, bgn, bg_palette256(colidx), 0);
             } else {
                 int tbase = tiledata + tileid * 32;
                 colidx = tile4bpp_pixel(tbase, py_in_tile, px_in_tile);
                 if (colidx == 0) continue; // transparent
-                uint16_t colour = bg_palette16(pal, colidx);
-                s_fb[y * GBA_W + x]   = bgr555_to_rgba8888(colour);
-                s_prio[y * GBA_W + x] = (prio << 4);
+                put_px(y * GBA_W + x, key, bgn, bg_palette16(pal, colidx), 0);
             }
         }
     }
@@ -244,6 +261,7 @@ static void render_affine_bg(int bgn, int prio)
     // Map size: 0=128×128, 1=256×256, 2=512×512, 3=1024×1024 px
     int map_size_px = 128 << BGCNT_MAPSIZE(bgcnt);
     int map_tiles   = map_size_px / 8;
+    uint16_t key    = (uint16_t)((prio << 9) | (128 + bgn));
 
     // Affine parameters for BG2/BG3
     int pa_off, pb_off, pc_off, pd_off, px_off, py_off;
@@ -274,8 +292,7 @@ static void render_affine_bg(int bgn, int prio)
         int32_t ty_fp = ref_y + pd * y;
 
         for (int x = 0; x < GBA_W; x++) {
-            int px = s_prio[y * GBA_W + x];
-            if ((px >> 4) <= prio) { tx_fp += pa; ty_fp += pc; continue; }
+            if (s_key2[y * GBA_W + x] <= key) { tx_fp += pa; ty_fp += pc; continue; }
 
             // Convert fixed-point (8 frac bits) to tile coordinates
             int tx = tx_fp >> 8;
@@ -298,9 +315,7 @@ static void render_affine_bg(int bgn, int prio)
             int tbase = tiledata + tileid * 64;
             int colidx = tile8bpp_pixel(tbase, py_in_tile, px_in_tile);
             if (colidx != 0) {
-                uint16_t colour = bg_palette256(colidx);
-                s_fb[y * GBA_W + x]   = bgr555_to_rgba8888(colour);
-                s_prio[y * GBA_W + x] = (prio << 4);
+                put_px(y * GBA_W + x, key, bgn, bg_palette256(colidx), 0);
             }
             tx_fp += pa;
             ty_fp += pc;
@@ -317,7 +332,7 @@ static void render_bitmap_mode3(void)
         s_line = y;
         for (int x = 0; x < GBA_W; x++) {
             uint16_t c = *(uint16_t *)(gba_vram + (y * GBA_W + x) * 2);
-            s_fb[y * GBA_W + x] = bgr555_to_rgba8888(c);
+            put_px(y * GBA_W + x, (uint16_t)((BGCNT_PRIO(IOREG16(IO_BG2CNT)) << 9) | 130), LAYER_BG2, c, 0);
         }
     }
 }
@@ -331,8 +346,8 @@ static void render_bitmap_mode4(void)
         s_line = y;
         for (int x = 0; x < GBA_W; x++) {
             uint8_t idx = gba_vram[page_off + y * GBA_W + x];
-            uint16_t c  = bg_palette256(idx);
-            s_fb[y * GBA_W + x] = bgr555_to_rgba8888(c);
+            if (idx == 0) continue;
+            put_px(y * GBA_W + x, (uint16_t)((BGCNT_PRIO(IOREG16(IO_BG2CNT)) << 9) | 130), LAYER_BG2, bg_palette256(idx), 0);
         }
     }
 }
@@ -355,7 +370,9 @@ static const int sprite_dims[4][3][2] = {
     {{64,64}, {64,32}, {32,64}},
 };
 
-static void render_sprites(int prio)
+// objwin = 0: draw the normal and semi-transparent sprites of priority prio.
+// objwin = 1: only mark the pixels of OBJ-window sprites (all priorities).
+static void render_sprites(int prio, int objwin)
 {
     uint16_t dispcnt = IOREG16(IO_DISPCNT);
     int obj_1d = !!(dispcnt & (1 << 6)); // 1D tile mapping
@@ -393,7 +410,13 @@ static void render_sprites(int prio)
         int obj_prio  = (a2 >> 10) & 3;
         int pal_bank  = (a2 >> 12) & 0xF;
 
-        if (obj_prio != prio) continue;
+        int gfx_mode  = (a0 >> 10) & 3; // 0 normal, 1 semi-transparent, 2 OBJ window
+        if (objwin) {
+            if (gfx_mode != 2) continue;
+        } else {
+            if (gfx_mode == 2 || obj_prio != prio) continue;
+        }
+        uint16_t key = (uint16_t)((obj_prio << 9) | s);
 
         // Affine parameters
         int affine_idx = (a1 >> 9) & 0x1F;
@@ -447,9 +470,8 @@ static void render_sprites(int prio)
                     int taddr  = tilebase + tid * 32;
                     int colidx = tile8bpp_pixel(taddr, pix_y, pix_x);
                     if (colidx == 0) continue;
-                    uint16_t colour = obj_palette256(colidx);
-                    s_fb[screen_y * GBA_W + screen_x]   = bgr555_to_rgba8888(colour);
-                    s_prio[screen_y * GBA_W + screen_x] = (obj_prio << 4) | 1;
+                    if (objwin) { s_objwin[screen_y * GBA_W + screen_x] = 1; continue; }
+                    put_px(screen_y * GBA_W + screen_x, key, LAYER_OBJ, obj_palette256(colidx), gfx_mode == 1);
                 } else {
                     if (obj_1d) {
                         tid = tileid + tile_y * (sw / 8) + tile_x;
@@ -459,12 +481,110 @@ static void render_sprites(int prio)
                     int taddr  = tilebase + tid * 32;
                     int colidx = tile4bpp_pixel(taddr, pix_y, pix_x);
                     if (colidx == 0) continue;
-                    uint16_t colour = obj_palette16(pal_bank, colidx);
-                    s_fb[screen_y * GBA_W + screen_x]   = bgr555_to_rgba8888(colour);
-                    s_prio[screen_y * GBA_W + screen_x] = (obj_prio << 4) | 1;
+                    if (objwin) { s_objwin[screen_y * GBA_W + screen_x] = 1; continue; }
+                    put_px(screen_y * GBA_W + screen_x, key, LAYER_OBJ, obj_palette16(pal_bank, colidx), gfx_mode == 1);
                 }
             }
         }
+    }
+}
+
+// ─── windows and colour effects ─────────────────────────────────────────────
+
+static inline int win_span(int start, int end, int limit, int v)
+{
+    // GBATEK: X2 > 240 or X1 > X2 (and likewise Y) are read as X2 = 240.
+    if (end > limit || start > end) end = limit;
+    return v >= start && v < end;
+}
+
+static void compute_windows(uint16_t dispcnt)
+{
+    int win0 = dispcnt & (1 << 13), win1 = dispcnt & (1 << 14), objw = dispcnt & (1 << 15);
+
+    if (!win0 && !win1 && !objw) {
+        memset(s_win, 0x3F, sizeof(s_win));
+        return;
+    }
+
+    uint16_t winin = IOREG16(IO_WININ), winout = IOREG16(IO_WINOUT);
+    uint16_t w0h = IOREG16(IO_WIN0H), w0v = IOREG16(IO_WIN0V);
+    uint16_t w1h = IOREG16(IO_WIN1H), w1v = IOREG16(IO_WIN1V);
+
+    memset(s_objwin, 0, sizeof(s_objwin));
+    if (objw && (dispcnt & (1 << 12))) {
+        render_sprites(0, 1);
+    }
+
+    for (int y = 0; y < GBA_H; y++) {
+        int in0y = win0 && win_span(w0v >> 8, w0v & 0xFF, GBA_H, y);
+        int in1y = win1 && win_span(w1v >> 8, w1v & 0xFF, GBA_H, y);
+        for (int x = 0; x < GBA_W; x++) {
+            int i = y * GBA_W + x;
+            uint8_t m = winout & 0x3F;
+            if (objw && s_objwin[i]) m = (winout >> 8) & 0x3F;
+            if (in1y && win_span(w1h >> 8, w1h & 0xFF, GBA_W, x)) m = (winin >> 8) & 0x3F;
+            if (in0y && win_span(w0h >> 8, w0h & 0xFF, GBA_W, x)) m = winin & 0x3F;
+            s_win[i] = m;
+        }
+    }
+}
+
+static inline uint16_t blend_alpha(uint16_t a, uint16_t b, int eva, int evb)
+{
+    int r = ((a & 0x1F) * eva + (b & 0x1F) * evb) >> 4;
+    int g = (((a >> 5) & 0x1F) * eva + ((b >> 5) & 0x1F) * evb) >> 4;
+    int bl = (((a >> 10) & 0x1F) * eva + ((b >> 10) & 0x1F) * evb) >> 4;
+    if (r > 31) r = 31;
+    if (g > 31) g = 31;
+    if (bl > 31) bl = 31;
+    return (uint16_t)(r | (g << 5) | (bl << 10));
+}
+
+static inline uint16_t blend_brightness(uint16_t a, int evy, int up)
+{
+    int c[3] = { a & 0x1F, (a >> 5) & 0x1F, (a >> 10) & 0x1F };
+    for (int k = 0; k < 3; k++) {
+        c[k] = up ? c[k] + (((31 - c[k]) * evy) >> 4) : c[k] - ((c[k] * evy) >> 4);
+    }
+    return (uint16_t)(c[0] | (c[1] << 5) | (c[2] << 10));
+}
+
+// BLDMOD (BLDCNT): bits 0-5 first target, 6-7 mode (1 alpha, 2 brighten,
+// 3 darken), 8-13 second target. Semi-transparent OBJs always alpha-blend
+// with a second-target layer below them.
+static void compose_effects(void)
+{
+    uint16_t bldcnt = IOREG16(IO_BLDMOD);
+    uint16_t colev  = IOREG16(IO_COLEV);
+    int mode = (bldcnt >> 6) & 3;
+    int eva = colev & 0x1F, evb = (colev >> 8) & 0x1F;
+    int evy = IOREG16(IO_COLEY) & 0x1F;
+    if (eva > 16) eva = 16;
+    if (evb > 16) evb = 16;
+    if (evy > 16) evy = 16;
+
+    for (int i = 0; i < GBA_W * GBA_H; i++) {
+        uint16_t c = s_col[i];
+        int top = s_layer[i], below = s_layer2[i];
+        int second = (bldcnt >> 8) & (1 << below);
+
+        if (s_semi[i] && second) {
+            c = blend_alpha(c, s_col2[i], eva, evb);
+        } else if ((s_win[i] & 0x20) && (bldcnt & (1 << top))) {
+            switch (mode) {
+                case 1:
+                    if (second) c = blend_alpha(c, s_col2[i], eva, evb);
+                    break;
+                case 2:
+                    c = blend_brightness(c, evy, 1);
+                    break;
+                case 3:
+                    c = blend_brightness(c, evy, 0);
+                    break;
+            }
+        }
+        s_fb[i] = bgr555_to_rgba8888(c);
     }
 }
 
@@ -491,32 +611,33 @@ void ppu_render_frame(void)
     uint16_t dispcnt = IOREG16(IO_DISPCNT);
     int mode = dispcnt & 7;
 
-    // Backdrop colour (palette entry 0)
-    uint16_t backdrop_c = *(uint16_t *)gba_palette;
-    uint32_t backdrop   = bgr555_to_rgba8888(backdrop_c);
-    (void)backdrop_c;
-
-    // Fill with backdrop and reset priority
-    for (int y = 0; y < GBA_H; y++) {
-        s_line = y;
-        uint32_t line_backdrop = s_hbl_src ? bgr555_to_rgba8888(pal_entry(0)) : backdrop;
-        for (int x = 0; x < GBA_W; x++) {
-            s_fb[y * GBA_W + x]   = line_backdrop;
-            s_prio[y * GBA_W + x] = 0xFF; // no layer drawn yet
-        }
-    }
-
     if (dispcnt & (1 << 7)) {
         // FORCE BLANK
         memset(s_fb, 0xFF, sizeof(s_fb));
         goto upload;
     }
 
+    // Fill both layers with the backdrop (palette entry 0, per line when an
+    // HBlank palette is active).
+    for (int y = 0; y < GBA_H; y++) {
+        s_line = y;
+        uint16_t bd = pal_entry(0);
+        for (int x = 0; x < GBA_W; x++) {
+            int i = y * GBA_W + x;
+            s_key[i] = s_key2[i] = KEY_BACKDROP;
+            s_col[i] = s_col2[i] = bd;
+            s_layer[i] = s_layer2[i] = LAYER_BD;
+            s_semi[i] = 0;
+        }
+    }
+
+    compute_windows(dispcnt);
+
     switch (mode) {
     case 0:
         // Text modes: render in priority order (3 lowest … 0 highest)
         for (int p = 3; p >= 0; p--) {
-            if (dispcnt & (1 << 12)) render_sprites(p);  // bit12 = OBJ enable
+            if (dispcnt & (1 << 12)) render_sprites(p, 0);  // bit12 = OBJ enable
             if (dispcnt & (1 <<  8)) render_text_bg(0, p);
             if (dispcnt & (1 <<  9)) render_text_bg(1, p);
             if (dispcnt & (1 << 10)) render_text_bg(2, p);
@@ -525,7 +646,7 @@ void ppu_render_frame(void)
         break;
     case 1:
         for (int p = 3; p >= 0; p--) {
-            if (dispcnt & (1 << 12)) render_sprites(p);
+            if (dispcnt & (1 << 12)) render_sprites(p, 0);
             if (dispcnt & (1 <<  8)) render_text_bg(0, p);
             if (dispcnt & (1 <<  9)) render_text_bg(1, p);
             if (dispcnt & (1 << 10)) render_affine_bg(2, p);
@@ -533,7 +654,7 @@ void ppu_render_frame(void)
         break;
     case 2:
         for (int p = 3; p >= 0; p--) {
-            if (dispcnt & (1 << 12)) render_sprites(p);
+            if (dispcnt & (1 << 12)) render_sprites(p, 0);
             if (dispcnt & (1 << 10)) render_affine_bg(2, p);
             if (dispcnt & (1 << 11)) render_affine_bg(3, p);
         }
@@ -547,6 +668,8 @@ void ppu_render_frame(void)
     default:
         break;
     }
+
+    compose_effects();
 
 upload:
     SDL_UpdateTexture(s_tex, NULL, s_fb, GBA_W * sizeof(uint32_t));
