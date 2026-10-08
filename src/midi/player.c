@@ -54,6 +54,17 @@ void midi_player_play_header(struct SoundPlayer *soundPlayer, struct SongHeader 
     u32 clocks;
     u32 i;
 
+#ifdef PLATFORM_PC
+    // Some DrumTech instruments have no sound (drumtech_drum_bank 44-56 are
+    // NULL in the ROM too; tanuki_and_monkey's BGM plays drum 51). The GBA
+    // then parses whatever the BIOS region at address 0 reads back as a
+    // header; here that is a NULL dereference. play_drumtech_note has just
+    // stopped the player, so leaving it stopped is the closest match.
+    if (song == NULL) {
+        return;
+    }
+#endif
+
     // Reading Sequence Data:
     if (midi_player_is_playing(soundPlayer)) {
         if (soundPlayer->priorityEnabled && !soundPlayer->isPaused) {
