@@ -617,24 +617,10 @@ EngineEvent drum_studio_common_events[] = {
     END_OF_COMMON_EVENT_LIST
 };
 
-extern void func_08029178();
-extern void func_08029b8c();
-extern void func_08027728();
-extern void func_08027744();
-extern void func_08027760();
-extern void func_0802777c();
-extern void func_080277a0();
+// The others are declared in include/engines/drum_studio.h with their real types.
 extern void func_080277b8();
 extern void drum_lessons_set_dialogue();
-extern void func_08027888();
-extern void func_080278d0();
 extern void drum_lessons_show_dialogue();
-extern void func_08029cec();
-extern void func_08027bd8();
-extern void func_08027c54();
-extern void func_08027c90();
-extern void func_080281e8();
-extern void func_080281fc();
 
 // [D_089e2e34] Engine Events
 EngineEvent drum_studio_engine_events[] = {

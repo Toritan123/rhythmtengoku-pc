@@ -146,74 +146,220 @@ void drum_lessons_set_teacher_expression(u32 expression) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08027304.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08027304] Teacher Drum Kit Event - D-Pad Down (left kick)
+void func_08027304(void) {
+    sprite_set_anim_cel(gSpriteHandler, gDrumStudio->teacher.leftLeg, 0);
+    sprite_set_anim_cel(gSpriteHandler, gDrumStudio->teacher.leftPedal, 0);
+    sprite_set_anim_cel(gSpriteHandler, gDrumStudio->teacher.bassDrum, 0);
+    sprite_set_anim_cel(gSpriteHandler, gDrumStudio->teacher.body, 0);
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08027350.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08027350] Teacher Drum Kit Event - B Button (right kick)
+void func_08027350(void) {
+    sprite_set_anim_cel(gSpriteHandler, gDrumStudio->teacher.rightLeg, 0);
+    sprite_set_anim_cel(gSpriteHandler, gDrumStudio->teacher.rightPedal, 0);
+    sprite_set_anim_cel(gSpriteHandler, gDrumStudio->teacher.bassDrum, 0);
+    sprite_set_anim_cel(gSpriteHandler, gDrumStudio->teacher.body, 0);
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_0802739c.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0802739c] Teacher Drum Kit Event - D-Pad Left
+void func_0802739c(void) {
+    sprite_set_anim(gSpriteHandler, gDrumStudio->teacher.leftArm, anim_drum_teacher_use_snare_l, 0, 1, 0x7f, 0);
+    sprite_set_anim_cel(gSpriteHandler, gDrumStudio->teacher.snareDrum, 0);
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080273e4.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_080273e4] Teacher Drum Kit Event - A Button
+void func_080273e4(void) {
+    sprite_set_anim(gSpriteHandler, gDrumStudio->teacher.rightArm, anim_drum_teacher_use_snare_r, 0, 1, 0x7f, 0);
+    sprite_set_anim_cel(gSpriteHandler, gDrumStudio->teacher.snareDrum, 0);
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_0802742c.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0802742c] Teacher Drum Kit Event - D-Pad Right
+void func_0802742c(void) {
+    sprite_set_anim(gSpriteHandler, gDrumStudio->teacher.leftArm, anim_drum_teacher_use_tom, 0, 1, 0x7f, 0);
+    sprite_set_anim_cel(gSpriteHandler, gDrumStudio->teacher.tomDrum, 0);
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08027474.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08027474] Teacher Drum Kit Event - D-Pad Up (Hi-Hat)
+void func_08027474(void) {
+    sprite_set_anim(gSpriteHandler, gDrumStudio->teacher.leftArm, anim_drum_teacher_use_hihat, 0, 1, 0x7f, 0);
+    sprite_set_playback(gSpriteHandler, gDrumStudio->teacher.hiHat, 1, 0x7f, 0);
+    sprite_set_anim_cel(gSpriteHandler, gDrumStudio->teacher.hiHat, 0);
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080274d0.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_080274d0] Teacher Drum Kit Event - L Button
+void func_080274d0(void) {
+    sprite_set_anim(gSpriteHandler, gDrumStudio->teacher.leftArm, anim_drum_teacher_use_splash, 0, 1, 0x7f, 0);
+    sprite_set_anim_cel(gSpriteHandler, gDrumStudio->teacher.splashCymbal, 0);
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08027518.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08027518] Teacher Drum Kit Event - R Button
+void func_08027518(void) {
+    sprite_set_anim(gSpriteHandler, gDrumStudio->teacher.rightArm, anim_drum_teacher_use_crash, 0, 1, 0x7f, 0);
+    sprite_set_anim_cel(gSpriteHandler, gDrumStudio->teacher.crashCymbal, 0);
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08027560.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08027560] Teacher Drum Kit Event - D-Pad Up (Snare Roll)
+void func_08027560(void) {
+    sprite_set_anim(gSpriteHandler, gDrumStudio->teacher.leftArm, anim_drum_teacher_snare_roll, 0, 1, 0x7f, 0);
+    sprite_set_anim_cel(gSpriteHandler, gDrumStudio->teacher.snareDrum, 1);
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080275a8.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_080275a8] Teacher DrumPlayFunc 0x09
+//
+// Despite the table it sits in, this and func_080275d0 show the *player's*
+// pedal hi-hat (0x354 + 0x10), exactly as the assembly does.
+void func_080275a8(void) {
+    sprite_set_visible(gSpriteHandler, gDrumStudio->player.pedalHiHat, TRUE);
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080275d0.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_080275d0] Teacher DrumPlayFunc 0x0A (same as func_080275a8)
+void func_080275d0(void) {
+    sprite_set_visible(gSpriteHandler, gDrumStudio->player.pedalHiHat, TRUE);
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080275f8.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_080275f8] Teacher DrumPlayFunc 0x0F: hide the player's kit (again the player's, as in the assembly)
+void func_080275f8(void) {
+    sprite_set_visible(gSpriteHandler, gDrumStudio->player.bassDrum, FALSE);
+    sprite_set_visible(gSpriteHandler, gDrumStudio->player.tomDrum, FALSE);
+    sprite_set_visible(gSpriteHandler, gDrumStudio->player.hiHat, FALSE);
+    sprite_set_visible(gSpriteHandler, gDrumStudio->player.leftPedal, FALSE);
+    sprite_set_visible(gSpriteHandler, gDrumStudio->player.rightPedal, FALSE);
+    sprite_set_visible(gSpriteHandler, gDrumStudio->player.crashCymbal, FALSE);
+    sprite_set_visible(gSpriteHandler, gDrumStudio->player.splashCymbal, FALSE);
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08027668.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08027668] Show the teacher's kit and run the player kit's setup function
+void func_08027668(void) {
+    sprite_set_visible(gSpriteHandler, gDrumStudio->teacher.snareDrum, TRUE);
+    sprite_set_visible(gSpriteHandler, gDrumStudio->teacher.bassDrum, TRUE);
+    sprite_set_visible(gSpriteHandler, gDrumStudio->teacher.tomDrum, TRUE);
+    sprite_set_visible(gSpriteHandler, gDrumStudio->teacher.hiHat, TRUE);
+    sprite_set_visible(gSpriteHandler, gDrumStudio->teacher.leftPedal, TRUE);
+    sprite_set_visible(gSpriteHandler, gDrumStudio->teacher.rightPedal, TRUE);
+    sprite_set_visible(gSpriteHandler, gDrumStudio->teacher.crashCymbal, TRUE);
+    sprite_set_visible(gSpriteHandler, gDrumStudio->teacher.splashCymbal, TRUE);
+    sprite_set_anim(gSpriteHandler, gDrumStudio->teacher.rightLeg, anim_drum_teacher_use_pedal_r, 0x7f, 1, 0x7f, 0);
+    if (D_089e16b0[gDrumStudio->playerDrumKitID] != NULL) {
+        CALL_DRUM_PLAY_FUNC(D_089e16b0[gDrumStudio->playerDrumKitID]);
+    }
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08027728.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08027728] Engine Event 0x07 (Set unk3CD to arg != 0)
+void func_08027728(u32 arg) {
+    gDrumStudio->unk3CD = (arg != 0);
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08027744.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08027744] Engine Event 0x08 (Set the Player's Kit)
+void func_08027744(u32 kit) {
+    gDrumStudio->playerDrumKitID = kit;
+    drum_studio_init_kit();
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08027760.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08027760] Engine Event 0x09 (Set the Teacher's Kit)
+void func_08027760(u32 kit) {
+    gDrumStudio->teacherDrumKitID = kit;
+    func_08027668();
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_0802777c.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0802777c] Engine Event 0x0A (Before the Pattern Loop)
+void func_0802777c(void) {
+    gDrumStudio->unk427 = 0;
+    func_08027f4c(0);
+    beatscript_enable_loops();
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080277a0.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_080277a0] Engine Event 0x0B (Start of a Pattern Loop)
+void func_080277a0(void) {
+    gDrumStudio->unk425 = 0;
+}
 #endif
 
 
@@ -256,18 +402,59 @@ void func_080277b8(void) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08027888.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08027888] Engine Event 0x0E (Store a Lesson Pattern)
+//
+// Appends the script argument -- a pointer -- to lessonPatterns; NULL
+// empties the list. The slots are u32 on the GBA and pointer-sized here.
+void func_08027888(uintptr_t pattern) {
+    if (pattern != 0) {
+        gDrumStudio->lessonPatterns[gDrumStudio->unk42E++] = pattern;
+    } else {
+        gDrumStudio->unk42E = 0;
+    }
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080278d0.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_080278d0] Engine Event 0x0F (Get a Lesson Pattern)
+uintptr_t func_080278d0(u32 index) {
+    return gDrumStudio->lessonPatterns[index];
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080278e8.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_080278e8] Update the background palette
+//
+// From the fourth pattern loop on the background flashes between two
+// palettes, slowing as unk458 counts up to 64.
+void func_080278e8(void) {
+    u32 pal = gDrumStudio->unk424;
+
+    if (pal > 3) {
+        if (gDrumStudio->unk458 <= 0x3f) gDrumStudio->unk458++;
+        pal += (gDrumStudio->unk458 >> 4) & 1;
+    }
+
+    dma3_set(drum_lessons_bg_pal[pal + 4], BG_PALETTE_BUFFER(0), 0x20, 0x10, 0x200);
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08027948.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08027948] Point a sprite at OBJ tile 0x300
+void func_08027948(s16 sprite) {
+    sprite_set_base_tile(gSpriteHandler, sprite, 0x300);
+}
 #endif
 
 
@@ -324,18 +511,83 @@ void drum_lessons_show_dialogue(u32 show) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08027bd8.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08027bd8] Engine Event 0x15 (Display Lesson Dialogue w/ Text Advance)
+void func_08027bd8(void) {
+    s16 x, y;
+
+    text_printer_get_x_y(gDrumStudio->lessonTextPrinter, &x, &y);
+    sprite_set_x_y(gSpriteHandler, gDrumStudio->textAdvIconSprite, x, y);
+    sprite_set_visible(gSpriteHandler, gDrumStudio->textAdvIconSprite, TRUE);
+    gDrumStudio->unk45C = 1;
+    set_pause_beatscript_scene(TRUE);
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08027c54.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08027c54] Engine Event 0x16 (Remove Lesson Dialogue w/ Text Advance)
+void func_08027c54(void) {
+    text_printer_set_string(gDrumStudio->lessonTextPrinter, NULL);
+    sprite_set_visible(gSpriteHandler, gDrumStudio->textAdvIconSprite, FALSE);
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08027c90.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08027c90] Engine Event 0x17 (Allow Slow Mode)
+//
+// Turning it off while slow mode is on restores the tempo first.
+void func_08027c90(u32 enable) {
+    if (gDrumStudio->unk562 == enable) return;
+
+    if ((enable == 0) && gDrumStudio->unk563) {
+        sprite_set_visible(gSpriteHandler, gDrumStudio->slowIconSprite, FALSE);
+        set_beatscript_tempo(gDrumStudio->null566);
+        gDrumStudio->unk563 = 0;
+        gDrumStudio->unk564 = 0;
+    }
+    gDrumStudio->unk562 = enable;
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08027d08.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08027d08] Slow mode: START toggles 5/8 tempo, with a half-second lockout
+void func_08027d08(void) {
+    if (!gDrumStudio->unk562) return;
+
+    if (gDrumStudio->unk563) {
+        gDrumStudio->unk425 = 1;
+        func_08027f90();
+    }
+
+    if (gDrumStudio->unk564 != 0) {
+        gDrumStudio->unk564--;
+        return;
+    }
+
+    if (gDrumStudio->unk563) {
+        if (!(D_03004afc & START_BUTTON)) return;
+        sprite_set_visible(gSpriteHandler, gDrumStudio->slowIconSprite, FALSE);
+        set_beatscript_tempo(gDrumStudio->null566);
+        gDrumStudio->unk563 = 0;
+    } else {
+        if (!(D_03004afc & START_BUTTON)) return;
+        sprite_set_visible(gSpriteHandler, gDrumStudio->slowIconSprite, TRUE);
+        gDrumStudio->null566 = get_beatscript_tempo();
+        set_beatscript_tempo((gDrumStudio->null566 * 5) >> 3);
+        gDrumStudio->unk563 = 1;
+    }
+    gDrumStudio->unk564 = 0x1e;
+}
 #endif
 
 
@@ -423,6 +675,15 @@ void func_08027f90(void) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08027fc8.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08027fc8] Lesson rank from score
+u32 func_08027fc8(u32 score) {
+    if (score > 0x3b5) return 4;
+    if (score > 0x383) return 3;
+    if (score <= 0x31f) return 1;
+    return 2;
+}
 #endif
 
 
@@ -486,18 +747,50 @@ void drum_lessons_get_score(void) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_0802818c.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0802818c] Save a lesson's rank
+//
+// Four bits per lesson, eight to a word, starting at D_030046a8 + 0x2B4
+// (data.unk294[4]).
+void func_0802818c(u32 lesson, u32 rank) {
+    u32 *word = &D_030046a8->data.unk294[4 + (lesson >> 3)];
+    u32 shift = (lesson & 7) * 4;
+    u32 mask = 0xf << shift;
+
+    *word = (*word & ~mask) | (mask & (rank << shift));
+    write_game_save_data();
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080281c4.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_080281c4] Read a lesson's saved rank
+u32 func_080281c4(u32 lesson) {
+    return (D_030046a8->data.unk294[4 + (lesson >> 3)] >> ((lesson & 7) * 4)) & 0xf;
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080281e8.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_080281e8] Engine Event 0x18 (Set unk576)
+void func_080281e8(u32 arg) {
+    gDrumStudio->unk576 = arg;
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080281fc.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_080281fc] Engine Event 0x19 (Set the Music Player)
+void func_080281fc(struct SoundPlayer *player) {
+    gDrumStudio->musicPlayer = player;
+}
 #endif
 
 
@@ -566,50 +859,163 @@ void drum_studio_event_stop_monitor(void) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080283ac.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_080283ac] Studio Drum Kit Event - D-Pad Down (left kick)
+void func_080283ac(void) {
+    sprite_set_anim_cel(gSpriteHandler, gDrumStudio->player.leftLeg, 0);
+    sprite_set_anim_cel(gSpriteHandler, gDrumStudio->player.leftPedal, 0);
+    sprite_set_anim_cel(gSpriteHandler, gDrumStudio->player.bassDrum, 0);
+    sprite_set_anim_cel(gSpriteHandler, gDrumStudio->player.body, 0);
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080283f8.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_080283f8] Studio Drum Kit Event - B Button (right kick)
+void func_080283f8(void) {
+    sprite_set_anim_cel(gSpriteHandler, gDrumStudio->player.rightLeg, 0);
+    sprite_set_anim_cel(gSpriteHandler, gDrumStudio->player.rightPedal, 0);
+    sprite_set_anim_cel(gSpriteHandler, gDrumStudio->player.bassDrum, 0);
+    sprite_set_anim_cel(gSpriteHandler, gDrumStudio->player.body, 0);
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08028444.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08028444] Studio Drum Kit Event - D-Pad Left
+void func_08028444(void) {
+    sprite_set_anim(gSpriteHandler, gDrumStudio->player.leftArm, anim_drum_student_use_snare_l, 0, 1, 0x7f, 0);
+    sprite_set_x_y(gSpriteHandler, gDrumStudio->player.leftArm, 0x66, 0x5a);
+    sprite_set_anim_cel(gSpriteHandler, gDrumStudio->player.snareDrum, 0);
+    gDrumStudio->player.leftArmPosX = 0x66;
+    gDrumStudio->player.leftArmPosY = 0x5a;
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080284a4.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_080284a4] Studio Drum Kit Event - A Button
+void func_080284a4(void) {
+    sprite_set_anim(gSpriteHandler, gDrumStudio->player.rightArm, anim_drum_student_use_snare_r, 0, 1, 0x7f, 0);
+    sprite_set_x_y(gSpriteHandler, gDrumStudio->player.rightArm, 0x78, 0x64);
+    sprite_set_anim_cel(gSpriteHandler, gDrumStudio->player.snareDrum, 0);
+    gDrumStudio->player.rightArmPosX = 0x78;
+    gDrumStudio->player.rightArmPosY = 0x64;
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08028504.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08028504] Studio Drum Kit Event - D-Pad Right
+void func_08028504(void) {
+    sprite_set_anim(gSpriteHandler, gDrumStudio->player.leftArm, anim_drum_student_use_tom, 0, 1, 0x7f, 0);
+    sprite_set_x_y(gSpriteHandler, gDrumStudio->player.leftArm, 0x78, 0x64);
+    sprite_set_anim_cel(gSpriteHandler, gDrumStudio->player.tomDrum, 0);
+    gDrumStudio->player.leftArmPosX = 0x78;
+    gDrumStudio->player.leftArmPosY = 0x64;
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08028564.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08028564] Studio Drum Kit Event - D-Pad Up (Hi-Hat)
+void func_08028564(void) {
+    sprite_set_anim(gSpriteHandler, gDrumStudio->player.leftArm, anim_drum_student_use_hihat, 0, 1, 0x7f, 0);
+    sprite_set_x_y(gSpriteHandler, gDrumStudio->player.leftArm, 0x78, 0x64);
+    sprite_set_playback(gSpriteHandler, gDrumStudio->player.hiHat, 0, 0, 0);
+    sprite_set_anim_cel(gSpriteHandler, gDrumStudio->player.hiHat, 2);
+    gDrumStudio->player.leftArmPosX = 0x78;
+    gDrumStudio->player.leftArmPosY = 0x64;
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080285d4.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_080285d4] Studio Drum Kit Event - L Button
+void func_080285d4(void) {
+    sprite_set_anim(gSpriteHandler, gDrumStudio->player.leftArm, anim_drum_student_use_splash, 0, 1, 0x7f, 0);
+    sprite_set_x_y(gSpriteHandler, gDrumStudio->player.leftArm, 0x78, 0x64);
+    sprite_set_anim_cel(gSpriteHandler, gDrumStudio->player.splashCymbal, 0);
+    gDrumStudio->player.leftArmPosX = 0x78;
+    gDrumStudio->player.leftArmPosY = 0x64;
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08028634.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08028634] Studio Drum Kit Event - R Button
+void func_08028634(void) {
+    sprite_set_anim(gSpriteHandler, gDrumStudio->player.rightArm, anim_drum_student_use_crash, 0, 1, 0x7f, 0);
+    sprite_set_x_y(gSpriteHandler, gDrumStudio->player.rightArm, 0x78, 0x64);
+    sprite_set_anim_cel(gSpriteHandler, gDrumStudio->player.crashCymbal, 0);
+    gDrumStudio->player.rightArmPosX = 0x78;
+    gDrumStudio->player.rightArmPosY = 0x64;
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08028694.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08028694] Studio Drum Kit Event - D-Pad Up (Snare Roll)
+void func_08028694(void) {
+    sprite_set_anim(gSpriteHandler, gDrumStudio->player.leftArm, anim_drum_student_snare_roll, 0, 1, 0x7f, 0);
+    sprite_set_x_y(gSpriteHandler, gDrumStudio->player.leftArm, 0x66, 0x5a);
+    gDrumStudio->player.leftArmPosX = 0x66;
+    gDrumStudio->player.leftArmPosY = 0x5a;
+    sprite_set_anim_cel(gSpriteHandler, gDrumStudio->player.snareDrum, 1);
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080286f4.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_080286f4] Studio DrumPlayFunc 0x09
+void func_080286f4(void) {
+    sprite_set_visible(gSpriteHandler, gDrumStudio->player.pedalHiHat, TRUE);
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_0802871c.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0802871c] Studio DrumPlayFunc 0x0A (same as func_080286f4)
+void func_0802871c(void) {
+    sprite_set_visible(gSpriteHandler, gDrumStudio->player.pedalHiHat, TRUE);
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08028744.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08028744] Studio DrumPlayFunc 0x0F: hide the kit
+void func_08028744(void) {
+    sprite_set_visible(gSpriteHandler, gDrumStudio->player.bassDrum, FALSE);
+    sprite_set_visible(gSpriteHandler, gDrumStudio->player.tomDrum, FALSE);
+    sprite_set_visible(gSpriteHandler, gDrumStudio->player.hiHat, FALSE);
+    sprite_set_visible(gSpriteHandler, gDrumStudio->player.leftPedal, FALSE);
+    sprite_set_visible(gSpriteHandler, gDrumStudio->player.rightPedal, FALSE);
+    sprite_set_visible(gSpriteHandler, gDrumStudio->player.crashCymbal, FALSE);
+    sprite_set_visible(gSpriteHandler, gDrumStudio->player.splashCymbal, FALSE);
+}
 #endif
 
 
@@ -873,14 +1279,37 @@ void drum_studio_select_button_exit(void) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08029178.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08029178] Engine Event 0x02 (Set unk3CE)
+void func_08029178(u32 arg) {
+    gDrumStudio->unk3CE = arg;
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_0802918c.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_0802918c] Queue the song title to scroll in
+void func_0802918c(const char *title, u32 flag) {
+    gDrumStudio->unk402 = 0xf0;
+    gDrumStudio->songTitleText = title;
+    gDrumStudio->unk408 = flag;
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080291bc.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_080291bc] Restart the song title scroll
+void func_080291bc(void) {
+    gDrumStudio->unk3FC = 0x100 - gDrumStudio->unk3FC;
+    gDrumStudio->unk3FE = 0;
+    gDrumStudio->unk400 = -0x90;
+    gDrumStudio->unk402 = 0;
+}
 #endif
 
 
@@ -908,6 +1337,27 @@ void drum_studio_update_song_title(void) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_080292e0.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_080292e0] The student takes a coffee break (or goes back to the kit)
+void func_080292e0(u32 drinking) {
+    struct StudioDrummer *drummer = &gDrumStudio->player;
+
+    if (drinking) {
+        sprite_set_visible(gSpriteHandler, drummer->head, FALSE);
+        sprite_set_visible(gSpriteHandler, drummer->leftArm, FALSE);
+        sprite_set_visible(gSpriteHandler, drummer->rightArm, FALSE);
+        sprite_set_anim(gSpriteHandler, drummer->body, anim_drum_student_drink_coffee, 0, 1, 0, 0);
+        sprite_set_anim_cel(gSpriteHandler, drummer->coffeeSteam, 0);
+        sprite_set_visible(gSpriteHandler, drummer->coffeeSteam, TRUE);
+    } else {
+        sprite_set_visible(gSpriteHandler, drummer->head, TRUE);
+        sprite_set_visible(gSpriteHandler, drummer->rightArm, TRUE);
+        sprite_set_visible(gSpriteHandler, drummer->leftArm, TRUE);
+        sprite_set_anim(gSpriteHandler, drummer->body, anim_drum_student_body, 0, 1, 0x7f, 0);
+        sprite_set_visible(gSpriteHandler, drummer->coffeeSteam, FALSE);
+    }
+}
 #endif
 
 
@@ -1188,6 +1638,12 @@ void drum_studio_update_save_options(void) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08029b8c.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08029b8c] Engine Event 0x06 (Get unk418)
+u32 func_08029b8c(void) {
+    return gDrumStudio->unk418;
+}
 #endif
 
 
@@ -1241,10 +1697,23 @@ void func_08029cac(u32 drumKitID, u16 keys, u16 pressed, u16 released) {
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08029cec.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08029cec] Engine Event 0x13 (Set the Student's Head Animation)
+void func_08029cec(u32 index) {
+    sprite_set_anim_data(gSpriteHandler, gDrumStudio->player.head, &D_089e2b98[index]);
+}
 #endif
 
 #ifndef PLATFORM_PC
 #include "asm/engines/drumming_lessons/asm_08029d20.s"
+#else
+// Translated from the assembly above and checked against it; not proven byte-exact.
+// [func_08029d20] Game Engine Stop
+void drum_studio_engine_stop(void) {
+    mem_heap_dealloc(gDrumStudio->drumReplaySeq);
+    func_08004248();
+}
 #endif
 
 
