@@ -924,7 +924,11 @@ void gameplay_update_all_cues(void) {
             if (gGameplay->cues != NULL) {
                 pc_autoplay_press(0, 0);
             }
-            if (gGameplay->playInputsEnabled && !gGameplay->pausedAtTextBox) {
+            // A paused script (gameplay's own text box, or an engine's, e.g.
+            // karate_man's "press A" tutorial text) is waiting for A, so the
+            // fallback may run.
+            if (gGameplay->playInputsEnabled && !gGameplay->pausedAtTextBox
+             && !beatscript_scene_is_paused()) {
                 // 0 = never (the default; see RTPC_AUTO_IDLE in platform/input.c).
                 pc_autoplay_set_idle_limit(0);
             } else {
