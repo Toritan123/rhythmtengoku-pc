@@ -153,6 +153,13 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
   `quiz_show`, `sick_beats`, `mechanical_horse`, `mannequin_factory`,
   `drum_studio` (lessons), DrumTech's `play_drumtech_note`, screen fades
   (`func_0800716c`), gradient backdrops (`func_08004070`).
+- **rat_race was fully re-audited against the assembly on 2026-10-08**,
+  function by function. The only mismatch left was the release filter in
+  engine_start (`gameplay_set_input_buttons(A_BUTTON, A_BUTTON)`; the
+  assembly passes a leftover R1 = 1). Without it the dash cue,
+  `RELEASE_BUTTON(A_BUTTON)`, could never be hit. When translating, watch
+  for arguments the assembly passes in a register it set for something
+  else just before the call.
 - `RTPC_AUTO=2` taps SELECT every 4 s, which *quits* a drum lesson
   ("セレクトde中止") -- use `RTPC_AUTO=1` for lessons.
 - **"Done" means no stub left for that engine — check it with the `comm`
