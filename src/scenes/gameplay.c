@@ -927,9 +927,16 @@ void gameplay_update_all_cues(void) {
             for (cue = gGameplay->cues; cue != NULL; cue = cue->prev) {
                 u16 filter = cue->data.buttonFilter;
                 u16 buttons = filter & 0x3ff;
+                u16 open;
 
                 if (cue->unk48_b0 || cue->hasExpired || (buttons == 0)) {
                     continue;
+                }
+                // Prefer a button the game currently accepts: ninja_bodyguard
+                // takes A or the D-Pad, but alternates which one is open.
+                open = buttons & ((filter & 0x8000) ? gGameplay->buttonReleaseFilter : gGameplay->buttonPressFilter);
+                if (open != 0) {
+                    buttons = open;
                 }
                 buttons &= -buttons; // lowest button only
                 if (filter & 0x8000) {
