@@ -21,7 +21,7 @@ struct StaffCreditEngineData {
     u8 scrollTimer;
     s16 bgBrightness;
     s16 brightnessMod;
-    u32 gfxTable;
+    const struct GraphicsTable *gfxTable; // Was u32: a pointer truncated on 64-bit hosts.
 };
 
 struct StaffCreditCue {

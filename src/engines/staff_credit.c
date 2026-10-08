@@ -174,7 +174,7 @@ void staff_credit_update_text_scroll(void) {
 }
 
 // Engine Event 0x03 (Set Background)
-void staff_credit_set_bg(u32 gfxTable) {
+void staff_credit_set_bg(const struct GraphicsTable *gfxTable) {
     gStaffCredit->brightnessMod = 0x33;
     gStaffCredit->gfxTable = gfxTable;
 }
