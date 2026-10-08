@@ -6,6 +6,7 @@
 int  pc_autoplay_enabled(void);
 void pc_autoplay_press(unsigned buttons, int holdFrames);     // hold at least this long
 void pc_autoplay_set_hold(unsigned buttons, int holdFrames);  // hold exactly this long
+void pc_autoplay_set_idle_limit(unsigned frames);             // A-tap fallback delay
 
 #include <SDL2/SDL.h>
 #include <stdint.h>

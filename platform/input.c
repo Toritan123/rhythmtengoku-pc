@@ -24,6 +24,7 @@
 // one countdown per GBA key bit.
 static int s_autoplay_hold[10];
 static uint32_t s_autoplay_idle;
+static uint32_t s_autoplay_idle_limit = 300;
 
 int pc_autoplay_enabled(void)
 {
@@ -43,6 +44,24 @@ void pc_autoplay_press(unsigned buttons, int holdFrames)
         }
     }
     s_autoplay_idle = 0;
+}
+
+// frames == 0: gameplay has its play inputs open. A stray press there is
+// judged -- tanuki_and_monkey takes it as "do it again", rat_race marks it
+// down -- so the fallback stays off unless RTPC_AUTO_IDLE=<frames> asks for
+// it. The drum lessons need that: they wait for the player to start
+// drumming on their own ("好きなタイミングでどうぞ").
+void pc_autoplay_set_idle_limit(unsigned frames)
+{
+    static int open_limit = -1;
+    if (open_limit < 0) {
+        const char *e = getenv("RTPC_AUTO_IDLE");
+        open_limit = e ? atoi(e) : 0;
+    }
+    if (frames == 0) {
+        frames = open_limit ? (unsigned)open_limit : 0xffffffffu;
+    }
+    s_autoplay_idle_limit = frames;
 }
 
 void pc_autoplay_set_hold(unsigned buttons, int holdFrames)
@@ -114,9 +133,9 @@ void input_update_reg_key(void)
             // RTPC_AUTO=4: press exactly what the live cues ask for, on time
             // (see gameplay_update_all_cues). After 5 s without a live cue
             // it falls back to tapping A every 30 frames, so menus and text
-            // still advance. (Too eager a fallback lands stray presses in
-            // gameplay, which some engines punish or count as "try again".)
-            if (++s_autoplay_idle > 300 && (s_autoplay_idle % 30) < 2) reg &= ~GBA_A;
+            // still advance -- but not while gameplay has its play inputs
+            // open, unless RTPC_AUTO_IDLE says so (pc_autoplay_set_idle_limit).
+            if (++s_autoplay_idle > s_autoplay_idle_limit && (s_autoplay_idle % 30) < 2) reg &= ~GBA_A;
             for (int i = 0; i < 10; i++) {
                 if (s_autoplay_hold[i] > 0) {
                     reg &= ~(1u << i);

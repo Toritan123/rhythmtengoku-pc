@@ -914,15 +914,21 @@ void gameplay_update_all_cues(void) {
         extern int pc_autoplay_enabled(void);
         extern void pc_autoplay_press(unsigned buttons, int holdFrames);
         extern void pc_autoplay_set_hold(unsigned buttons, int holdFrames);
+        extern void pc_autoplay_set_idle_limit(unsigned frames);
 
         if (pc_autoplay_enabled()) {
-            // A live cue, or play inputs that are open while no text box
-            // waits for A, counts as activity: the A-tapping fallback must
-            // not land stray presses in gameplay, which engines such as
-            // tanuki_and_monkey treat as "do this bit again".
-            if ((gGameplay->cues != NULL)
-             || (gGameplay->playInputsEnabled && !gGameplay->pausedAtTextBox)) {
+            // A live cue counts as activity. With play inputs open (and no
+            // text box waiting for A) the A-tapping fallback is off by
+            // default, since a stray press there is judged; see
+            // platform/input.c.
+            if (gGameplay->cues != NULL) {
                 pc_autoplay_press(0, 0);
+            }
+            if (gGameplay->playInputsEnabled && !gGameplay->pausedAtTextBox) {
+                // 0 = never (the default; see RTPC_AUTO_IDLE in platform/input.c).
+                pc_autoplay_set_idle_limit(0);
+            } else {
+                pc_autoplay_set_idle_limit(300);
             }
             for (cue = gGameplay->cues; cue != NULL; cue = cue->prev) {
                 u16 filter = cue->data.buttonFilter;

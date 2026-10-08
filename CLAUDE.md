@@ -140,22 +140,28 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
 
 ## State (measured 2026-10-08)
 
-- **117 functions exist only as a no-op stub** (2026-10-08), all engine
-  code apart from the intentional IWRAM-blob stubs (`*_rom`, `func_08000a00`,
-  `fast_blend_*`, `__umodsi3`, `midi_directsound_init` -- each has a PC
-  replacement). No scene is a stub any more.
-- Engines still (partly) in assembly: ninja_bodyguard (53), bunny_hop (51),
-  toss_boys (42), showtime (35). Count bare `#include "asm/..."` blocks per
-  file -- the stub list only shows the ones something else references.
+- **40 weak stubs are left** (2026-10-08): showtime's engine, the
+  intentional IWRAM-blob stubs (`*_rom`, `func_08000a00`, `fast_blend_*`,
+  `__umodsi3`, `midi_directsound_init`, `pc_fast_udivsi3_impl` -- each has
+  a PC replacement), and `func_0803d2c0`..`func_0803d4e0`, which nothing
+  references (orphans in auto_stubs.c, no run-time effect). No scene is a
+  stub any more.
+- Engine still in assembly: showtime (35 functions). Count bare
+  `#include "asm/..."` blocks per file -- the stub list only shows the ones
+  something else references.
 - Done: `rhythm_tweezers`, `rhythm_test`, `clappy_trio`, `samurai_slice`,
   `rat_race`, `tap_trial`, `metronome`, `tram_and_pauline`, `polyrhythm`,
   `quiz_show`, `sick_beats`, `mechanical_horse`, `mannequin_factory`,
   `drum_studio` (lessons), `drum_intro` (Drum Samurai cutscenes,
-  tanuki_and_monkey, staff credit intro), DrumTech's `play_drumtech_note`,
+  tanuki_and_monkey, staff credit intro), `ninja_bodyguard`, `bunny_hop`,
+  `toss_boys`, DrumTech's `play_drumtech_note`,
   screen fades (`func_0800716c`), gradient backdrops (`func_08004070`).
 - **Cleared end to end under `RTPC_AUTO=4`** (every cue hit, results
   screen reached): tanuki_and_monkey (100.0), rat_race (High Level),
-  night_walk, space_dance, staff_credit. Use this as the acceptance test for
+  night_walk, space_dance, staff_credit, ninja_bodyguard/reincarnate,
+  bunny_hop, toss_boys/toss_boys_2/remix_5, bouncy_road (all 4), bon_odori,
+  bon_dance, cosmic_dance, clappy_trio, drum_girls_live_unused, the drum
+  lessons (with RTPC_AUTO_IDLE=600). Use this as the acceptance test for
   an engine, not "it draws".
 - **rat_race was fully re-audited against the assembly on 2026-10-08**,
   function by function. The only mismatch left was the release filter in
@@ -296,7 +302,11 @@ Combine with `RTPC_AUTO=4` and `RTPC_HEADLESS=1`.
 **`RTPC_AUTO=4` plays the cues** (2026-10-08): it presses each live cue's
 button on the target frame, holds buttons the engine also judges on
 release until the release cue, and only taps A (for menus and text) after
-5 s with no live cue and no open play inputs. `RTPC_AUTO=1/2` tap A blindly,
+5 s with no live cue and no open play inputs. The drum lessons wait for the
+player to start drumming on their own, so run them with
+`RTPC_AUTO_IDLE=600` (A-tap after 10 s even with play inputs open); do not
+make that the default -- in tanuki_and_monkey and rat_race those taps are
+judged as stray input. `RTPC_AUTO=1/2` tap A blindly,
 which in engines that treat an unrelated press as "do it again"
 (tanuki_and_monkey) loops a practice forever and in rat_race costs the rank.
 **`RTPC_CUETRACE=1`** logs every spawn, hit/barely with its offset, miss and
