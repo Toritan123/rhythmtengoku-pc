@@ -116,8 +116,18 @@ u32 func_0804e418(struct struct_0804cb88 *drawData)
         u32 shape  = (u32)(cel_attr0 >> 14);   /* attr0[15:14] */
         u32 size   = (u32)(cel_attr1 >> 14);   /* attr1[15:14] */
         u32 dimIdx = (shape << 2) | size;       /* 0..11 */
-        u8  width  = drawData->objDim[dimIdx * 2];
-        u8  height = drawData->objDim[dimIdx * 2 + 1];
+        u32 width  = drawData->objDim[dimIdx * 2];
+        u32 height = drawData->objDim[dimIdx * 2 + 1];
+
+        /* Double-size is read from the merged attr0 (the sprite's own flags
+         * set it, not the cel), and doubles the OBJ's box for everything
+         * below: the centring, the culling (asm: and r1, r7, #0x300;
+         * lsleq r0, r0, #1). */
+        int dbl = (out_attr0 & 0x300u) == 0x300u;
+        if (dbl) {
+            width  <<= 1;
+            height <<= 1;
+        }
 
         /* ── Affine or non-affine path ── */
         if (r6 & 0x200u) {
@@ -128,12 +138,11 @@ u32 func_0804e418(struct struct_0804cb88 *drawData)
             s32 halfH    = (s32)height >> 1;
 
             /* Adjust OBJ offset toward sprite centre.
-             * cel_attr0 & 0x300: bits 8:9 = rotation/scaling + double-size
-             *   == 0x300 → double-size: add quarter-dim once
-             *   != 0x300 → normal affine: add quarter-dim twice (= half-dim) */
+             *   double-size → add quarter of the doubled box once
+             *   otherwise   → add quarter-dim twice (= half-dim) */
             xObjOff += quarterW;
             yObjOff += quarterH;
-            if ((cel_attr0 & 0x300u) != 0x300u) {
+            if (!dbl) {
                 xObjOff += quarterW;
                 yObjOff += quarterH;
             }

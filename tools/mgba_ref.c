@@ -152,6 +152,23 @@ int main(int argc, char **argv)
             }
         }
         if (getenv("MGBA_REF_CLOCK") && (f % 20) == 0) fprintf(stderr, "f %d clock %d epoch %d\n", f, (int32_t)core->busRead32(core, SCRIPT_CLOCK), epoch);
+        if (getenv("MGBA_REF_OAM") && f0 >= 0 && f - f0 == atoi(getenv("MGBA_REF_OAM"))) {
+            // Same format as RTPC_OAMDUMP in platform/ppu.c.
+            for (int i = 0; i < 128; i++) {
+                uint16_t a0 = core->busRead16(core, 0x07000000 + i * 8);
+                uint16_t a1 = core->busRead16(core, 0x07000002 + i * 8);
+                uint16_t a2 = core->busRead16(core, 0x07000004 + i * 8);
+                if (((a0 >> 8) & 3) == 2) continue;
+                fprintf(stderr, "[OAM] %3d %04x %04x %04x", i, a0, a1, a2);
+                if (a0 & 0x100) {
+                    uint32_t g = 0x07000000 + ((a1 >> 9) & 0x1F) * 32;
+                    fprintf(stderr, "  pa %d pb %d pc %d pd %d", (int16_t)core->busRead16(core, g + 6),
+                            (int16_t)core->busRead16(core, g + 14), (int16_t)core->busRead16(core, g + 22),
+                            (int16_t)core->busRead16(core, g + 30));
+                }
+                fprintf(stderr, "\n");
+            }
+        }
         if (getenv("MGBA_REF_RNG") && f0 >= 0 && f - f0 < 40) {
             fprintf(stderr, "rel %d rng %04x\n", f - f0, core->busRead16(core, 0x030000b4));
         }

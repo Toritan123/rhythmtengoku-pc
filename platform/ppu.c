@@ -428,26 +428,32 @@ static void render_sprites(int prio, int objwin)
             aff_pd = (int16_t)(*(uint16_t *)(gba_oam + affine_idx * 32 + 30));
         }
 
+        // Double-size affine sprites (mode 3) draw into a box twice the
+        // sprite's size, centred on the same point, so a scaled-up sprite is
+        // not clipped to its own size (karate_man's incoming pots).
+        int bw = (obj_mode == 3) ? sw * 2 : sw;
+        int bh = (obj_mode == 3) ? sh * 2 : sh;
+
         // Render visible rows
-        for (int py = 0; py < sh; py++) {
+        for (int py = 0; py < bh; py++) {
             int screen_y = y_screen + py;
             if (screen_y < 0 || screen_y >= GBA_H) continue;
             s_line = screen_y;
 
-            for (int px_s = 0; px_s < sw; px_s++) {
+            for (int px_s = 0; px_s < bw; px_s++) {
                 int screen_x = x_screen + px_s;
                 if (screen_x < 0 || screen_x >= GBA_W) continue;
 
                 int ppx = hflip ? (sw - 1 - px_s) : px_s;
                 int ppy = vflip ? (sh - 1 - py) : py;
 
-                // Affine: transform (ppx - sw/2, ppy - sh/2) using matrix
-                int src_px, src_py;
+                // Affine: texture = matrix * (screen - box centre) + sprite
+                // centre, in 8.8 fixed point; the hardware floors (>> 8).
                 if (obj_mode == 1 || obj_mode == 3) {
-                    int dx = (px_s - sw / 2) * 256;
-                    int dy = (py   - sh / 2) * 256;
-                    src_px = (aff_pa * dx + aff_pb * dy) / 65536 + sw / 2;
-                    src_py = (aff_pc * dx + aff_pd * dy) / 65536 + sh / 2;
+                    int dx = px_s - bw / 2;
+                    int dy = py   - bh / 2;
+                    int src_px = ((aff_pa * dx + aff_pb * dy) >> 8) + sw / 2;
+                    int src_py = ((aff_pc * dx + aff_pd * dy) >> 8) + sh / 2;
                     if (src_px < 0 || src_px >= sw || src_py < 0 || src_py >= sh) continue;
                     ppx = src_px;
                     ppy = src_py;
@@ -707,6 +713,25 @@ upload:
                 SDL_Surface *sf = SDL_CreateRGBSurfaceFrom(s_fb, GBA_W, GBA_H, 32, GBA_W*4,
                     0x000000FF, 0x0000FF00, 0x00FF0000, 0xFF000000);
                 if (sf) { SDL_SaveBMP(sf, p); SDL_FreeSurface(sf); }
+            }
+        }
+        // RTPC_OAMDUMP=N (test aid): print the visible OAM entries and their
+        // affine parameters at frame N, to compare with the ROM in mGBA
+        // (tools/mgba_ref.c, MGBA_REF_OAM).
+        {
+            static int at = -2;
+            if (at == -2) { const char *e = getenv("RTPC_OAMDUMP"); at = e ? atoi(e) : -1; }
+            if (at >= 0 && s_frame == (uint32_t)at) {
+                for (int i = 0; i < 128; i++) {
+                    const uint16_t *o = (const uint16_t *)(gba_oam + i * 8);
+                    if (((o[0] >> 8) & 3) == 2) continue;
+                    fprintf(stderr, "[OAM] %3d %04x %04x %04x", i, o[0], o[1], o[2]);
+                    if (o[0] & 0x100) {
+                        const int16_t *g = (const int16_t *)(gba_oam + ((o[1] >> 9) & 0x1F) * 32);
+                        fprintf(stderr, "  pa %d pb %d pc %d pd %d", g[3], g[7], g[11], g[15]);
+                    }
+                    fprintf(stderr, "\n");
+                }
             }
         }
         // Save at regular intervals
