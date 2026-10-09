@@ -435,7 +435,8 @@ u32 rhythm_tweezers_cue_update_long(struct Cue *cue, struct RhythmTweezersCue *i
     if (++info->pullTime > info->pullTarget) pullFinished = TRUE;
     if ((D_03004ac0 & 0xf1) == 0) buttonsReleased = TRUE;
 
-    // Held too long: the hair tears out on its own and the cue is a miss.
+    // Held for the whole pull: the hair comes out and the cue is a hit
+    // (cue result 0 = CUE_RESULT_HIT).
     if (pullFinished) {
         buttonsReleased = FALSE;
         gameplay_add_cue_result(markingCriteria, 0, 0);
@@ -462,7 +463,8 @@ u32 rhythm_tweezers_cue_update_long(struct Cue *cue, struct RhythmTweezersCue *i
         }
     }
 
-    // Released in time: the hair springs back and the cue is a hit.
+    // Let go too early: the hair springs back, the cue counts as barely
+    // (1 = CUE_RESULT_BARELY) and a tutorial loop is told to go again.
     if (buttonsReleased) {
         gameplay_add_cue_result(markingCriteria, 1, 0);
         affine_sprite_set_anim(info->sprite, anim_rhythm_tweezers_long_hair, 0, 1, 0x7f, 0);

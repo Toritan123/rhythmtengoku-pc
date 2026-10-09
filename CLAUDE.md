@@ -207,11 +207,28 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
   - Autoplay misses that are not bugs: filter-0 cues (no button; remix_6/7,
     mannequin_factory, sick_beats) and tutorial demo cues with input off
     (sneaky_spirits, rap_men).
+- **`D_03004b10` field offsets** (struct GraphicsBuffer, include/graphics.h):
+  BG_CNT 0x04, BG_OFS 0x0C, affineBG 0x1C, WIN0H 0x3C, WININ 0x44,
+  WINOUT 0x46, MOSAIC 0x48, **BLDMOD 0x4C, COLEV 0x4E, COLEY 0x50**,
+  bgPalette 0x54. The `(IORAMBase + 0x40)` comment on WIN0H is the IO
+  address, not the struct offset. samurai_slice's translation mapped 0x4C
+  to WININ and lost its blend (black stage, invisible demons) until
+  2026-10-10. When a layer shows that should not, diff the `[IO]` line of
+  RTPC_OAMDUMP against MGBA_REF_OAM first.
 - **Double-size affine sprites were wrong until 2026-10-09** (karate_man's
   pots showed as a magnified square). `func_0804e418` in
   `platform/sprite_lib_pc.c` tested the cel's attr0 for double-size instead
   of the merged one and did not double the box, and the PPU ignored mode 3.
   Both fixed; if a scaled sprite looks clipped or offset, start there.
+- **RTPC_AUTO=4 keeps holding while the engine has closed both input
+  filters** (2026-10-09). rhythm_tweezers' curly hairs close them on the
+  hit and then watch `D_03004ac0`; a 2-frame tap snapped every hair back,
+  the tutorial (`beatscript_enable_loops` on failure) repeated forever and
+  the game never reached its results. Only presses made for a cue are
+  extended, so text-advancing A taps stay taps.
+- **`[RES]` names in RTPC_TRACE were shifted by one before 2026-10-09**:
+  the enum is HIT=0, BARELY=1, MISS=2, NONE=3, but the trace printed 0 as
+  "NONE". Read older logs with that in mind ("[RES] NONE" = hit).
 - **RTPC_AUTO=4 re-presses a button only after a frame up** (2026-10-09).
   Two A cues two frames apart (drum lessons) used to merge into one long
   press, so the lessons missed a cue every loop and never ended; the
@@ -276,7 +293,10 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
   semi-transparent OBJs. Each pixel keeps its top two layers for that. If a
   game shows a layer where it should not, or something opaque that should be
   see-through, check the window and blend registers before the engine.
-- `perfect` crashes intermittently (~1 run in 6), undiagnosed and pre-existing.
+- `perfect` used to crash intermittently (~1 run in 6), never diagnosed. On
+  2026-10-09 it did not crash in 42 runs (RTPC_AUTO=0/1/4, headless and
+  rendered, 25 s each), so it no longer reproduces; whether one of the
+  pointer-width fixes cured it is unknown.
 - **`text_printer` draws on PC** (2026-09-23). `text_print_glyph_to_vram_rom`
   (the ARM routine the GBA copies into IWRAM) is translated in C as
   `pc_print_glyph_to_vram` in `src/text_printer.c`; the `_rom` stub stays on

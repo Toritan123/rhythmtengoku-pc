@@ -672,8 +672,8 @@ void gameplay_add_cue_result(u32 markingCriteria, u32 cueResult, s32 timingOffse
     u32 noCue = (cueResult == CUE_RESULT_NONE);
 #ifdef PLATFORM_PC
     if (getenv("RTPC_TRACE")) {
-        static const char *nm[] = {"NONE","HIT","BARELY","MISS","?4","?5"};
-        fprintf(stderr, "[RES] %s off=%d\n", nm[cueResult < 6 ? cueResult : 0], timingOffset);
+        static const char *nm[] = {"HIT","BARELY","MISS","NONE"}; // enum CueHitResult
+        fprintf(stderr, "[RES] %s off=%d\n", cueResult < 4 ? nm[cueResult] : "?", timingOffset);
         fflush(stderr);
     }
 #endif
@@ -937,6 +937,22 @@ void gameplay_update_all_cues(void) {
             }
             u16 pressedThisFrame = 0;
 
+            // An engine that closes both filters right after a press is
+            // watching the button being held (rhythm_tweezers' curly hairs:
+            // hold until the hair comes out; letting go early snaps it back
+            // and the tutorial repeats forever). Keep holding until it opens
+            // them again. Only presses made for a cue are kept: the A taps
+            // that advance text must stay taps.
+            static u16 sCuePressed;
+            if ((gGameplay->buttonPressFilter == 0) && (gGameplay->buttonReleaseFilter == 0)) {
+                sCuePressed &= pc_autoplay_held();
+                if (sCuePressed != 0) {
+                    pc_autoplay_press(sCuePressed, 2);
+                }
+            } else {
+                sCuePressed = 0;
+            }
+
             for (cue = gGameplay->cues; cue != NULL; cue = cue->prev) {
                 u16 filter = cue->data.buttonFilter;
                 u16 buttons = filter & 0x3ff;
@@ -985,6 +1001,7 @@ void gameplay_update_all_cues(void) {
                                  gGameplay->buttonPressFilter, pc_autoplay_held());
                     pc_autoplay_press(buttons, (gGameplay->buttonReleaseFilter & buttons) ? 600 : 2);
                     pressedThisFrame |= buttons;
+                    sCuePressed |= buttons;
                 } else if (cue->runningTime + 2 == cue->duration) {
                     // Let go first if still held, so the press is an edge.
                     pc_autoplay_set_hold(buttons, 0);
