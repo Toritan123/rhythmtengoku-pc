@@ -178,13 +178,46 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
   PPMs. Scene addresses: follow each level name in
   `data/scenes/game_select/levels.inc.c` to its ROM string and the pointer
   before it (rat_race = 0x089d2c04). Recipe: run the PC game with
-  `RTPC_KEYLOG=keys.txt RTPC_SHOTS=10`, find the frame offset with an
-  input-free run (rat_race: PC shot n == mGBA frame n+28), shift the key log
-  by offset+1, capture in mGBA, diff with PIL. rat_race then matches pixel
-  for pixel except (a) anything from `agb_random` -- the GBA spins
-  `get_agb_random_var()` while waiting for VBlank, so its RNG cannot be
-  reproduced -- and (b) fades/text that wait for asset loading, which is
-  instant on PC (a few frames early).
+  `RTPC_AUTO=4 RTPC_KEYLOG=keys.txt RTPC_SHOTS=10`, pass keys.txt to
+  mgba_ref unchanged with EVERY=1, and compare each PC shot n with the
+  best-matching ref frame near n+offset (PIL/numpy).
+  - **Replay on the script clock, not on frames.** The key log records
+    `D_030053c0.runningTime` (0x030053d8 on the GBA) with each key change,
+    and mgba_ref presses the key when the ROM's clock reaches it. A fixed
+    frame offset does not hold: the ROM spends extra frames on every load,
+    so ninja_bodyguard drifted ~20 frames by its end, the ROM missed cues
+    the PC hit, and its results said "やりなおし" -- a replay artifact, not a
+    port bug. With the clock the offset stays constant all game.
+  - Expected differences: anything from `agb_random` (the GBA spins
+    `get_agb_random_var()` while waiting for VBlank, so its RNG cannot be
+    reproduced -- arrow debris, bubbles, dust), fades/text that wait for
+    asset loading (instant on PC), and the first ~40 frames (the PC boots
+    straight into the scene; the ROM fades out of the warning screen).
+  - When a sprite differs, compare OAM rather than pixels:
+    `RTPC_OAMDUMP=<pc frame>` and `MGBA_REF_OAM=<ref frame>` print the
+    visible entries in the same format; `diff` them. That is how the
+    double-size bug below was found in one step.
+  - **Disk**: a per-frame capture is ~115 KB, ~1 GB per game, and this
+    machine had 3 GB free when it filled up mid-batch. Delete captures as
+    soon as a game is compared.
+  - Checked so far (whole game incl. results, script-clock replay):
+    karate_man and clappy_trio match pixel for pixel; rat_race,
+    ninja_bodyguard differ only in RNG-driven sprites (rat_race: dust y
+    `agb_random(0xe)` and plate stack cel `agb_random(3)`).
+  - Autoplay misses that are not bugs: filter-0 cues (no button; remix_6/7,
+    mannequin_factory, sick_beats) and tutorial demo cues with input off
+    (sneaky_spirits, rap_men).
+- **Double-size affine sprites were wrong until 2026-10-09** (karate_man's
+  pots showed as a magnified square). `func_0804e418` in
+  `platform/sprite_lib_pc.c` tested the cel's attr0 for double-size instead
+  of the merged one and did not double the box, and the PPU ignored mode 3.
+  Both fixed; if a scaled sprite looks clipped or offset, start there.
+- **RTPC_AUTO=4 re-presses a button only after a frame up** (2026-10-09).
+  Two A cues two frames apart (drum lessons) used to merge into one long
+  press, so the lessons missed a cue every loop and never ended; the
+  autoplay now picks the cue's other button (Left). Lessons clear with 0
+  misses; the one stray right before their results is the A that closes
+  the final text box, as a player would press it.
 - `RTPC_AUTO=2` taps SELECT every 4 s, which *quits* a drum lesson
   ("セレクトde中止") -- use `RTPC_AUTO=1` (or 4) for lessons.
 - **Game labels are resolved by `tools/bs2c.py`, not by
