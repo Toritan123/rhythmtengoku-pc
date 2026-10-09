@@ -344,6 +344,12 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
     before play_drumtech_note existed.
   - "NOT TRANSLATED" placeholders are strong symbols and hide from the stub
     count: `grep -rn "NOT TRANSLATED" src`.
+- **Palette loads copy past the palette** (fixed 0x140/0x200 bytes; 229 of
+  290 loads). The GBA gets the ROM bytes that follow, and Wizard's Waltz's
+  title colour comes from them. `tools/gen_pal_overread.py` regenerates
+  `platform/pal_overread.c` (ROM bytes of every such copy, checked against
+  the defined colours) and `src/graphics_table.c` copies from it on PC.
+  Re-run it after adding or changing a graphics table.
 - **Data tables the ROM leaves unterminated** break on PC, because the GBA got
   away with whatever happened to follow in ROM. `rat_race_marking_criteria`
   was one (its .bs says `@! No criteria terminator`); `tools/bs2c.py` now
