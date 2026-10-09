@@ -314,9 +314,9 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
   built OBJ tile numbers as `X + (Y + 64) * 32`; the +64 set attr2 bit 11
   (priority) and put text behind BGs -- the options description box was the
   visible case. Two display bugs seen while checking this, both pre-existing
-  and not text: brown tile garbage on the rhythm_tweezers onion (not seen in
-  a screenshot after the PPU window/blend work on 2026-10-08; whether that
-  fixed it is unverified), and the yellow "モノラル" label overlapping
+  and not text: brown tile garbage on the rhythm_tweezers onion (gone: the
+  2026-10-09 mGBA comparison of rhythm_tweezers differs from the ROM only
+  in the RNG-spun falling hairs), and the yellow "モノラル" label overlapping
   "ステレオ" in options -- the latter is in the cel data itself
   (`options_cel006` entries 6-7 place the palette-4 "モノラル" at (20, 0)
   behind the selected word), so most likely the intended look, not a bug.
