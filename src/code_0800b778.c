@@ -1,6 +1,7 @@
 #include "global.h"
 #ifdef PLATFORM_PC
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #endif
 #include "code_0800b778.h"
@@ -310,6 +311,14 @@ void update_active_beatscript_scene(void) {
 // script progress instead of its frame count (the ROM spends extra frames
 // on every load, so a fixed frame offset drifts).
 int pc_script_clock(void) {
+    // RTPC_CLOCKLOG=1: also print the clock and tempo state every 20 calls
+    // (once per frame), in the format of mgba_ref's MGBA_REF_CLOCK.
+    static int log = -1, n;
+    if (log < 0) log = getenv("RTPC_CLOCKLOG") != NULL;
+    if (log && (n++ % 20) == 0) {
+        fprintf(stderr, "[CLOCK] f %d clock %d delta %d bpm %d speed %d\n", n - 1, D_030053c0.runningTime,
+                D_030053c0.deltaTime, D_030053c0.scriptBPM, D_030053c0.scriptSpeed);
+    }
     return D_030053c0.runningTime;
 }
 #endif

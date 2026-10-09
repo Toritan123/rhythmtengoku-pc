@@ -152,7 +152,11 @@ int main(int argc, char **argv)
                 fprintf(stderr, "scene frames start at %d, epoch %d\n", f0, epoch);
             }
         }
-        if (getenv("MGBA_REF_CLOCK") && (f % 20) == 0) fprintf(stderr, "f %d clock %d epoch %d\n", f, (int32_t)core->busRead32(core, SCRIPT_CLOCK), epoch);
+        if (getenv("MGBA_REF_CLOCK") && f0 >= 0 && ((f - f0) % 20) == 0) {
+            fprintf(stderr, "[CLOCK] rel %d clock %d delta %d bpm %d speed %d\n", f - f0,
+                    (int32_t)core->busRead32(core, SCRIPT_CLOCK), (int32_t)core->busRead32(core, 0x030053d4),
+                    core->busRead16(core, 0x030053cc), core->busRead16(core, 0x030053ce));
+        }
         if (getenv("MGBA_REF_OAM") && f0 >= 0 && f - f0 == atoi(getenv("MGBA_REF_OAM"))) {
             // Same format as RTPC_OAMDUMP in platform/ppu.c.
             fprintf(stderr, "[IO]");
