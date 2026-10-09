@@ -304,6 +304,17 @@ void update_active_beatscript_scene(void) {
 }
 
 
+#ifdef PLATFORM_PC
+// Test aid: the script clock, which RTPC_KEYLOG records next to each key
+// change so tools/mgba_ref.c can replay the input against the ROM's own
+// script progress instead of its frame count (the ROM spends extra frames
+// on every load, so a fixed frame offset drifts).
+int pc_script_clock(void) {
+    return D_030053c0.runningTime;
+}
+#endif
+
+
 // Check if No Beatscript Threads Are Active
 s32 beatscript_scene_is_inactive(void) {
     u32 i;

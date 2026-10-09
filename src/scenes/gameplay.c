@@ -915,6 +915,7 @@ void gameplay_update_all_cues(void) {
         extern void pc_autoplay_press(unsigned buttons, int holdFrames);
         extern void pc_autoplay_set_hold(unsigned buttons, int holdFrames);
         extern void pc_autoplay_set_idle_limit(unsigned frames);
+        extern unsigned pc_autoplay_held(void);
 
         if (pc_autoplay_enabled()) {
             // A live cue counts as activity. With play inputs open (and no
@@ -957,6 +958,11 @@ void gameplay_update_all_cues(void) {
                 if ((buttons & ~pressedThisFrame) != 0) {
                     buttons &= ~pressedThisFrame;
                 }
+                // Likewise avoid a button still held from a press a frame or
+                // two ago: re-pressing it would not be an edge.
+                if (!(filter & 0x8000) && ((buttons & ~pc_autoplay_held()) != 0)) {
+                    buttons &= ~pc_autoplay_held();
+                }
                 buttons &= -buttons;
                 if (filter & 0x8000) {
                     // Release cue: hold the button (or keep holding it) so
@@ -975,6 +981,8 @@ void gameplay_update_all_cues(void) {
                     // getting in the way. Hold for up to 10 s (rat_race
                     // waits ~5 s); a release cue, or the next press cue for
                     // the same button, cuts it short.
+                    PC_CUE_TRACE("auto press %04x filter=%04x open=%04x held=%04x\n", buttons, filter,
+                                 gGameplay->buttonPressFilter, pc_autoplay_held());
                     pc_autoplay_press(buttons, (gGameplay->buttonReleaseFilter & buttons) ? 600 : 2);
                     pressedThisFrame |= buttons;
                 } else if (cue->runningTime + 2 == cue->duration) {

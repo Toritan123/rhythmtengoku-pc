@@ -12,12 +12,14 @@
 // SCENE_ADDR is the ROM address of a struct Scene, e.g. 0x089d2c04 for
 // scene_rat_race (taken from the game select level table). INPUTS, optional,
 // is a file of "frame keys" lines (keys = GBA KEYINPUT bit mask, held from
-// that frame on), with frames counted from the scene switch.
+// that frame on), with frames counted from the scene switch -- or an
+// RTPC_KEYLOG file as it is ("frame keys epoch clock since"), which is
+// replayed on the ROM's script clock instead of on frame numbers.
 //
-// To compare a PC run: record it with RTPC_KEYLOG=keys.txt, find the frame
-// offset from an input-free run (rat_race: PC shot n == mGBA frame n + 28),
-// and add one more frame to the logged input frames (keys are logged one
-// frame before the shot of the same number). Anything driven by the RNG
+// To compare a PC run: record it with RTPC_KEYLOG=keys.txt and pass that
+// file. The frame offset between PC shot n and mGBA frame n + k (rat_race:
+// k = 28) is not constant: the ROM spends extra frames on each load, so
+// compare each PC shot with the best-matching ref frame nearby. Anything driven by the RNG
 // will differ: the GBA spins get_agb_random_var() while it waits for
 // VBlank, so its RNG advances by an amount that depends on spare CPU time.
 #include <mgba/core/core.h>
@@ -27,6 +29,7 @@
 #include <string.h>
 
 #define TITLE_SCENE_PTR 0x08935fac // D_08935fac: pointer to the title scene
+#define SCRIPT_CLOCK    0x030053d8 // D_030053c0.runningTime
 
 static void save_ppm(const char *path, const color_t *buf, unsigned w, unsigned h)
 {
@@ -52,10 +55,23 @@ int main(int argc, char **argv)
     int frames = atoi(argv[3]), every = atoi(argv[4]);
     const char *outdir = argv[5];
 
-    int inFrame[4096]; uint32_t inKeys[4096]; int nIn = 0;
+    // Input lines are "frame keys" or, from RTPC_KEYLOG, "frame keys epoch
+    // clock since". With the clock columns the keys are replayed when the
+    // ROM's script clock reaches the logged point instead of on the logged
+    // frame: the ROM spends extra frames on every load, so a frame offset
+    // that fits the start of a game drifts by its end.
+    static int inFrame[8192], inEpoch[8192], inClock[8192], inSince[8192];
+    static uint32_t inKeys[8192];
+    int nIn = 0, clocked = 0;
     if (argc > 6) {
         FILE *f = fopen(argv[6], "r");
-        while (f && nIn < 4096 && fscanf(f, "%d %i", &inFrame[nIn], (int *)&inKeys[nIn]) == 2) nIn++;
+        char line[128];
+        while (f && nIn < 8192 && fgets(line, sizeof(line), f)) {
+            int n = sscanf(line, "%d %i %d %d %d", &inFrame[nIn], (int *)&inKeys[nIn],
+                           &inEpoch[nIn], &inClock[nIn], &inSince[nIn]);
+            if (n == 5) clocked = 1;
+            if (n >= 2) nIn++;
+        }
         if (f) fclose(f);
     }
 
@@ -90,14 +106,37 @@ int main(int argc, char **argv)
     if (!switched) { fprintf(stderr, "transition entry not found\n"); return 1; }
 
     // Leave the warning screen with A, then run the scene.
-    int k = 0;
+    // The clock is tracked from here on, while the warning scene still runs:
+    // epoch -1 is the warning scene, and the requested scene restarting the
+    // clock (which can come after f0) makes epoch 0, as on the PC.
+    int k = -1, epoch = -1, since = 0;
+    int32_t lastClock = (int32_t)core->busRead32(core, SCRIPT_CLOCK);
     for (int f = 0; f < frames; f++) {
         uint32_t keys = 0;
-        if (f0 < 0) {
+        // The same bookkeeping as platform/input.c, read at the same point:
+        // before the game polls the keys for this frame.
+        int32_t clock = (int32_t)core->busRead32(core, SCRIPT_CLOCK);
+        if (clock < lastClock) epoch++;
+        since = (clock == lastClock) ? since + 1 : 0;
+        lastClock = clock;
+        if (f0 < 0 && (!clocked || epoch < 0)) {
             keys = ((f / 10) % 2) ? 0 : 1; // tap A until the scene changes
+        } else if (clocked) {
+            while (k + 1 < nIn &&
+                   (inEpoch[k + 1] < epoch ||
+                    (inEpoch[k + 1] == epoch && (inClock[k + 1] < clock ||
+                     (inClock[k + 1] == clock && inSince[k + 1] <= since))))) k++;
+            if (k >= 0) keys = inKeys[k];
         } else {
             while (k + 1 < nIn && inFrame[k + 1] <= f - f0) k++;
-            if (nIn && inFrame[k] <= f - f0) keys = inKeys[k];
+            if (k >= 0) keys = inKeys[k];
+        }
+        if (getenv("MGBA_REF_KEYS")) {
+            static uint32_t lastKeys;
+            if (keys != lastKeys) {
+                fprintf(stderr, "rel %d keys %03x epoch %d clock %d since %d\n", f - f0, keys, epoch, lastClock, since);
+                lastKeys = keys;
+            }
         }
         core->setKeys(core, keys);
         core->runFrame(core);
@@ -107,8 +146,12 @@ int main(int argc, char **argv)
         if (f0 < 0 && f > 30) {
             int nonwhite = 0;
             for (unsigned i = 0; i < w * h; i += 97) if ((buf[i] & 0xFFFFFF) != 0xF8F8F8 && (buf[i] & 0xFFFFFF) != 0xFFFFFF) nonwhite++;
-            if (nonwhite > (int)(w * h / 97) * 9 / 10) { f0 = f; fprintf(stderr, "scene frames start at %d\n", f0); }
+            if (nonwhite > (int)(w * h / 97) * 9 / 10) {
+                f0 = f;
+                fprintf(stderr, "scene frames start at %d, epoch %d\n", f0, epoch);
+            }
         }
+        if (getenv("MGBA_REF_CLOCK") && (f % 20) == 0) fprintf(stderr, "f %d clock %d epoch %d\n", f, (int32_t)core->busRead32(core, SCRIPT_CLOCK), epoch);
         if (getenv("MGBA_REF_RNG") && f0 >= 0 && f - f0 < 40) {
             fprintf(stderr, "rel %d rng %04x\n", f - f0, core->busRead16(core, 0x030000b4));
         }

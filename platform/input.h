@@ -7,6 +7,10 @@ int  pc_autoplay_enabled(void);
 void pc_autoplay_press(unsigned buttons, int holdFrames);     // hold at least this long
 void pc_autoplay_set_hold(unsigned buttons, int holdFrames);  // hold exactly this long
 void pc_autoplay_set_idle_limit(unsigned frames);             // A-tap fallback delay
+unsigned pc_autoplay_held(void);                              // buttons autoplay is holding
+
+// D_030053c0.runningTime, for RTPC_KEYLOG (defined in src/code_0800b778.c).
+int pc_script_clock(void);
 
 #include <SDL2/SDL.h>
 #include <stdint.h>

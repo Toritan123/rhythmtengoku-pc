@@ -46,6 +46,19 @@ void pc_autoplay_press(unsigned buttons, int holdFrames)
     s_autoplay_idle = 0;
 }
 
+// Buttons the autoplay is holding (bit mask): still counting down, or down
+// in the REG_KEY value the game read this frame. A press requested now only
+// shows up next frame, so pressing one of these again would not be an edge.
+static unsigned s_autoplay_down;
+unsigned pc_autoplay_held(void)
+{
+    unsigned m = s_autoplay_down;
+    for (int i = 0; i < 10; i++) {
+        if (s_autoplay_hold[i] > 0) m |= 1u << i;
+    }
+    return m;
+}
+
 // frames == 0: gameplay has its play inputs open. A stray press there is
 // judged -- tanuki_and_monkey takes it as "do it again", rat_race marks it
 // down -- so the fallback stays off unless RTPC_AUTO_IDLE=<frames> asks for
@@ -136,9 +149,11 @@ void input_update_reg_key(void)
             // still advance -- but not while gameplay has its play inputs
             // open, unless RTPC_AUTO_IDLE says so (pc_autoplay_set_idle_limit).
             if (++s_autoplay_idle > s_autoplay_idle_limit && (s_autoplay_idle % 30) < 2) reg &= ~GBA_A;
+            s_autoplay_down = 0;
             for (int i = 0; i < 10; i++) {
                 if (s_autoplay_hold[i] > 0) {
                     reg &= ~(1u << i);
+                    s_autoplay_down |= 1u << i;
                     s_autoplay_hold[i]--;
                 }
             }
@@ -157,14 +172,23 @@ void input_update_reg_key(void)
         }
     }
 
-    // RTPC_KEYLOG=<file> (test aid): record "frame keys" whenever the
-    // pressed set changes, frames counted from boot, so a run can be
-    // replayed in mGBA (tools/mgba_ref.c) and compared frame by frame.
+    // RTPC_KEYLOG=<file> (test aid): record "frame keys epoch clock since"
+    // whenever the pressed set changes, frames counted from boot, so a run
+    // can be replayed in mGBA (tools/mgba_ref.c) and compared frame by frame.
+    // clock is D_030053c0.runningTime when the keys are read, epoch counts
+    // its restarts (scene changes) and since counts the frames it has stood
+    // still (paused script); mgba_ref replays on these, because the ROM's
+    // frame count drifts with load times.
     {
         static FILE *log = NULL;
         static int opened = 0;
         static uint32_t frame = 0;
         static uint16_t last = 0xFFFF;
+        static int lastClock = 0, epoch = 0, since = 0;
+        int clock = pc_script_clock();
+        if (clock < lastClock) epoch++; // a new scene restarted the clock
+        since = (clock == lastClock) ? since + 1 : 0;
+        lastClock = clock;
         if (!opened) {
             const char *e = getenv("RTPC_KEYLOG");
             if (e && *e) log = fopen(e, "w");
@@ -173,7 +197,7 @@ void input_update_reg_key(void)
         if (log) {
             uint16_t keys = (uint16_t)(~reg & 0x3FF);
             if (keys != last) {
-                fprintf(log, "%u 0x%03x\n", frame, keys);
+                fprintf(log, "%u 0x%03x %d %d %d\n", frame, keys, epoch, clock, since);
                 fflush(log);
                 last = keys;
             }
