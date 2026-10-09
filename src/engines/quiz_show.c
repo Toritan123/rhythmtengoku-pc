@@ -322,6 +322,23 @@ s32 func_08037cd0(void) {
 
 void quiz_show_engine_update(void) {
     func_08037378();
+
+#ifdef PLATFORM_PC
+    // RTPC_AUTO=4 test aid. The quiz has no cues to press for: the player
+    // answers by matching the host's press count, which the engine compares
+    // itself (func_08037cd0). While play inputs are open and the player is
+    // behind, tap A -- one press per frame up, so each one is an edge.
+    {
+        extern int pc_autoplay_enabled(void);
+        extern void pc_autoplay_press(unsigned buttons, int holdFrames);
+        extern unsigned pc_autoplay_held(void);
+
+        if (pc_autoplay_enabled() && gameplay_inputs_are_enabled()
+         && (gQuizShow->player.count < gQuizShow->host.count) && !(pc_autoplay_held() & A_BUTTON)) {
+            pc_autoplay_press(A_BUTTON, 1);
+        }
+    }
+#endif
 }
 
 void func_08037d00(struct QuizShowScriptTable *arg0) {
