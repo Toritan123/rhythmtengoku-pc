@@ -43,6 +43,24 @@ void *func_08002a54(void *dest) {
 }
 
 
+#ifdef PLATFORM_PC
+#include "platform/pal_overread.h"
+
+// A raw copy of a palette past its own banks reads, on the GBA, whatever
+// follows it in ROM; return those bytes instead of reading past the C array.
+static const void *pc_raw_gfx_src(const void *src, u32 size) {
+    u32 i;
+
+    for (i = 0; i < gPcPalOverreadCount; i++) {
+        if ((gPcPalOverreads[i].pal == src) && (size <= gPcPalOverreads[i].size)) {
+            return gPcPalOverreads[i].rom;
+        }
+    }
+    return src;
+}
+#endif
+
+
 // Initialise GfxTableLoader
 void func_08002a6c(struct GfxTableLoader *info, const struct GraphicsTable *gfxTable, u32 limit) {
     if (gfxTable->src != NULL) {
@@ -62,6 +80,9 @@ void func_08002a6c(struct GfxTableLoader *info, const struct GraphicsTable *gfxT
         if (gfxTable->size != COMPRESSED_GFX_SOURCE) {
             info->compressionLevel = COMPRESSION_LEVEL_NONE;
             info->size = gfxTable->size;
+#ifdef PLATFORM_PC
+            info->src = pc_raw_gfx_src(info->src, info->size);
+#endif
             return;
         }
 
@@ -191,6 +212,9 @@ void func_08002b10(struct GfxTableLoader *info) {
                 info->src = gfxTable->src;
                 info->dest = (void *)func_08002a54(gfxTable->dest);
                 info->size = gfxTable->size;
+#ifdef PLATFORM_PC
+                info->src = pc_raw_gfx_src(info->src, info->size);
+#endif
             } else {
                 info->compressionLevel = COMPRESSION_LEVEL_RLE;
                 info->src = (void *)func_0800869c(gfxTable->src);

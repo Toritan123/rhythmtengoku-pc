@@ -725,6 +725,11 @@ upload:
                 fprintf(stderr, "[IO]");
                 for (int r = 0; r < 0x56; r += 2) fprintf(stderr, " %04x", IOREG16(r));
                 fprintf(stderr, "\n");
+                for (int b = 0; b < 32; b++) { // 16 BG banks, then 16 OBJ banks
+                    fprintf(stderr, "[PAL] %s%2d", b < 16 ? "bg " : "obj", b & 15);
+                    for (int c = 0; c < 16; c++) fprintf(stderr, " %04x", ((const uint16_t *)gba_palette)[b * 16 + c]);
+                    fprintf(stderr, "\n");
+                }
                 for (int i = 0; i < 128; i++) {
                     const uint16_t *o = (const uint16_t *)(gba_oam + i * 8);
                     if (((o[0] >> 8) & 3) == 2) continue;

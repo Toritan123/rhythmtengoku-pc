@@ -161,6 +161,11 @@ int main(int argc, char **argv)
             struct GBA *gba = core->board;
             for (int r = 0; r < 0x56; r += 2) fprintf(stderr, " %04x", gba->memory.io[r >> 1]);
             fprintf(stderr, "\n");
+            for (int b = 0; b < 32; b++) { // 16 BG banks, then 16 OBJ banks
+                fprintf(stderr, "[PAL] %s%2d", b < 16 ? "bg " : "obj", b & 15);
+                for (int c = 0; c < 16; c++) fprintf(stderr, " %04x", core->busRead16(core, 0x05000000 + (b * 16 + c) * 2));
+                fprintf(stderr, "\n");
+            }
             for (int i = 0; i < 128; i++) {
                 uint16_t a0 = core->busRead16(core, 0x07000000 + i * 8);
                 uint16_t a1 = core->busRead16(core, 0x07000002 + i * 8);
