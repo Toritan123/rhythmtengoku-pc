@@ -251,8 +251,8 @@ void func_0803118c(s32 x) {
 // Translated from the assembly above and checked against it; not proven byte-exact.
 // [func_080311b4] Game Engine Stop
 void samurai_slice_engine_stop(void) {
-    D_03004b10.WININ = 0;
-    D_03004b10.WINOUT = 0;
+    D_03004b10.BLDMOD = 0;
+    D_03004b10.COLEV = 0;
 }
 #endif
 
@@ -296,7 +296,7 @@ u32 samurai_slice_cue_update(struct Cue *cue, struct SamuraiSliceCue *info, u32 
 
     gSamuraiSlice->sliceState = 0;
     gSamuraiSlice->windowWipe = 0;
-    D_03004b10.WINOUT = 0x1000;
+    D_03004b10.COLEV = 0x1000;
     scene_set_music_track_volume(gSamuraiSlice->unk1E2, 0);
     gSamuraiSlice->slicesInARow = 0;
     sprite_set_visible(gSpriteHandler, gSamuraiSlice->flamesSprite, FALSE);
@@ -445,7 +445,7 @@ void samurai_slice_cue_barely(struct Cue *cue, struct SamuraiSliceCue *info, u32
 
     gSamuraiSlice->sliceState = 0;
     gSamuraiSlice->windowWipe = 0;
-    D_03004b10.WINOUT = 0x1000;
+    D_03004b10.COLEV = 0x1000;
     scene_set_music_track_volume(gSamuraiSlice->unk1E2, 0);
 }
 #endif
@@ -904,8 +904,8 @@ void func_08032228(void) {
 
     gSamuraiSlice->windowWipeDone = FALSE;
     gSamuraiSlice->windowWipe = 0;
-    D_03004b10.WININ = 0x3846;
-    D_03004b10.WINOUT = 0x1000;
+    D_03004b10.BLDMOD = 0x3846;
+    D_03004b10.COLEV = 0x1000;
     gSamuraiSlice->unk1E2 = 0;
 }
 #endif
@@ -933,7 +933,7 @@ void func_08032298(void) {
         samuraiSlice->windowWipeDone = TRUE;
     }
 
-    D_03004b10.WINOUT = ((0x10 - (gSamuraiSlice->windowWipe >> 8)) << 8)
+    D_03004b10.COLEV = ((0x10 - (gSamuraiSlice->windowWipe >> 8)) << 8)
                       | (gSamuraiSlice->windowWipe >> 8);
     scene_set_music_track_volume(gSamuraiSlice->unk1E2,
                                  (u16)((3 * (gSamuraiSlice->windowWipe >> 8)) << 2));
@@ -976,7 +976,7 @@ void func_08032330(void) {
     scene_set_bg_layer_pos(BG_LAYER_1, (s16)(gSamuraiSlice->bg1ScrollX >> 8), 0);
     scene_set_bg_layer_pos(BG_LAYER_2, (s16)(gSamuraiSlice->bg2ScrollX >> 8), 0);
 
-    D_03004b10.WINOUT = ((0x10 - (gSamuraiSlice->windowWipe >> 8)) << 8)
+    D_03004b10.COLEV = ((0x10 - (gSamuraiSlice->windowWipe >> 8)) << 8)
                       | (gSamuraiSlice->windowWipe >> 8);
     scene_set_music_track_volume(gSamuraiSlice->unk1E2,
                                  (u16)((3 * (gSamuraiSlice->windowWipe >> 8)) << 2));

@@ -722,6 +722,9 @@ upload:
             static int at = -2;
             if (at == -2) { const char *e = getenv("RTPC_OAMDUMP"); at = e ? atoi(e) : -1; }
             if (at >= 0 && s_frame == (uint32_t)at) {
+                fprintf(stderr, "[IO]");
+                for (int r = 0; r < 0x56; r += 2) fprintf(stderr, " %04x", IOREG16(r));
+                fprintf(stderr, "\n");
                 for (int i = 0; i < 128; i++) {
                     const uint16_t *o = (const uint16_t *)(gba_oam + i * 8);
                     if (((o[0] >> 8) & 3) == 2) continue;

@@ -24,6 +24,7 @@
 // VBlank, so its RNG advances by an amount that depends on spare CPU time.
 #include <mgba/core/core.h>
 #include <mgba/core/config.h>
+#include <mgba/internal/gba/gba.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -154,6 +155,12 @@ int main(int argc, char **argv)
         if (getenv("MGBA_REF_CLOCK") && (f % 20) == 0) fprintf(stderr, "f %d clock %d epoch %d\n", f, (int32_t)core->busRead32(core, SCRIPT_CLOCK), epoch);
         if (getenv("MGBA_REF_OAM") && f0 >= 0 && f - f0 == atoi(getenv("MGBA_REF_OAM"))) {
             // Same format as RTPC_OAMDUMP in platform/ppu.c.
+            fprintf(stderr, "[IO]");
+            // From mGBA's register file: the scroll registers are
+            // write-only and read back as open bus through the bus.
+            struct GBA *gba = core->board;
+            for (int r = 0; r < 0x56; r += 2) fprintf(stderr, " %04x", gba->memory.io[r >> 1]);
+            fprintf(stderr, "\n");
             for (int i = 0; i < 128; i++) {
                 uint16_t a0 = core->busRead16(core, 0x07000000 + i * 8);
                 uint16_t a1 = core->busRead16(core, 0x07000002 + i * 8);
