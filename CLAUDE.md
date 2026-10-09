@@ -161,13 +161,30 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
   bon_dance, cosmic_dance, clappy_trio, drum_girls_live_unused, the drum
   lessons (with RTPC_AUTO_IDLE=600). Use this as the acceptance test for
   an engine, not "it draws".
-- **rat_race was fully re-audited against the assembly on 2026-10-08**,
-  function by function. The only mismatch left was the release filter in
+- **rat_race was "fully re-audited" on 2026-10-08 and still had a bug**: the
+  cat's BG0 offset was passed as x instead of y, so the cat sat in view all
+  game. Reading the asm did not catch it; comparing frames against the real
+  ROM did (next item). Treat an audit by reading as weaker evidence than a
+  pixel comparison. The other mismatch found then was the release filter in
   engine_start (`gameplay_set_input_buttons(A_BUTTON, A_BUTTON)`; the
   assembly passes a leftover R1 = 1). Without it the dash cue,
   `RELEASE_BUTTON(A_BUTTON)`, could never be hit. When translating, watch
   for arguments the assembly passes in a register it set for something
   else just before the call.
+- **The real ROM can be run for comparison** (2026-10-09): mGBA and
+  libmgba are installed (`/usr/local/lib/libmgba.dylib`, x86_64).
+  `tools/mgba_ref.c` boots the ROM, retargets the warning screen's
+  transition to any `struct Scene` address, replays a key log and saves
+  PPMs. Scene addresses: follow each level name in
+  `data/scenes/game_select/levels.inc.c` to its ROM string and the pointer
+  before it (rat_race = 0x089d2c04). Recipe: run the PC game with
+  `RTPC_KEYLOG=keys.txt RTPC_SHOTS=10`, find the frame offset with an
+  input-free run (rat_race: PC shot n == mGBA frame n+28), shift the key log
+  by offset+1, capture in mGBA, diff with PIL. rat_race then matches pixel
+  for pixel except (a) anything from `agb_random` -- the GBA spins
+  `get_agb_random_var()` while waiting for VBlank, so its RNG cannot be
+  reproduced -- and (b) fades/text that wait for asset loading, which is
+  instant on PC (a few frames early).
 - `RTPC_AUTO=2` taps SELECT every 4 s, which *quits* a drum lesson
   ("セレクトde中止") -- use `RTPC_AUTO=1` (or 4) for lessons.
 - **Game labels are resolved by `tools/bs2c.py`, not by
