@@ -164,5 +164,8 @@ Palette drum_live_menu_pal[] = {
         /* 13 */ TO_RGB555(0x000000),
         /* 14 */ TO_RGB555(0x000000),
         /* 15 */ TO_RGB555(0x000000)
-    }
+    },
+#ifdef PLATFORM_PC // ROM bytes past this palette (tools/gen_pal_overread.py)
+    /* PALETTE 09 */ { 0x0001, 0x00f8, 0x0000, 0x0351, 0x0002, 0x80e0, 0x8000, 0x218a, 0x80e0, 0x4010, 0x219d, 0x0002, 0x80e2, 0x8000, 0x218a, 0x80e2 },
+#endif // PLATFORM_PC
 };

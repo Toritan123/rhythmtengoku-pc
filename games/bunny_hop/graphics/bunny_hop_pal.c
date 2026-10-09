@@ -456,5 +456,8 @@ Palette bunny_hop_remix_3_pal[] = {
         /* 13 */ TO_RGB555(0x000000),
         /* 14 */ TO_RGB555(0x000000),
         /* 15 */ TO_RGB555(0x000000)
-    }
+    },
+#ifdef PLATFORM_PC // ROM bytes past this palette (tools/gen_pal_overread.py)
+    /* PALETTE 09 */ { 0x0001, 0x00f8, 0x0000, 0x0326, 0x0015, 0x00be, 0x81fe, 0x0100, 0x00c6, 0x41ee, 0x0296, 0x40c0, 0x01f8, 0x0304, 0x40c9, 0x01f8 },
+#endif // PLATFORM_PC
 };
