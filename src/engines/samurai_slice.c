@@ -897,10 +897,10 @@ void func_08032228(void) {
     struct SamuraiSliceEngineData *samuraiSlice = gSamuraiSlice;
 
     samuraiSlice->sliceState = 0;
-    samuraiSlice->bg1ScrollX = 0;
-    samuraiSlice->bg2ScrollX = 0;
-    scene_set_bg_layer_pos(BG_LAYER_1, (s16)(samuraiSlice->bg1ScrollX >> 8), 0);
-    scene_set_bg_layer_pos(BG_LAYER_2, (s16)(gSamuraiSlice->bg2ScrollX >> 8), 0);
+    samuraiSlice->bg1ScrollY = 0;
+    samuraiSlice->bg2ScrollY = 0;
+    scene_set_bg_layer_pos(BG_LAYER_1, 0, (s16)(samuraiSlice->bg1ScrollY >> 8));
+    scene_set_bg_layer_pos(BG_LAYER_2, 0, (s16)(gSamuraiSlice->bg2ScrollY >> 8));
 
     gSamuraiSlice->windowWipeDone = FALSE;
     gSamuraiSlice->windowWipe = 0;
@@ -951,30 +951,30 @@ void func_08032330(void) {
 
     // Everything moves at a quarter speed while the intro is still running.
     if (samuraiSlice->introTimer != 0) {
-        samuraiSlice->bg1ScrollX += 0x200;
+        samuraiSlice->bg1ScrollY += 0x200;
     } else {
-        samuraiSlice->bg1ScrollX += 0x800;
+        samuraiSlice->bg1ScrollY += 0x800;
     }
 
     samuraiSlice = gSamuraiSlice;
     if (samuraiSlice->introTimer != 0) {
-        samuraiSlice->bg2ScrollX -= 0x200;
+        samuraiSlice->bg2ScrollY -= 0x200;
     } else {
-        samuraiSlice->bg2ScrollX -= 0x800;
+        samuraiSlice->bg2ScrollY -= 0x800;
     }
 
     samuraiSlice = gSamuraiSlice;
-    if ((samuraiSlice->bg1ScrollX >> 8) > 0xef) samuraiSlice->bg1ScrollX = 0xf000;
+    if ((samuraiSlice->bg1ScrollY >> 8) > 0xef) samuraiSlice->bg1ScrollY = 0xf000;
     samuraiSlice = gSamuraiSlice;
-    if ((samuraiSlice->bg2ScrollX >> 8) <= -0xf0) samuraiSlice->bg2ScrollX = -0xf000;
+    if ((samuraiSlice->bg2ScrollY >> 8) <= -0xf0) samuraiSlice->bg2ScrollY = -0xf000;
 
     step = (get_beatscript_tempo() << 8) / 0x8c;
     samuraiSlice = gSamuraiSlice;
     samuraiSlice->windowWipe -= step;
     if (samuraiSlice->windowWipe <= 0) samuraiSlice->windowWipe = 0;
 
-    scene_set_bg_layer_pos(BG_LAYER_1, (s16)(gSamuraiSlice->bg1ScrollX >> 8), 0);
-    scene_set_bg_layer_pos(BG_LAYER_2, (s16)(gSamuraiSlice->bg2ScrollX >> 8), 0);
+    scene_set_bg_layer_pos(BG_LAYER_1, 0, (s16)(gSamuraiSlice->bg1ScrollY >> 8));
+    scene_set_bg_layer_pos(BG_LAYER_2, 0, (s16)(gSamuraiSlice->bg2ScrollY >> 8));
 
     D_03004b10.COLEV = ((0x10 - (gSamuraiSlice->windowWipe >> 8)) << 8)
                       | (gSamuraiSlice->windowWipe >> 8);
@@ -995,10 +995,10 @@ void func_08032430(u32 wipeTarget) {
     gSamuraiSlice->windowWipeTarget = wipeTarget;
 
     samuraiSlice = gSamuraiSlice;
-    samuraiSlice->bg1ScrollX = 0;
-    samuraiSlice->bg2ScrollX = 0;
-    scene_set_bg_layer_pos(BG_LAYER_1, (s16)(samuraiSlice->bg1ScrollX >> 8), 0);
-    scene_set_bg_layer_pos(BG_LAYER_2, (s16)(gSamuraiSlice->bg2ScrollX >> 8), 0);
+    samuraiSlice->bg1ScrollY = 0;
+    samuraiSlice->bg2ScrollY = 0;
+    scene_set_bg_layer_pos(BG_LAYER_1, 0, (s16)(samuraiSlice->bg1ScrollY >> 8));
+    scene_set_bg_layer_pos(BG_LAYER_2, 0, (s16)(gSamuraiSlice->bg2ScrollY >> 8));
 }
 #endif
 

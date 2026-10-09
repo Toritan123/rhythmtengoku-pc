@@ -65,8 +65,8 @@ struct SamuraiSliceEngineData {
     struct SamuraiSliceDemon demons[2];         // 0x010
     u8  sliceState;                             // 0x078
     u8  unk079[3];
-    s32 bg1ScrollX;                             // 0x07C  16.8 fixed point
-    s32 bg2ScrollX;                             // 0x080  16.8 fixed point
+    s32 bg1ScrollY;                             // 0x07C  16.8 fixed point
+    s32 bg2ScrollY;                             // 0x080  16.8 fixed point
     s32 windowWipe;                             // 0x084  16.8 fixed point
     u8  windowWipeTarget;                       // 0x088
     u8  windowWipeDone;                         // 0x089
