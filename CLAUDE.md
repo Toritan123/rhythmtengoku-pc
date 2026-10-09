@@ -200,10 +200,19 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
   - **Disk**: a per-frame capture is ~115 KB, ~1 GB per game, and this
     machine had 3 GB free when it filled up mid-batch. Delete captures as
     soon as a game is compared.
-  - Checked so far (whole game incl. results, script-clock replay):
-    karate_man and clappy_trio match pixel for pixel; rat_race,
-    ninja_bodyguard differ only in RNG-driven sprites (rat_race: dust y
-    `agb_random(0xe)` and plate stack cel `agb_random(3)`).
+  - Checked so far (whole game incl. results, script-clock replay), as of
+    2026-10-10. Pixel for pixel: karate_man, clappy_trio, toss_boys,
+    space_dance, marching_orders, power_calligraphy, rap_men, polyrhythm.
+    Only RNG / load-timing differences: rat_race, ninja_bodyguard,
+    bunny_hop, showtime, night_walk, sneaky_spirits, spaceball, tap_trial,
+    tram_pauline, sick_beats, rhythm_tweezers(_2), wizards_waltz,
+    bon_odori, samurai_slice, quiz_show (until its random question pick).
+    Bugs this found: double-size sprites (karate_man), blend registers and
+    BG x/y (samurai_slice), palette overreads (wizards_waltz, bon_odori).
+  - **BG x/y swapped in `scene_set_bg_layer_pos` happened twice**
+    (rat_race's cat, samurai_slice's slide): the args are (layer, x, y) and
+    the asm passes x in R1, y in R2. Every engine's calls were checked on
+    2026-10-10; check any new translation the same way.
   - Autoplay misses that are not bugs: filter-0 cues (no button; remix_6/7,
     mannequin_factory, sick_beats) and tutorial demo cues with input off
     (sneaky_spirits, rap_men).
