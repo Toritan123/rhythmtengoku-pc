@@ -609,12 +609,12 @@ void func_0803a678(void) {
 
     ratRace->unk080 = 0;
     ratRace->unk07C = 0;
-    gRatRace->catX = 0x5000;
+    gRatRace->catY = 0x5000;
 
     gRatRace->catPupilsSprite = sprite_create(gSpriteHandler, anim_cat_pupils,
                                               4, 0x78, 0x94, 0xc00a, 0, 0, 0);
     gRatRace->catEyelidsSprite = sprite_create(gSpriteHandler, anim_cat_eyelids,
-                                               0, 0x78, (s16)((gRatRace->catX >> 8) + 0x44),
+                                               0, 0x78, (s16)((gRatRace->catY >> 8) + 0x44),
                                                0xc005, 0, 0, 0);
     sprite_set_visible(gSpriteHandler, gRatRace->catEyelidsSprite, FALSE);
 
@@ -646,7 +646,7 @@ void func_0803a798(u32 state) {
     switch (state) {
         case 0:
             // Back to the start: up out of view, eyelids open and hidden, paws away.
-            gRatRace->catX = 0x5000;
+            gRatRace->catY = 0x5000;
             sprite_set_visible(gSpriteHandler, gRatRace->catEyelidsSprite, FALSE);
             sprite_set_anim_cel(gSpriteHandler, gRatRace->catEyelidsSprite, 0);
             sprite_set_visible(gSpriteHandler, gRatRace->catPawSprite, FALSE);
@@ -669,7 +669,7 @@ void func_0803a798(u32 state) {
             break;
 
         case 4:
-            gRatRace->catX = 0;
+            gRatRace->catY = 0;
             break;
 
         case 5:
@@ -698,7 +698,7 @@ void func_0803a8e4(void) {
         case 3:
             // Lowering into view, and rising back out again in case 6.
             t = func_0800c398();
-            gRatRace->catX -= ((t * 5) << 4) / 6;
+            gRatRace->catY -= ((t * 5) << 4) / 6;
             break;
 
         case 4:
@@ -721,7 +721,7 @@ void func_0803a8e4(void) {
 
         case 6:
             t = func_0800c398();
-            gRatRace->catX += ((t * 5) << 4) / 6;
+            gRatRace->catY += ((t * 5) << 4) / 6;
             break;
 
         default:
@@ -729,13 +729,16 @@ void func_0803a8e4(void) {
     }
 
     sprite_set_y(gSpriteHandler, gRatRace->catPupilsSprite,
-                 (s16)((gRatRace->catX >> 8) + 0x44));
+                 (s16)((gRatRace->catY >> 8) + 0x44));
     sprite_set_y(gSpriteHandler, gRatRace->catEyelidsSprite,
-                 (s16)((gRatRace->catX >> 8) + 0x44));
+                 (s16)((gRatRace->catY >> 8) + 0x44));
 
     // Once the goal banner owns layer 0 the cat stops driving it.
     if (!gRatRace->unk0D3) {
-        scene_set_bg_layer_pos(BG_LAYER_0, (s16)((-gRatRace->catX) >> 8), 0);
+        // y, not x: the asm passes R1 = 0 and R2 = -catY. With the two
+        // swapped the cat sat 80 px to the right, in view, all game long,
+        // instead of 80 px down behind the table until it rises.
+        scene_set_bg_layer_pos(BG_LAYER_0, 0, (s16)((-gRatRace->catY) >> 8));
     }
 }
 #endif

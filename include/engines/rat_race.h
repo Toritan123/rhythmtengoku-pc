@@ -73,7 +73,7 @@ struct RatRaceEngineData {
     u8  unk07C;                                 // 0x07C
     u8  unk07D[3];
     s32 unk080;                                 // 0x080
-    s32 catX;                                   // 0x084  16.8 fixed point
+    s32 catY;                                   // 0x084  16.8 fixed point
     struct RatRaceDashParticle particles[9];    // 0x088
     s16 unk0D0;                                 // 0x0D0
     u8  unk0D2;                                 // 0x0D2
