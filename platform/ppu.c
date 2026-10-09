@@ -633,6 +633,14 @@ void ppu_render_frame(void)
 
     compute_windows(dispcnt);
 
+    // RTPC_PPU_LAYERS=<mask> (debug): draw only these layers (bit 0-3 BG,
+    // bit 4 OBJ), to see which layer a pixel comes from.
+    {
+        static int mask = -2;
+        if (mask == -2) { const char *e = getenv("RTPC_PPU_LAYERS"); mask = e ? (int)strtol(e, NULL, 0) : -1; }
+        if (mask >= 0) dispcnt &= (uint16_t)(~0x1F00u | ((unsigned)mask << 8));
+    }
+
     switch (mode) {
     case 0:
         // Text modes: render in priority order (3 lowest … 0 highest)

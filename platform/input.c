@@ -157,6 +157,30 @@ void input_update_reg_key(void)
         }
     }
 
+    // RTPC_KEYLOG=<file> (test aid): record "frame keys" whenever the
+    // pressed set changes, frames counted from boot, so a run can be
+    // replayed in mGBA (tools/mgba_ref.c) and compared frame by frame.
+    {
+        static FILE *log = NULL;
+        static int opened = 0;
+        static uint32_t frame = 0;
+        static uint16_t last = 0xFFFF;
+        if (!opened) {
+            const char *e = getenv("RTPC_KEYLOG");
+            if (e && *e) log = fopen(e, "w");
+            opened = 1;
+        }
+        if (log) {
+            uint16_t keys = (uint16_t)(~reg & 0x3FF);
+            if (keys != last) {
+                fprintf(log, "%u 0x%03x\n", frame, keys);
+                fflush(log);
+                last = keys;
+            }
+        }
+        frame++;
+    }
+
     *(volatile uint16_t *)(gba_io + IO_KEY) = reg;
 }
 

@@ -934,6 +934,8 @@ void gameplay_update_all_cues(void) {
             } else {
                 pc_autoplay_set_idle_limit(300);
             }
+            u16 pressedThisFrame = 0;
+
             for (cue = gGameplay->cues; cue != NULL; cue = cue->prev) {
                 u16 filter = cue->data.buttonFilter;
                 u16 buttons = filter & 0x3ff;
@@ -948,14 +950,24 @@ void gameplay_update_all_cues(void) {
                 if (open != 0) {
                     buttons = open;
                 }
-                buttons &= -buttons; // lowest button only
+                // Lowest button only -- but one not already given to another
+                // cue due on the same frame: two simultaneous cues that both
+                // take A or Left (the drum lessons) need two presses, since
+                // one press only judges the nearest cue.
+                if ((buttons & ~pressedThisFrame) != 0) {
+                    buttons &= ~pressedThisFrame;
+                }
+                buttons &= -buttons;
                 if (filter & 0x8000) {
                     // Release cue: hold the button (or keep holding it) so
                     // that it lets go exactly on the target frame.
                     if (cue->runningTime + 8 == cue->duration) {
                         pc_autoplay_set_hold(buttons, 8);
                     }
-                } else if (cue->runningTime == cue->duration) {
+                } else if ((cue->runningTime == cue->duration)
+                        || ((cue->duration == 0) && (cue->runningTime == 1))) {
+                    // (A cue due "now" -- night_walk's remix entry -- has
+                    // duration 0 and is already at 1 by the first update.)
                     // An engine that also judges releases of this button
                     // (rat_race: press to stop, release to run) expects it
                     // held until the release cue; a quick tap would land a
@@ -964,6 +976,7 @@ void gameplay_update_all_cues(void) {
                     // waits ~5 s); a release cue, or the next press cue for
                     // the same button, cuts it short.
                     pc_autoplay_press(buttons, (gGameplay->buttonReleaseFilter & buttons) ? 600 : 2);
+                    pressedThisFrame |= buttons;
                 } else if (cue->runningTime + 2 == cue->duration) {
                     // Let go first if still held, so the press is an edge.
                     pc_autoplay_set_hold(buttons, 0);
