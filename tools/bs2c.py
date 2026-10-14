@@ -575,7 +575,29 @@ def translate(path, macros, root, index=None, consts=None):
 
     # latin-1 keeps every byte: the text blocks hold Shift-JIS strings that
     # must reach the C output unchanged.
+    # The .bs sources are run through the C preprocessor by the GBA build;
+    # the only conditionals in them are on REV (the ROM revision). The base
+    # ROM this port is checked against is REV 0 (BASEROM_SHA1 in Makefile).
+    rev = int(os.environ.get("REV", "0"))
+    cond = []   # stack of "this branch is live"
     for raw in open(path, encoding="latin-1"):
+        pp = raw.strip()
+        if pp.startswith("#if "):
+            expr = pp[4:].strip()
+            if not re.fullmatch(r"REV\s*(<|<=|>|>=|==|!=)\s*\d+", expr):
+                raise SystemExit(f"{path}: unsupported conditional '{pp}'")
+            live = eval(expr, {}, {"REV": rev})
+            cond.append(live and all(cond))
+            continue
+        if pp == "#else":
+            outer = all(cond[:-1])
+            cond[-1] = outer and not cond[-1]
+            continue
+        if pp == "#endif":
+            cond.pop()
+            continue
+        if cond and not cond[-1]:
+            continue
         # Skip the bodies of macros defined in this file; they were loaded above.
         word = strip_comments(raw).split(None, 1)
         if word and word[0] == ".macro":
@@ -667,6 +689,8 @@ SCENE_VAR_FIELDS = {
     "scenes/data_room/reading.bs":     {4: ("ReadingSceneData",         "inputsEnabled", "src/scenes/reading.h")},
     # 0x358 on the GBA: StudioSceneData embeds a DrumTechController (with
     # pointers) ahead of inputsEnabled.
+    # inputsEnabled follows a u8, at 4 on both; written symbolically anyway.
+    "scenes/game_select/scene.bs":     {4: ("GameSelectSceneData",  "inputsEnabled", "src/scenes/game_select.h")},
     "scenes/studio/scene.bs":          {0x358: ("StudioSceneData",      "inputsEnabled", "src/scenes/studio.h")},
     # No pointer precedes inputsEnabled here, so 0x10 is already right on both;
     # written symbolically anyway so it cannot rot.

@@ -158,7 +158,18 @@ int main(int argc, char **argv)
                     core->busRead16(core, 0x030053cc), core->busRead16(core, 0x030053ce));
         }
         if (getenv("MGBA_REF_OAM") && f0 >= 0 && f - f0 == atoi(getenv("MGBA_REF_OAM"))) {
-            // Same format as RTPC_OAMDUMP in platform/ppu.c.
+            // Same format as RTPC_OAMDUMP in platform/ppu.c, which also
+            // writes VRAM to vram_NNNNN.bin.
+            {
+                char vp[512];
+                snprintf(vp, sizeof(vp), "%s/vram_%05d.bin", outdir, f - f0);
+                FILE *vf = fopen(vp, "wb");
+                for (uint32_t a = 0; vf && a < 0x18000; a += 2) {
+                    uint16_t v = core->busRead16(core, 0x06000000 + a);
+                    fwrite(&v, 2, 1, vf);
+                }
+                if (vf) fclose(vf);
+            }
             fprintf(stderr, "[IO]");
             // From mGBA's register file: the scroll registers are
             // write-only and read back as open bus through the bus.

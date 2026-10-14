@@ -686,7 +686,7 @@ void ppu_render_frame(void)
     compose_effects();
 
 upload:
-    SDL_UpdateTexture(s_tex, NULL, s_fb, GBA_W * sizeof(uint32_t));
+    if (s_tex) SDL_UpdateTexture(s_tex, NULL, s_fb, GBA_W * sizeof(uint32_t)); // none when headless
 
     // Auto-save frames at key points for diagnostics (build with RTPC_FRAMEDUMP=1)
 #ifdef RTPC_FRAMEDUMP
@@ -722,6 +722,12 @@ upload:
             static int at = -2;
             if (at == -2) { const char *e = getenv("RTPC_OAMDUMP"); at = e ? atoi(e) : -1; }
             if (at >= 0 && s_frame == (uint32_t)at) {
+                {   // the whole of VRAM, for a byte diff against MGBA_REF_OAM's
+                    char vp[512];
+                    snprintf(vp, sizeof(vp), "%s/vram_%05d.bin", dir, s_frame);
+                    FILE *vf = fopen(vp, "wb");
+                    if (vf) { fwrite(gba_vram, 1, 0x18000, vf); fclose(vf); }
+                }
                 fprintf(stderr, "[IO]");
                 for (int r = 0; r < 0x56; r += 2) fprintf(stderr, " %04x", IOREG16(r));
                 fprintf(stderr, "\n");

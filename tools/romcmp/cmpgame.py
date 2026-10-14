@@ -44,7 +44,7 @@ def build_mgba_ref(work):
 def pc_run(game, d, keylog, frames=None, limit=3000):
     os.makedirs(d)
     env = dict(os.environ, RTPC_SAVE='/dev/null', RTPC_SCENE=game, RTPC_SHOTS='10',
-               RTPC_SHOT_DIR=d, RTPC_TRACE='1', RTPC_CUETRACE='1', RTPC_AUTO='4',
+               RTPC_SHOT_DIR=d, RTPC_TRACE='1', RTPC_CUETRACE='1', RTPC_AUTO='4', RTPC_HEADLESS='1',
                RTPC_KEYLOG=keylog)
     logp = d + '.log'
     with open(logp, 'w') as log:
@@ -66,38 +66,65 @@ def load(p):
 
 
 def compare(pcd, refd, last):
+    """Compare each PC shot with the ROM frames near n + offset.
+
+    The offset is anchored: the replay runs on the script clock, so it only
+    moves when a load pauses the ROM's script for a few frames. A shot is
+    first matched within +-3 frames of the current offset; only if a wider
+    search finds an exact match at another offset for 3 shots in a row is
+    the offset moved there. (Moving it on any exact match let a static
+    screen drag it away, which then made later, identical frames differ.)
+    """
     cache = {}
 
     def ref(k):
         if k not in cache:
             p = os.path.join(refd, 'ref_%05d.ppm' % k)
-            cache[k] = load(p) if os.path.exists(p) else None
+            try:
+                cache[k] = load(p) if os.path.exists(p) else None
+            except OSError:
+                cache[k] = None
         return cache[k]
 
-    bad = []; cur = START_OFFSET
-    for n in range(10, last + 1, 10):
-        a = os.path.join(pcd, 'shot_%05d.bmp' % n)
-        if not os.path.exists(a):
-            continue
-        A = load(a); best = None
-        for k in range(n + cur - 20, n + cur + 80):
+    def best(A, n, lo, hi, cur):
+        b = None
+        for k in range(n + lo, n + hi + 1):
             B = ref(k)
             if B is None:
                 continue
             c = int((np.abs(A - B).max(axis=2) > 24).sum())
-            key = (c, abs(k - n - cur))  # ties: stay near the running offset
-            if best is None or key < best[0]:
-                best = (key, k - n)
+            key = (c, abs(k - n - cur))
+            if b is None or key < b[0]:
+                b = (key, k - n)
+        return (b[0][0], b[1]) if b else None
+
+    bad = []; cur = START_OFFSET; pending = []
+    for n in range(10, last + 1, 10):
+        a = os.path.join(pcd, 'shot_%05d.bmp' % n)
+        if not os.path.exists(a):
+            continue
+        try:
+            A = load(a)
+        except OSError:     # the last shot, cut short when the run was stopped
+            continue
+        near = best(A, n, cur - 3, cur + 3, cur)
+        if near is None:
+            continue
+        c, o = near
+        if c:
+            wide = best(A, n, cur - 30, cur + 60, cur)
+            if wide and wide[0] == 0:
+                pending.append(wide[1])
+                if len(pending) >= 3 and len(set(pending[-3:])) == 1:
+                    cur = pending[-1]; pending = []
+            else:
+                pending = []
+            bad.append((n, c, o))
+        else:
+            pending = []
         for k in list(cache):
             if k < n + cur - 40:
                 del cache[k]
-        if best is None:
-            continue
-        c, o = best[0][0], best[1]
-        if c == 0:
-            cur = o
-        if c:
-            bad.append((n, c, o))
     return bad
 
 

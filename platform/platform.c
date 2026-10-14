@@ -114,6 +114,9 @@ int platform_poll_events(void)
 {
     SDL_Event ev;
     while (SDL_PollEvent(&ev)) {
+        if (ev.type == SDL_WINDOWEVENT && getenv("RTPC_WINLOG")) {
+            fprintf(stderr, "[WIN] t=%llu event %d\n", (unsigned long long)SDL_GetTicks64(), ev.window.event);
+        }
         if (input_handle_event(&ev)) return 1;
     }
     return 0;
@@ -143,7 +146,16 @@ void platform_frame_sync(void)
     // touched SRAM, so this costs nothing on the frames that did not save.
     rtpc_sram_flush();
 
-    if (!s_headless) {
+    if (s_headless) {
+        // Still build the frame when a test aid wants pictures of it
+        // (RTPC_SHOTS, RTPC_FRAMEDUMP, RTPC_OAMDUMP): the PPU writes those
+        // from its own framebuffer, no window needed.
+        static int want = -1;
+        if (want < 0) {
+            want = getenv("RTPC_SHOTS") || getenv("RTPC_FRAMEDUMP") || getenv("RTPC_OAMDUMP");
+        }
+        if (want) ppu_render_frame();
+    } else {
     // Render GBA frame to texture and present.  This shows the frame the game
     // just finished building, so it happens first — presenting any later would
     // add display latency for no benefit.
