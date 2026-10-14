@@ -37,69 +37,6 @@ extern struct GameEngine karate_man_engine;
 
 // Scene descriptors – used as targets for set_next_scene().
 
-// ─── Title Scene ─────────────────────────────────────────────────────────────
-// Minimal PC beatscript for the title scene.
-static struct Beatscript script_scene_title_pc[] = {
-    /* rest long */ { BS_CMD_REST, 0, 0, 3600 },
-    /* stop      */ { BS_CMD_STOP, 0, 0, 0    },
-};
-
-// PC title update: replicates what the GBA beatscript does after GFX loads.
-// On GBA: beatscript unpauses → calls func_08007324(TRUE) → palette fade →
-//         title_logo_appear → title_scene_complete_intro → enable inputs.
-// On PC we drive this manually with a frame counter.
-static s32 pc_title_frames = 0;  // reset by pc_title_start each visit
-
-static void pc_title_start(void *sVar, s32 dArg) {
-    pc_title_frames = 0;
-    title_scene_start(sVar, dArg);
-    // Start title BGM immediately (on GBA this is done by the ROM beatscript).
-    scene_set_music(&s_title_bgm_seqData);
-    // Sync scriptBaseBPM to musicBaseBPM so playerSpeed = 1.0x (no pitch-shift).
-    // scene_set_music() sets musicBaseBPM but leaves scriptBaseBPM at its old
-    // value, causing the MIDI player to run at scriptBPM/musicBPM rate.
-    set_beatscript_tempo(D_030053c0.musicBaseBPM);
-}
-
-static void pc_title_update(void *sVar, s32 dArg) {
-    pc_title_frames++;
-
-    // Enable display-buffer flush after GFX init has fired (init_gfx2 schedules
-    // at frame 2; give it a few more frames for GFX loading to begin).
-    // func_08007324(TRUE) sets D_03004b10.updateDisplay so that func_08006e88
-    // will copy the shadow DISPCNT (set by scene_set_bg_layer_display /
-    // scene_show_obj_layer) into the real REG_DISPCNT each frame.
-    if (pc_title_frames == 10) {
-        func_08007324(TRUE);
-    }
-
-    // After ~2 s show the title logo and enable player input.
-    if (pc_title_frames == 120) {
-        title_logo_appear();
-        title_scene_complete_intro();
-        gTitle->inputsEnabled = TRUE;
-    }
-
-    // Delegate to the normal per-frame logic (timer, demo timer, input).
-    title_scene_update(sVar, dArg);
-}
-
-static struct SubScene sub_scene_title_pc = {
-    /* startFunc  */ (void (*)())pc_title_start,    /* startParam  */ 0,
-    /* pausedFunc */ NULL,                           /* pausedParam */ 0,
-    /* updateFunc */ (void (*)())pc_title_update,   /* updateParam */ 0,
-    /* stopFunc   */ (void (*)())title_scene_stop,  /* stopParam   */ 0,
-    /* script     */ script_scene_title_pc,
-};
-
-struct Scene scene_title = {
-    /* initFunc  */ (void (*)())func_0801d86c, /* initParam  */ &sub_scene_title_pc,
-    /* loopFunc  */ (u32 (*)())func_0801d8d8,  /* loopParam  */ NULL,
-    /* endFunc   */ NULL,                       /* endParam   */ NULL,
-    /* memory    */ sizeof(struct TitleSceneData),
-};
-
-
 // ─── Beatscript data stubs ────────────────────────────────────────────────────
 // On GBA these are ROM arrays; on PC we provide immediate-STOP sentinels.
 struct Beatscript epilogue_end_script[1]            = {{ BS_CMD_STOP }};
@@ -112,7 +49,6 @@ struct Beatscript D_089cfda4[1]                     = {{ BS_CMD_STOP }};
 // have read past the end of the object.
 struct Beatscript D_089e2ad4[1]                     = {{ BS_CMD_STOP }};
 struct Beatscript D_089e2b04[1]                     = {{ BS_CMD_STOP }};
-struct Beatscript script_scene_title_exit[1]        = {{ BS_CMD_STOP }};
 
 
 // The beatscript data stubs above must be strong *data* definitions.
