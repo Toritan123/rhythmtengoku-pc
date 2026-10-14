@@ -199,9 +199,9 @@ extern struct GraphicsTable studio_gfx_table[];
 extern struct CompressedData *studio_buffered_textures[];
 extern u16 studio_menu_x_ofs[];
 extern u8 studio_menu_unused_table[];
-extern struct Beatscript script_scene_studio_idle[];
-extern struct Beatscript script_scene_studio_start_song[];
-extern struct Beatscript script_scene_studio_exit[];
+extern const struct Beatscript script_scene_studio_idle[];
+extern const struct Beatscript script_scene_studio_start_song[];
+extern const struct Beatscript script_scene_studio_exit[];
 extern struct Scene scene_studio;
 
 

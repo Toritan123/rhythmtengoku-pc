@@ -448,9 +448,13 @@ class Emitter:
             if kind == "text":
                 continue    # string contents, not symbol references
             for it in items:
-                for tok in it if isinstance(it, tuple) else (it,):
-                    # \b keeps the tail of a number (the xC in 0xC) out.
-                    for w in re.findall(r"\b[A-Za-z_]\w*", str(tok)):
+                # A struct item is (type tag, value); the tag is not a symbol.
+                toks = it[1:] if isinstance(it, tuple) and it and it[0] in ("w", "h", "b") else \
+                       (it if isinstance(it, tuple) else (it,))
+                for tok in toks:
+                    # The lookbehind keeps the tail of a number (the xC in 0xC,
+                    # also after a macro pasted it next to other digits) out.
+                    for w in re.findall(r"(?<![\w.])[A-Za-z_]\w*", str(tok)):
                         names.add(w)
         return names
 
@@ -661,6 +665,9 @@ SCENE_VAR_FIELDS = {
     "scenes/debug/asset_test.bs":      {8: ("AssetTestSceneData",       "inputsEnabled", "src/scenes/debug_asset_test.h")},
     "scenes/perfect/scene.bs":         {4: ("PerfectSceneData",         "inputsEnabled", "src/scenes/perfect.h")},
     "scenes/data_room/reading.bs":     {4: ("ReadingSceneData",         "inputsEnabled", "src/scenes/reading.h")},
+    # 0x358 on the GBA: StudioSceneData embeds a DrumTechController (with
+    # pointers) ahead of inputsEnabled.
+    "scenes/studio/scene.bs":          {0x358: ("StudioSceneData",      "inputsEnabled", "src/scenes/studio.h")},
     # No pointer precedes inputsEnabled here, so 0x10 is already right on both;
     # written symbolically anyway so it cannot rot.
     "scenes/options/scene.bs":         {0x10: ("OptionsSceneData",      "inputsEnabled", "src/scenes/options.h")},

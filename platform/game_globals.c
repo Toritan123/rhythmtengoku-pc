@@ -37,19 +37,6 @@ extern struct GameEngine karate_man_engine;
 
 // Scene descriptors – used as targets for set_next_scene().
 
-// Studio: not yet implemented – return to main_menu immediately.
-static u32 pc_studio_loop(void) {
-    set_next_scene(&scene_main_menu);
-    return TRUE;
-}
-struct Scene scene_studio = {
-    /* initFunc  */ NULL,                          /* initParam  */ 0,
-    /* loopFunc  */ (u32 (*)())pc_studio_loop,     /* loopParam  */ 0,
-    /* endFunc   */ NULL,                          /* endParam   */ 0,
-    /* memory    */ 0,
-};
-
-
 // ─── Title Scene ─────────────────────────────────────────────────────────────
 // Minimal PC beatscript for the title scene.
 static struct Beatscript script_scene_title_pc[] = {
@@ -116,9 +103,6 @@ struct Scene scene_title = {
 // ─── Beatscript data stubs ────────────────────────────────────────────────────
 // On GBA these are ROM arrays; on PC we provide immediate-STOP sentinels.
 struct Beatscript epilogue_end_script[1]            = {{ BS_CMD_STOP }};
-struct Beatscript script_scene_studio_exit[1]       = {{ BS_CMD_STOP }};
-struct Beatscript script_scene_studio_idle[1]       = {{ BS_CMD_STOP }};
-struct Beatscript script_scene_studio_start_song[1] = {{ BS_CMD_STOP }};
 // [D_089cfda4] Generic gameplay fade-out sequence. The beatscript engine jumps
 // here (func_0801d968) when a game ends; the previous const u8[4] definition
 // meant the engine then executed whatever globals followed it in memory.

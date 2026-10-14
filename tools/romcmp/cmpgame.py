@@ -3,6 +3,11 @@
 #
 #   tools/romcmp/cmpgame.py WORKDIR GAME [GAME...]
 #
+# GAME is a scene name without scene_ (games resolve through the level
+# table), or NAME=0xADDR for a scene that is not a level (scene_studio is
+# 0x089d85b4), or either with :FRAMES appended to stop after that many PC
+# frames instead of at the results screen.
+#
 # For each game: run the PC build under RTPC_AUTO=4 to its results screen,
 # saving a shot every 10 frames and the key log; replay that log in mGBA
 # (tools/mgba_ref.c) on the script clock, saving every frame; then compare
@@ -36,7 +41,7 @@ def build_mgba_ref(work):
     return exe
 
 
-def pc_run(game, d, keylog, limit=3000):
+def pc_run(game, d, keylog, frames=None, limit=3000):
     os.makedirs(d)
     env = dict(os.environ, RTPC_SAVE='/dev/null', RTPC_SCENE=game, RTPC_SHOTS='10',
                RTPC_SHOT_DIR=d, RTPC_TRACE='1', RTPC_CUETRACE='1', RTPC_AUTO='4',
@@ -49,6 +54,8 @@ def pc_run(game, d, keylog, limit=3000):
             time.sleep(3)
             txt = open(logp, errors='replace').read()
             if 'scene_results' in txt and 'scene_title' in txt.split('scene_results')[-1]:
+                break
+            if frames and os.path.exists(os.path.join(d, 'shot_%05d.bmp' % frames)):
                 break
         p.kill(); p.wait()
     return open(logp, errors='replace').read()
@@ -99,16 +106,21 @@ def main():
     os.makedirs(work, exist_ok=True)
     mgba = build_mgba_ref(work)
     addrs = scene_addrs()
-    for game in games:
+    for spec in games:
+        frames = None
+        if ':' in spec:
+            spec, frames = spec.split(':'); frames = int(frames)
+        game, _, addr = spec.partition('=')
+        addr = int(addr, 0) if addr else addrs[game]
         g = os.path.join(work, game)
         shutil.rmtree(g, ignore_errors=True); os.makedirs(g)
         keylog = os.path.join(g, 'keys.txt')
         pcd = os.path.join(g, 'pc'); refd = os.path.join(g, 'ref')
-        log = pc_run(game, pcd, keylog)
+        log = pc_run(game, pcd, keylog, frames)
         shots = [int(x[5:10]) for x in os.listdir(pcd) if x.startswith('shot_')]
         last = max(shots) if shots else 0
         os.makedirs(refd)
-        subprocess.run([mgba, ROM_PATH, hex(addrs[game]), str(last + START_OFFSET + 120), '1', refd, keylog],
+        subprocess.run([mgba, ROM_PATH, hex(addr), str(last + START_OFFSET + 120), '1', refd, keylog],
                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         bad = compare(pcd, refd, last)
         for n, c, o in bad:
