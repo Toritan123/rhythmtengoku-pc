@@ -66,6 +66,22 @@ lives at `/opt/homebrew`). Runtime env vars are all `RTPC_*` — see
 `RTPC_FRAMEDUMP`, `RTPC_SCENE`, `RTPC_SHOT_DIR`, `RTPC_HEADLESS`,
 `RTPC_AUDIO_LINEAR`, `RTPC_BS`, `RTPC_SAVE`.
 
+### Windows
+
+`make -f Makefile.pc win-dist` cross-builds `dist/windows/` (exe + SDL2.dll)
+with the Homebrew mingw toolchain and `third_party/SDL2-mingw` (git-ignored).
+Check it under wine, headless, with shots (wine maps `Z:\` to `/`):
+
+```sh
+cd dist/windows && RTPC_SAVE='C:\\t.sav' RTPC_HEADLESS=1 RTPC_SCENE=karate_man \
+  RTPC_AUTO=4 RTPC_SHOTS=600 RTPC_SHOT_DIR='Z:\\tmp\\wshots' WINEDEBUG=-all wine rhythmtengoku.exe
+```
+
+On 2026-10-14 its karate_man frames 600/1200/1800 were byte-identical to the
+macOS build's. The Windows build had not compiled since `platform/save_pc.c`
+(which includes `<SDL.h>`) was added -- nobody had built it; build it after
+touching platform code.
+
 ## Saves
 
 `gba_sram` is a plain 64 KB array. `platform/save_pc.c` loads it at startup and

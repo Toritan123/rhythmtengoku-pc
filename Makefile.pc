@@ -35,7 +35,7 @@ ifeq ($(PLATFORM),windows)
   TARGET  := $(BUILD)/rhythmtengoku.exe
   ARCHFLAGS :=
   BIN2SFLAGS :=
-  SDL2_CFLAGS := -I$(SDL2_WIN)/include
+  SDL2_CFLAGS := -I$(SDL2_WIN)/include -I$(SDL2_WIN)/include/SDL2
   # -mwindows keeps a console window from opening alongside the game.
   # SDL redefines main() to SDL_main on Windows, so -lSDL2main must come first.
   SDL2_LIBS   := -L$(SDL2_WIN)/lib -lmingw32 -lSDL2main -lSDL2 -mwindows
