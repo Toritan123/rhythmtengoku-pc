@@ -24,6 +24,19 @@ def scene_addrs(rom_path=ROM_PATH):
         addr = struct.unpack('<I', rom[off:off + 4])[0]
         if name.startswith('scene_') and addr:
             out[name[len('scene_'):]] = addr
+    # The medal corner menus (toys, endless games, drum lessons) list their
+    # scenes in struct MedalCornerLevel tables, 0x10 bytes per entry, at the
+    # ROM address in the comment above each table.
+    import glob
+    for f in sorted(glob.glob(os.path.join(ROOT, 'data/scenes/medal_corner/*.inc.c'))):
+        src = open(f, encoding='latin-1').read()
+        for m in re.finditer(r'// \[D_(08[0-9a-fA-F]{6})\][^\n]*\nstruct MedalCornerLevel \w+\[\] = \{(.*?)\n\};', src, re.S):
+            base = int(m.group(1), 16)
+            for i, name in enumerate(re.findall(r'/\*\s*Scene\s*\*/\s*&?(\w+)', m.group(2))):
+                off = base - 0x08000000 + i * 0x10
+                addr = struct.unpack('<I', rom[off:off + 4])[0]
+                if name.startswith('scene_') and addr:
+                    out.setdefault(name[len('scene_'):], addr)
     return out
 
 
