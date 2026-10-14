@@ -146,6 +146,12 @@ void platform_frame_sync(void)
     // touched SRAM, so this costs nothing on the frames that did not save.
     rtpc_sram_flush();
 
+    {   // RTPC_TEST_MINIMIZE=<frame> (test aid): minimise the window at that
+        // frame, to watch what a hidden or covered window does to pacing.
+        static long at = -2, n = 0;
+        if (at == -2) { const char *e = getenv("RTPC_TEST_MINIMIZE"); at = e ? atol(e) : -1; }
+        if (!s_headless && at >= 0 && ++n == at) SDL_MinimizeWindow(s_win);
+    }
     if (s_headless) {
         // Still build the frame when a test aid wants pictures of it
         // (RTPC_SHOTS, RTPC_FRAMEDUMP, RTPC_OAMDUMP): the PPU writes those
