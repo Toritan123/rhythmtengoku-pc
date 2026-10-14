@@ -46,6 +46,15 @@ not always enough to reach frame 900 — give it 40.
 
 If nothing appears, `sample <pid>`: `runModal` in the stack = a dialog is up
 (only the user can dismiss it); `agb_main` / `platform_frame_sync` = running.
+Launch it with `open -g` (background) when someone is using the machine.
+If frame 1800 is missing but 120 and 900 are there, `sample` the process:
+`SDL_RenderPresent` -> `METAL_...` -> `semaphore_timedwait` means macOS is
+withholding Metal drawables because the window is covered (seen behind
+another app's full-screen window on 2026-10-14; each present then waits up
+to 1 s). Hiding the app (HIDDEN event) costs one 1 s stall and then runs at
+60 fps. Not reproduced on purpose yet -- it needs a window over the user's
+screen -- and not fixed: a covered window slowing the game is a real issue
+for players too.
 Quit with `osascript -e 'tell application "Rhythm Tengoku" to quit'` —
 `kill -9` seeds AppKit's crash history and the next launch stops on the
 "reopen windows?" modal, which is your own test artifact, not a bug.
@@ -193,6 +202,15 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
     reproduced -- arrow debris, bubbles, dust), fades/text that wait for
     asset loading (instant on PC), and the first ~40 frames (the PC boots
     straight into the scene; the ROM fades out of the warning screen).
+  - **`tools/romcmp/cmpgame.py WORKDIR GAME...`** does all of the above
+    (headless, so no window): the level table gives each game's Scene
+    address (`scene_addrs.py`); other scenes take `name=0xADDR`
+    (studio 0x089d85b4, title 0x089dd47c, game_select 0x089cdf08), and
+    `:FRAMES` stops a scene with no results screen. It keeps only the
+    differing pairs as PNGs. To see *why* scripts diverge, paste
+    `RTPC_CLOCKLOG=1` next to `MGBA_REF_CLOCK=1` (clock, tempo): that is
+    how karate_man_2's and cosmic_dance's late differences were traced to
+    their scripts' `switch_random`.
   - When a sprite differs, compare OAM rather than pixels:
     `RTPC_OAMDUMP=<pc frame>` and `MGBA_REF_OAM=<ref frame>` print the
     visible entries in the same format; `diff` them. That is how the
@@ -367,24 +385,14 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
   appends END_OF_CRITERIA for it. Grep the .bs sources for `@!` comments
   before assuming a table is well formed.
 
-## Scene overrides in platform/game_globals.c
+## Scene overrides
 
-Only `scene_studio`, `scene_title` and `scene_game_select` are still PC
-rewrites. Everything else runs its real script out of `data/scenes/*.bs.c`.
-Five further shims (warning, main_menu, options, data_room, cafe) and five
-stub loop functions used to live here but were never wired to anything —
-they were removed once the offset fix made them pointless. Before adding a
-shim, check with `nm` which object actually defines the scene:
-
-```sh
-find build/macos -name '*.o' ! -name auto_stubs.o -print0 | xargs -0 nm -g -A \
-  | grep ' [TDSB] _scene_<name>$'
-```
-
-`title` and `game_select` do **not** suffer the offset bug (`inputsEnabled`
-sits at 0 and 4 with no pointer ahead of it); their shims exist for GFX
-timing — `func_08007324(TRUE)` — so converting them to the real scripts is
-its own job, not a consequence of the offset fix.
+None left (2026-10-14). `scene_studio` (a stub that bounced to the main
+menu), `scene_title` and `scene_game_select` (frame-counter rewrites) now
+run their real scripts from `data/scenes/*/scene.bs.c`, generated with
+`tools/bs2c.py` like every other scene; each was compared with the ROM.
+What remains in `platform/game_globals.c` is `PC_GAME_STUB` names that
+nothing references and a few one-command data stubs.
 
 ## Exercising one engine
 
