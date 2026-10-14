@@ -55,10 +55,20 @@ static void dump_open(void)
     if (!path) return;
     s_dump = fopen(path, "wb");
     if (!s_dump) return;
-    fwrite(hdr, 1, 44, s_dump);   // patched on close
+    fwrite(hdr, 1, 44, s_dump);   // filled in by dump_header()
 }
 
+static void dump_header(void);
+
 static void dump_close(void)
+{
+    if (!s_dump) return;
+    dump_header();
+    fclose(s_dump);
+    s_dump = NULL;
+}
+
+static void dump_header(void)
 {
     uint32_t rate = PC_SAMPLE_RATE, byte_rate = PC_SAMPLE_RATE * 4;
     uint32_t riff = 36 + s_dump_bytes;
@@ -72,8 +82,8 @@ static void dump_close(void)
     fwrite(&rate, 4, 1, s_dump); fwrite(&byte_rate, 4, 1, s_dump);
     fwrite(&align, 2, 1, s_dump); fwrite(&bits, 2, 1, s_dump);
     fwrite("data", 1, 4, s_dump); fwrite(&s_dump_bytes, 4, 1, s_dump);
-    fclose(s_dump);
-    s_dump = NULL;
+    fseek(s_dump, 0, SEEK_END);
+    fflush(s_dump);
 }
 
 static SDL_AudioDeviceID s_dev  = 0;
@@ -271,6 +281,37 @@ int audio_pc_init(void)
     return 0;
 }
 
+// RTPC_HEADLESS with RTPC_AUDIO_DUMP: no device, but the mixer output is
+// still resampled and written to the dump, at exactly the nominal ratio (the
+// rate matcher sees a queue sitting on its target), so a test run can record
+// the game's sound without opening a window or an audio device.
+static int s_dump_only = 0;
+
+void audio_pc_init_dump_only(void)
+{
+    if (!getenv("RTPC_AUDIO_DUMP")) return;
+    dump_open();
+    s_dump_only = (s_dump != NULL);
+    s_last_write_pos = 0;
+    s_resample_pos   = 0.0;
+    s_carry_valid    = 0;
+    s_q_ema          = -1.0;
+    s_perf_last      = 0;
+    s_read_acc       = 0.0;
+}
+
+int audio_pc_dump_only(void)
+{
+    return s_dump_only;
+}
+
+// Queued output in bytes; without a device, exactly the controller's target.
+static uint32_t queued_bytes(double target_ms)
+{
+    if (s_dev) return SDL_GetQueuedAudioSize(s_dev);
+    return (uint32_t)(target_ms * PC_SAMPLE_RATE / 1000.0) * 4;
+}
+
 // Steady-state depth of the SDL output queue, in milliseconds.  This is the
 // delay between a sample being generated and the player hearing it, which on a
 // rhythm game is the offset between the music and what is on screen.
@@ -294,7 +335,7 @@ void audio_pc_destroy(void)
 
 void audio_pc_push_frame(void)
 {
-    if (!s_dev || !gMidiPCMBufR || !gMidiPCMBufL) return;
+    if ((!s_dev && !s_dump_only) || !gMidiPCMBufR || !gMidiPCMBufL) return;
 
     uint32_t write_pos = gMidiPCMBufWritePos;
     uint32_t buf_size  = gMidiPCMBufSize32;
@@ -345,13 +386,13 @@ void audio_pc_push_frame(void)
     // If there is already ≥ 200 ms of audio queued, skip pushing this frame.
     // This caps latency and prevents unbounded queue growth when the game
     // temporarily runs faster than real-time (initial burst, turbo, etc.).
-    if (SDL_GetQueuedAudioSize(s_dev) == 0) {
+    if (s_dev && SDL_GetQueuedAudioSize(s_dev) == 0) {
         // The device ran dry before this push: an audible gap.
         s_underruns++;
         if (getenv("RTPC_AUDIO_STATS"))
             fprintf(stderr, "[AUD] underrun #%u\n", s_underruns);
     }
-    if (SDL_GetQueuedAudioSize(s_dev) >= MAX_QUEUE_BYTES) {
+    if (s_dev && SDL_GetQueuedAudioSize(s_dev) >= MAX_QUEUE_BYTES) {
         // Dropping a frame of audio outright is also a discontinuity; count it
         // separately so it is not mistaken for an underrun.
         s_drops++;
@@ -404,7 +445,7 @@ void audio_pc_push_frame(void)
     double nom_out  = (double)gba_samples / nominal;   /* output frames if uncorrected */
     double step     = nominal;
     {
-        double q_now  = (double)(SDL_GetQueuedAudioSize(s_dev) / 4);
+        double q_now  = (double)(queued_bytes(target_ms) / 4);
         double target = target_ms * PC_SAMPLE_RATE / 1000.0;
         double lim    = nom_out * 0.12;                /* ratio authority, +-12 % */
         double err, corr;
@@ -556,6 +597,28 @@ void audio_pc_push_frame(void)
         psg_pc_render(out, out_count, PC_SAMPLE_RATE);
     }
 
+    // AC coupling. The GBA's analogue output passes through a series
+    // capacitor, so the player never hears a DC level; the mix itself has
+    // one (the 8-bit stage floors, samples are asymmetric, the PSG is
+    // unipolar), measured at -25..-137 in karate_man and -1115 during its
+    // intro, where it pushed the output into clipping. mGBA's output has none
+    // either (blip_buf high-passes). A one-pole high-pass at ~10 Hz removes it
+    // without touching anything audible. RTPC_AUDIO_DC=1 keeps the DC, for A/B.
+    {
+        static int keep_dc = -1;
+        static double xl = 0.0, xr = 0.0, yl = 0.0, yr = 0.0;
+        const double R = 0.998577;   // exp(-2 pi 10 / 44100)
+        uint32_t n;
+        if (keep_dc < 0) { const char *e = getenv("RTPC_AUDIO_DC"); keep_dc = (e && atoi(e)) ? 1 : 0; }
+        for (n = 0; !keep_dc && n < out_count; n++) {
+            double l = out[2 * n], r = out[2 * n + 1];
+            yl = l - xl + R * yl; xl = l;
+            yr = r - xr + R * yr; xr = r;
+            out[2 * n]     = (int16_t)(yl > 32767.0 ? 32767.0 : (yl < -32768.0 ? -32768.0 : yl));
+            out[2 * n + 1] = (int16_t)(yr > 32767.0 ? 32767.0 : (yr < -32768.0 ? -32768.0 : yr));
+        }
+    }
+
     if (s_volume != 1.0) {
         const double knee = 32767.0 * 0.8;
         const double lim  = 32767.0 - knee;
@@ -575,11 +638,12 @@ void audio_pc_push_frame(void)
         fprintf(stderr, "[AUD] avail=%u gba=%u out=%u q=%.1fms\n",
                 avail, gba_samples, out_count, audio_pc_queued_ms());
     if (out_count > 0) {
-        SDL_QueueAudio(s_dev, out, out_count * 2 * sizeof(int16_t));
+        if (s_dev) SDL_QueueAudio(s_dev, out, out_count * 2 * sizeof(int16_t));
         if (s_dump) {
             uint32_t n = out_count * 2 * (uint32_t)sizeof(int16_t);
             fwrite(out, 1, n, s_dump);
             s_dump_bytes += n;
+            dump_header();
         }
     }
     SDL_free(out);

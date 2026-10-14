@@ -40,6 +40,7 @@ int platform_init(void)
             return -1;
         }
         input_init();
+        audio_pc_init_dump_only();   // RTPC_AUDIO_DUMP still records, no device
         fprintf(stderr, "[PLATFORM] headless: no window, renderer or audio\n");
         fflush(stderr);
         s_last_tick = SDL_GetTicks64();
@@ -174,7 +175,7 @@ void platform_frame_sync(void)
     t_render = SDL_GetPerformanceCounter();
 
     // Push audio samples for this frame
-    if (!s_headless) audio_pc_push_frame();
+    if (!s_headless || audio_pc_dump_only()) audio_pc_push_frame();
 
     t_audio = SDL_GetPerformanceCounter();
 

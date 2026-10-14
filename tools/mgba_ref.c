@@ -32,6 +32,27 @@
 #define TITLE_SCENE_PTR 0x08935fac // D_08935fac: pointer to the title scene
 #define SCRIPT_CLOCK    0x030053d8 // D_030053c0.runningTime
 
+// blip_buf, exported by libmgba but its header is not installed.
+struct blip_t;
+int  blip_samples_avail(const struct blip_t *);
+int  blip_read_samples(struct blip_t *, short out[], int count, int stereo);
+void blip_set_rates(struct blip_t *, double clock_rate, double sample_rate);
+
+#define AUDIO_RATE 44100 // same as the PC build's output (PC_SAMPLE_RATE)
+
+static void write_wav_header(FILE *f, uint32_t dataBytes)
+{
+    uint32_t riff = 36 + dataBytes, sz16 = 16, rate = AUDIO_RATE, byteRate = AUDIO_RATE * 4;
+    uint16_t fmt = 1, ch = 2, bits = 16, align = 4;
+    fseek(f, 0, SEEK_SET);
+    fwrite("RIFF", 1, 4, f); fwrite(&riff, 4, 1, f);
+    fwrite("WAVEfmt ", 1, 8, f); fwrite(&sz16, 4, 1, f);
+    fwrite(&fmt, 2, 1, f); fwrite(&ch, 2, 1, f);
+    fwrite(&rate, 4, 1, f); fwrite(&byteRate, 4, 1, f);
+    fwrite(&align, 2, 1, f); fwrite(&bits, 2, 1, f);
+    fwrite("data", 1, 4, f); fwrite(&dataBytes, 4, 1, f);
+}
+
 static void save_ppm(const char *path, const color_t *buf, unsigned w, unsigned h)
 {
     FILE *f = fopen(path, "wb");
@@ -107,6 +128,19 @@ int main(int argc, char **argv)
     if (!switched) { fprintf(stderr, "transition entry not found\n"); return 1; }
 
     // Leave the warning screen with A, then run the scene.
+    // MGBA_REF_AUDIO=<wav>: the ROM's sound from the scene start on, 44.1 kHz
+    // stereo s16, for comparison with the PC build's RTPC_AUDIO_DUMP.
+    FILE *wav = NULL;
+    uint32_t wavBytes = 0;
+    struct blip_t *bl = core->getAudioChannel(core, 0), *br = core->getAudioChannel(core, 1);
+    if (getenv("MGBA_REF_AUDIO")) {
+        wav = fopen(getenv("MGBA_REF_AUDIO"), "wb");
+        if (wav) write_wav_header(wav, 0);
+        core->setAudioBufferSize(core, 4096);
+        blip_set_rates(bl, core->frequency(core), AUDIO_RATE);
+        blip_set_rates(br, core->frequency(core), AUDIO_RATE);
+    }
+
     // The clock is tracked from here on, while the warning scene still runs:
     // epoch -1 is the warning scene, and the requested scene restarting the
     // clock (which can come after f0) makes epoch 0, as on the PC.
@@ -141,6 +175,19 @@ int main(int argc, char **argv)
         }
         core->setKeys(core, keys);
         core->runFrame(core);
+        if (wav) {
+            short l[2048], r[2048], lr[4096];
+            int n;
+            while ((n = blip_samples_avail(bl)) > 0) {
+                if (n > 2048) n = 2048;
+                blip_read_samples(bl, l, n, 0);
+                blip_read_samples(br, r, n, 0);
+                if (f0 < 0) continue; // only from the scene start
+                for (int i = 0; i < n; i++) { lr[2 * i] = l[i]; lr[2 * i + 1] = r[i]; }
+                fwrite(lr, 4, n, wav);
+                wavBytes += 4 * n;
+            }
+        }
         // The warning scene has a white screen; the first frame after the
         // switch whose VRAM changed is hard to detect generically, so key the
         // frame counter on the first non-white frame after leaving it.
@@ -205,6 +252,7 @@ int main(int argc, char **argv)
             save_ppm(path, buf, w, h);
         }
     }
+    if (wav) { write_wav_header(wav, wavBytes); fclose(wav); }
     core->deinit(core);
     return 0;
 }

@@ -11,5 +11,7 @@ void audio_pc_destroy(void);
 void audio_pc_push_frame(void);
 double audio_pc_queued_ms(void);
 unsigned int audio_pc_underruns(void);
+void audio_pc_init_dump_only(void);   // headless + RTPC_AUDIO_DUMP
+int  audio_pc_dump_only(void);
 
 #endif // PLATFORM_PC
