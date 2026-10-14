@@ -227,6 +227,15 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
     `RTPC_CLOCKLOG=1` next to `MGBA_REF_CLOCK=1` (clock, tempo): that is
     how karate_man_2's and cosmic_dance's late differences were traced to
     their scripts' `switch_random`.
+  - **Sound** (2026-10-14): `tools/romcmp/audiogame.sh WORKDIR GAME SECONDS`
+    records the PC (headless `RTPC_AUDIO_DUMP`) and mGBA (`MGBA_REF_AUDIO`)
+    with the same input and runs `audiocmp.py`. rat_race / night_walk:
+    envelope correlation 0.97, no 100 ms window off by more than 4 dB,
+    octave levels within 0.2 dB up to 2 kHz. Expected differences: gain
+    (PC/ROM ~1.36, scaling), +2 dB at 4-8 kHz (the PC resampler is flat
+    where the hardware's sample-and-hold droops) and nothing above 8 kHz
+    (the PC band-limits to the GBA's 6.7 kHz Nyquist; mGBA keeps images).
+    The mix's DC is now removed like the GBA's AC-coupled output.
   - When a sprite differs, compare OAM rather than pixels:
     `RTPC_OAMDUMP=<pc frame>` and `MGBA_REF_OAM=<ref frame>` print the
     visible entries in the same format; `diff` them. That is how the
@@ -243,6 +252,13 @@ Include the data types (`D`/`S`/`B`/`C`) on the second list — `scene_*` and
     bon_odori, samurai_slice, quiz_show (until its random question pick).
     Bugs this found: double-size sprites (karate_man), blend registers and
     BG x/y (samurai_slice), palette overreads (wizards_waltz, bon_odori).
+    2026-10-14, also only RNG / load timing: karate_man_2 (its last rock's
+    tempo is a script switch_random), snappy_trio, polyrhythm_2,
+    night_walk_2, bouncy_road(_2), ninja_reincarnate, sneaky_spirits_2,
+    spaceball_2, tap_trial_2, marching_orders_2, toss_boys_2, cosmic_dance
+    (switch_random in its script), rap_women, bon_dance, remix_1..8, and
+    the non-game scenes main_menu, options, data_room, cafe, the three
+    medal corners, reading, perfect, studio, title, game_select.
   - **BG x/y swapped in `scene_set_bg_layer_pos` happened twice**
     (rat_race's cat, samurai_slice's slide): the args are (layer, x, y) and
     the asm passes x in R1, y in R2. Every engine's calls were checked on
