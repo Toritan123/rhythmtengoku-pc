@@ -153,6 +153,12 @@ void platform_frame_sync(void)
         if (at == -2) { const char *e = getenv("RTPC_TEST_MINIMIZE"); at = e ? atol(e) : -1; }
         if (!s_headless && at >= 0 && ++n == at) SDL_MinimizeWindow(s_win);
     }
+    {   // RTPC_TEST_OFFSCREEN=<frame> (test aid): move the window off every
+        // screen at that frame -- not visible, like a fully covered window.
+        static long at = -2, n = 0;
+        if (at == -2) { const char *e = getenv("RTPC_TEST_OFFSCREEN"); at = e ? atol(e) : -1; }
+        if (!s_headless && at >= 0 && ++n == at) SDL_SetWindowPosition(s_win, -20000, -20000);
+    }
     if (s_headless) {
         // Still build the frame when a test aid wants pictures of it
         // (RTPC_SHOTS, RTPC_FRAMEDUMP, RTPC_OAMDUMP): the PPU writes those
